@@ -1,0 +1,528 @@
+# Test-install pipeline — CI-only verification that the app INSTALLS and
+# FIRST-RUNS (including the required default TTS model) on every supported
+# platform, producing throwaway installer artifacts.
+#
+# This workflow NEVER releases anything:
+#   - no tag, no GitHub Release, no updater manifest, no publishing
+#   - unsigned builds (updater artifacts disabled via a --config overlay, so
+#     no TAURI_SIGNING_PRIVATE_KEY / APPLE_* secrets are needed or read)
+#   - no version stamping/bumping — bundles carry whatever version is in git
+#   - installers land as short-lived workflow ARTIFACTS (retention: 7 days)
+#
+# Two independent matrices per platform:
+#   build          — mirrors release.yml's bundle steps (uv + ffmpeg sidecars,
+#                    same `tauri build --target --bundles` invocation) minus
+#                    every tag/sign/publish part, then re-runs release.yml's
+#                    installer structural smoke (DMG mount / MSI quiet install /
+#                    AppImage extract) and uploads the installers.
+#   first-run-smoke— sets up the backend venv exactly like the app's own first
+#                    launch (`uv sync --frozen --no-dev`, the command
+#                    lib.rs::ensure_venv_ready runs), boots the backend
+#                    headless, waits for the REQUIRED default model
+#                    (k2-fsa/OmniVoice, ~2.4 GB) to download + load, then runs
+#                    one real POST /generate synthesis and validates the WAV.
+#
+# Triggers: manual dispatch, or a push to the ci/test-install working branch
+# (so the run starts straight from the branch without merging to main).
+
+name: Test Install (no release)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ["ci/test-install"]
+
+# Read-only token — this workflow must be structurally incapable of creating
+# tags/releases or pushing version bumps.
+permissions:
+  contents: read
+
+concurrency:
+  group: test-install-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Run all JavaScript actions on Node 24 (mirrors ci.yml / release.yml).
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  # ── Installer builds (unsigned, artifacts only) ──────────────────────────
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Same platform set as release.yml. Note: the Intel-mac leg uses
+          # macos-15-intel — macos-13 retired in Dec 2025; macos-15-intel is
+          # GitHub's designated x86_64 migration target (see release.yml).
+          - os: macos-14
+            slug: macos-arm64
+            label: "macOS Apple Silicon"
+            rust_target: aarch64-apple-darwin
+            bundles: "app,dmg"
+          - os: macos-15-intel
+            slug: macos-x64
+            label: "macOS Intel"
+            rust_target: x86_64-apple-darwin
+            bundles: "app,dmg"
+          # Windows: MSI only — NSIS fails at makensis near its ~2 GB stub
+          # limit (see release.yml).
+          - os: windows-2022
+            slug: windows-x64
+            label: "Windows x64"
+            rust_target: x86_64-pc-windows-msvc
+            bundles: "msi"
+          # Linux: AppImage only — tauri-bundler's .deb target currently fails
+          # with "Failed to create control scripts" (see release.yml).
+          - os: ubuntu-22.04
+            slug: linux-x64
+            label: "Linux x64"
+            rust_target: x86_64-unknown-linux-gnu
+            bundles: "appimage"
+
+    runs-on: ${{ matrix.os }}
+    name: Build (${{ matrix.label }})
+    timeout-minutes: 90
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # ── Language runtimes (mirrors release.yml) ────────────────────────
+      - name: Setup Rust (stable)
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.rust_target }}
+
+      - name: Rust cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: frontend/src-tauri -> target
+          key: ${{ matrix.rust_target }}-testinstall
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+
+      # ── Platform deps (Tauri host requirements only — no Python here) ─
+      - name: macOS system deps
+        if: runner.os == 'macOS'
+        run: |
+          brew install ffmpeg || true
+
+      - name: Linux system deps
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            build-essential curl wget file libxdo-dev libssl-dev \
+            libayatana-appindicator3-dev librsvg2-dev \
+            libasound2-dev ffmpeg
+
+      # ── Frontend build ─────────────────────────────────────────────────
+      - name: Cache bun deps
+        uses: actions/cache@v4
+        with:
+          path: ~/.bun/install/cache
+          key: ${{ runner.os }}-bun-${{ hashFiles('frontend/bun.lock', 'bun.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-bun-
+
+      - name: Install frontend deps
+        working-directory: frontend
+        run: bun install
+
+      # ── Sidecars (verbatim from release.yml) ───────────────────────────
+      # Pinned uv version mirrors the `UV_VERSION` constant in lib.rs; bump
+      # both together when refreshing.
+      - name: Bundle uv (${{ matrix.rust_target }})
+        shell: bash
+        env:
+          UV_VERSION: "0.11.7"
+          TRIPLE: ${{ matrix.rust_target }}
+        run: |
+          set -euo pipefail
+          mkdir -p frontend/src-tauri/binaries
+          case "$TRIPLE" in
+            aarch64-apple-darwin|x86_64-apple-darwin|x86_64-unknown-linux-gnu)
+              ARCHIVE="tar.gz"
+              ;;
+            x86_64-pc-windows-msvc)
+              ARCHIVE="zip"
+              ;;
+            *)
+              echo "Unsupported target for uv bundling: $TRIPLE"
+              exit 1
+              ;;
+          esac
+          URL="https://github.com/astral-sh/uv/releases/download/${UV_VERSION}/uv-${TRIPLE}.${ARCHIVE}"
+          echo "Fetching $URL"
+          WORK=$(mktemp -d)
+          if [ "$ARCHIVE" = "zip" ]; then
+            curl -fsSL "$URL" -o "$WORK/uv.zip"
+            unzip -j -o "$WORK/uv.zip" -d "$WORK"
+            mv "$WORK/uv.exe" "frontend/src-tauri/binaries/uv-${TRIPLE}.exe"
+          else
+            curl -fsSL "$URL" | tar -xz -C "$WORK"
+            mv "$WORK/uv-${TRIPLE}/uv" "frontend/src-tauri/binaries/uv-${TRIPLE}"
+            chmod +x "frontend/src-tauri/binaries/uv-${TRIPLE}"
+          fi
+          ls -la "frontend/src-tauri/binaries/"
+
+      # Same constant lives in frontend/src-tauri/src/tools.rs:
+      # FFMPEG_BTBN_VERSION — bump together.
+      - name: Bundle ffmpeg + ffprobe (${{ matrix.rust_target }})
+        shell: bash
+        env:
+          TRIPLE: ${{ matrix.rust_target }}
+          FFMPEG_BTBN_VERSION: "latest"
+        run: |
+          set -euo pipefail
+          BINDIR="frontend/src-tauri/binaries"
+          mkdir -p "$BINDIR"
+          WORK=$(mktemp -d)
+
+          case "$TRIPLE" in
+            aarch64-apple-darwin|x86_64-apple-darwin)
+              for TOOL in ffmpeg ffprobe; do
+                if [ "$TOOL" = "ffmpeg" ]; then
+                  URL="https://evermeet.cx/ffmpeg/getrelease/zip"
+                else
+                  URL="https://evermeet.cx/ffmpeg/getrelease/${TOOL}/zip"
+                fi
+                echo "Fetching $TOOL from evermeet.cx"
+                curl -fsSL "$URL" -o "$WORK/${TOOL}.zip"
+                unzip -o -j "$WORK/${TOOL}.zip" -d "$WORK"
+                mv "$WORK/${TOOL}" "$BINDIR/${TOOL}-${TRIPLE}"
+                chmod +x "$BINDIR/${TOOL}-${TRIPLE}"
+              done
+              ;;
+            x86_64-unknown-linux-gnu)
+              URL="https://github.com/BtbN/FFmpeg-Builds/releases/download/${FFMPEG_BTBN_VERSION}/ffmpeg-master-${FFMPEG_BTBN_VERSION}-linux64-gpl.tar.xz"
+              echo "Fetching ffmpeg from BtbN (linux64) — version=${FFMPEG_BTBN_VERSION}"
+              curl -fsSL "$URL" -o "$WORK/ffmpeg.tar.xz"
+              tar -xJf "$WORK/ffmpeg.tar.xz" -C "$WORK"
+              EXTRACTED=$(find "$WORK" -type d -name "bin" | head -1)
+              mv "$EXTRACTED/ffmpeg"  "$BINDIR/ffmpeg-${TRIPLE}"
+              mv "$EXTRACTED/ffprobe" "$BINDIR/ffprobe-${TRIPLE}"
+              chmod +x "$BINDIR/ffmpeg-${TRIPLE}" "$BINDIR/ffprobe-${TRIPLE}"
+              ;;
+            x86_64-pc-windows-msvc)
+              URL="https://github.com/BtbN/FFmpeg-Builds/releases/download/${FFMPEG_BTBN_VERSION}/ffmpeg-master-${FFMPEG_BTBN_VERSION}-win64-gpl.zip"
+              echo "Fetching ffmpeg from BtbN (win64) — version=${FFMPEG_BTBN_VERSION}"
+              curl -fsSL "$URL" -o "$WORK/ffmpeg.zip"
+              unzip -o "$WORK/ffmpeg.zip" -d "$WORK"
+              EXTRACTED=$(find "$WORK" -type f -name "ffmpeg.exe" | head -1)
+              EXTRACTED_DIR=$(dirname "$EXTRACTED")
+              mv "$EXTRACTED_DIR/ffmpeg.exe"  "$BINDIR/ffmpeg-${TRIPLE}.exe"
+              mv "$EXTRACTED_DIR/ffprobe.exe" "$BINDIR/ffprobe-${TRIPLE}.exe"
+              ;;
+            *)
+              echo "⚠ No ffmpeg bundling for target: $TRIPLE (will download at first run)"
+              ;;
+          esac
+          ls -la "$BINDIR/"
+
+      # ── Tauri build — UNSIGNED, NO PUBLISH ─────────────────────────────
+      # Invokes the tauri CLI directly (not tauri-action) so there is no
+      # release codepath at all. A --config overlay turns off
+      # createUpdaterArtifacts (tauri.conf.json has it on for release.yml),
+      # because updater payload signing requires TAURI_SIGNING_PRIVATE_KEY —
+      # deliberately absent here. macOS bundles still get the valid ad-hoc
+      # seal from tauri.conf.json (bundle.macOS.signingIdentity = "-").
+      - name: Tauri build (unsigned)
+        working-directory: frontend
+        shell: bash
+        env:
+          # GH runners have no FUSE; linuxdeploy must extract-and-run.
+          APPIMAGE_EXTRACT_AND_RUN: 1
+        run: |
+          set -euo pipefail
+          printf '%s\n' '{"bundle": {"createUpdaterArtifacts": false}}' > test-install-overlay.json
+          bunx tauri build --target ${{ matrix.rust_target }} --bundles ${{ matrix.bundles }} --config test-install-overlay.json
+
+      # ── Installer smoke (mirrors release.yml's structural checks) ──────
+      - name: Installer smoke (macOS)
+        if: runner.os == 'macOS'
+        timeout-minutes: 5
+        shell: bash
+        run: |
+          set -euo pipefail
+          DMG=$(find frontend/src-tauri/target/${{ matrix.rust_target }}/release/bundle/dmg -name "*.dmg" | head -1)
+          echo "Smoke-testing DMG: $DMG"
+          MOUNT=$(hdiutil attach -nobrowse -readonly "$DMG" | tail -1 | grep -oE '/Volumes/.*$')
+          APP=$(find "$MOUNT" -maxdepth 2 -name "*.app" | head -1)
+          fail() { echo "FAIL — $1"; find "$APP/Contents" -maxdepth 4 -type f 2>/dev/null | head -40; hdiutil detach "$MOUNT" || true; exit 1; }
+          [ -n "$APP" ] || { echo "FAIL — no .app inside DMG"; hdiutil detach "$MOUNT" || true; exit 1; }
+          ls "$APP/Contents/MacOS"/* >/dev/null 2>&1 || fail "no shell binary in Contents/MacOS"
+          find "$APP/Contents" -type f -name 'uv' | grep -q . || fail "bundled uv sidecar missing"
+          find "$APP/Contents" -type f -name 'pyproject.toml' | grep -q . || fail "backend resource pyproject.toml missing"
+          find "$APP/Contents" -type f -path '*/backend/main.py' | grep -q . || fail "backend source backend/main.py missing"
+          echo "OK — bundle has shell + uv + backend resources"
+          hdiutil detach "$MOUNT" || true
+
+      # Report-only signing verification (same script release.yml runs on
+      # unsigned/preview paths) — asserts the ad-hoc seal is valid.
+      - name: Verify macOS signing (report-only)
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          set -uo pipefail
+          APP=$(find "frontend/src-tauri/target/${{ matrix.rust_target }}/release/bundle/macos" -maxdepth 1 -name '*.app' | head -1)
+          [ -n "$APP" ] || { echo "FAIL — no .app found to verify"; exit 1; }
+          echo "Unsigned test build → report-only verification."
+          bash scripts/verify-macos-signing.sh "$APP"
+
+      - name: Installer smoke (Windows)
+        if: runner.os == 'Windows'
+        timeout-minutes: 5
+        shell: bash
+        run: |
+          set -euo pipefail
+          MSI=$(find frontend/src-tauri/target/${{ matrix.rust_target }}/release/bundle/msi -name "*.msi" | head -1)
+          echo "Smoke-testing MSI: $MSI"
+          msiexec.exe //i "$(cygpath -w "$MSI")" //quiet //norestart
+          INSTALL="/c/Program Files/OmniVoice Studio"
+          fail() { echo "FAIL — $1. Contents:"; find "$INSTALL" -maxdepth 4 -type f 2>/dev/null | head -40; exit 1; }
+          test -f "$INSTALL/omnivoice-studio.exe" || fail "shell exe missing"
+          test -f "$INSTALL/uv.exe" || fail "bundled uv missing"
+          find "$INSTALL" -type f -name 'pyproject.toml' | grep -q . || fail "backend resource pyproject.toml missing"
+          find "$INSTALL" -type f -path '*backend*main.py' | grep -q . || fail "backend source main.py missing"
+          echo "OK — MSI installed shell + uv + backend resources"
+
+      - name: Installer smoke (Linux)
+        if: runner.os == 'Linux'
+        timeout-minutes: 5
+        shell: bash
+        run: |
+          set -euo pipefail
+          APPIMAGE=$(find frontend/src-tauri/target/${{ matrix.rust_target }}/release/bundle/appimage -name "*.AppImage" | head -1)
+          APPIMAGE=$(realpath "$APPIMAGE")
+          echo "Smoke-testing AppImage: $APPIMAGE"
+          chmod +x "$APPIMAGE"
+          EXTRACT_DIR="$(mktemp -d)"
+          cd "$EXTRACT_DIR"
+          "$APPIMAGE" --appimage-extract >/dev/null
+          ROOT="$EXTRACT_DIR/squashfs-root"
+          fail() { echo "FAIL — $1"; find "$ROOT" -maxdepth 5 -type f 2>/dev/null | head -40; exit 1; }
+          { [ -f "$ROOT/AppRun" ] || find "$ROOT" -type f \( -name "OmniVoice Studio" -o -name "omnivoice-studio" \) | grep -q .; } || fail "shell binary / AppRun missing"
+          find "$ROOT" -type f -name 'uv' | grep -q . || fail "bundled uv sidecar missing"
+          find "$ROOT" -type f -name 'pyproject.toml' | grep -q . || fail "backend resource pyproject.toml missing"
+          find "$ROOT" -type f -path '*/backend/main.py' | grep -q . || fail "backend source backend/main.py missing"
+          echo "OK — AppImage has shell + uv + backend resources"
+
+      # ── Collect + upload installers as short-lived artifacts ───────────
+      - name: Collect installers
+        shell: bash
+        run: |
+          set -euo pipefail
+          BUNDLE_DIR="frontend/src-tauri/target/${{ matrix.rust_target }}/release/bundle"
+          mkdir -p test-install-artifacts
+          find "$BUNDLE_DIR" -type f \
+            \( -name "*.dmg" -o -name "*.msi" -o -name "*.AppImage" -o -name "*.deb" \) \
+            -exec cp {} test-install-artifacts/ \;
+          echo "Installers built:"
+          ls -la test-install-artifacts/
+
+      - name: Upload installers (artifact only — NOT a release)
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-install-${{ matrix.slug }}
+          path: test-install-artifacts/*
+          retention-days: 7
+          if-no-files-found: error
+
+  # ── First-run with required models (headless backend, per OS) ───────────
+  # Replicates what the installed app does on first launch, without the GUI:
+  # the same venv sync the Tauri shell runs, then backend boot → default
+  # model download (k2-fsa/OmniVoice, ~2.4 GB) → one real synthesis.
+  # CPU-only runners: device auto-detect resolves to cpu (or mps on the M1
+  # runner) exactly as it would on a user's machine.
+  first-run-smoke:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-14
+            slug: macos-arm64
+            label: "macOS Apple Silicon"
+          - os: macos-15-intel
+            slug: macos-x64
+            label: "macOS Intel"
+          - os: windows-2022
+            slug: windows-x64
+            label: "Windows x64"
+          - os: ubuntu-22.04
+            slug: linux-x64
+            label: "Linux x64"
+
+    runs-on: ${{ matrix.os }}
+    name: First-run smoke (${{ matrix.label }})
+    timeout-minutes: 75
+    env:
+      # Restricted-network resilience (mirrors ci.yml smoke-matrix).
+      UV_HTTP_TIMEOUT: "120"
+      UV_HTTP_RETRIES: "5"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # The Linux venv pulls CUDA-enabled torch (+ nvidia libs); reclaim the
+      # runner space the preinstalled toolchains occupy so venv + ~2.4 GB
+      # model fit comfortably.
+      - name: Free disk space (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo rm -rf /usr/local/lib/android /usr/share/dotnet /opt/ghc /usr/local/share/boost || true
+          df -h /
+
+      # Graceful skip when a runner genuinely lacks disk: log clearly what
+      # was (not) covered instead of failing the whole run on ENOSPC.
+      - name: Disk space gate
+        id: disk
+        shell: bash
+        run: |
+          set -euo pipefail
+          df -Pk . "$HOME" || true
+          FREE_WS=$(df -Pk . | awk 'NR==2 {print int($4/1048576)}')
+          FREE_HOME=$(df -Pk "$HOME" | awk 'NR==2 {print int($4/1048576)}')
+          FREE=$(( FREE_WS < FREE_HOME ? FREE_WS : FREE_HOME ))
+          echo "Free disk: workspace=${FREE_WS}G home=${FREE_HOME}G -> min=${FREE}G"
+          if [ "$FREE" -lt 12 ]; then
+            echo "::warning::First-run model smoke SKIPPED on ${{ matrix.label }} — only ${FREE} GB free (< 12 GB needed for venv + ~2.4 GB default model). Installer build coverage is unaffected."
+            echo "proceed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "proceed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Setup Python 3.11
+        if: steps.disk.outputs.proceed == 'true'
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install uv
+        if: steps.disk.outputs.proceed == 'true'
+        uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: System deps (macOS)
+        if: steps.disk.outputs.proceed == 'true' && runner.os == 'macOS'
+        run: brew install ffmpeg libsndfile || true
+
+      - name: System deps (Windows)
+        if: steps.disk.outputs.proceed == 'true' && runner.os == 'Windows'
+        shell: bash
+        run: |
+          choco install ffmpeg -y --no-progress
+          ffmpeg -version
+
+      - name: System deps (Linux)
+        if: steps.disk.outputs.proceed == 'true' && runner.os == 'Linux'
+        uses: awalsh128/cache-apt-pkgs-action@latest
+        with:
+          packages: ffmpeg libsndfile1
+          version: 1.0
+
+      # Exactly the command the installed app's first launch runs
+      # (lib.rs::ensure_venv_ready → `uv sync --frozen --no-dev`).
+      - name: Install backend venv (first-launch parity)
+        if: steps.disk.outputs.proceed == 'true'
+        run: uv sync --frozen --no-dev
+
+      - name: First-run smoke — backend boot, required-model download, real synthesis
+        if: steps.disk.outputs.proceed == 'true'
+        shell: bash
+        timeout-minutes: 60
+        env:
+          # Generous cold-load budget for CPU runners on a fresh HF cache.
+          OMNIVOICE_MODEL_LOAD_TIMEOUT: "1800"
+        run: |
+          set -uo pipefail
+          BASE="http://127.0.0.1:3900"
+
+          uv run --no-sync python backend/main.py > backend.log 2>&1 &
+          SERVER_PID=$!
+          trap 'kill $SERVER_PID 2>/dev/null || true' EXIT
+          echo "backend pid: $SERVER_PID"
+
+          fail() {
+            echo "::error::${{ matrix.label }}: $1"
+            echo "── backend.log (last 120 lines) ──"
+            tail -120 backend.log || true
+            exit 1
+          }
+
+          # Phase 1: liveness — /health (torch import makes cold boot slow).
+          UP=0
+          for i in $(seq 1 60); do
+            if curl -sf "$BASE/health" >/dev/null 2>&1; then
+              echo "Phase 1 OK — /health up after ~$((i*5))s"
+              UP=1
+              break
+            fi
+            kill -0 $SERVER_PID 2>/dev/null || fail "backend process died during boot"
+            sleep 5
+          done
+          [ "$UP" = "1" ] || fail "backend /health not responding after 300s"
+
+          curl -sf "$BASE/system/info" | python -c "import sys,json; d=json.load(sys.stdin); print('device:', d.get('device'), '| platform:', d.get('platform'), '| python:', d.get('python'), '| version:', d.get('version'))" || true
+
+          # Phase 2: required-model bootstrap — the lifespan preload downloads
+          # and loads the default checkpoint (k2-fsa/OmniVoice) on first run.
+          echo "Phase 2 — waiting for required-model download + load (fresh HF cache)…"
+          ELAPSED=0
+          READY=0
+          LAST=""
+          while [ $ELAPSED -lt 1800 ]; do
+            LAST=$(curl -sf "$BASE/model/status" 2>/dev/null || echo '{}')
+            STATUS=$(printf '%s' "$LAST" | python -c "import sys,json; d=json.load(sys.stdin); print(d.get('status','?'))" 2>/dev/null || echo '?')
+            DETAIL=$(printf '%s' "$LAST" | python -c "import sys,json; d=json.load(sys.stdin); print(d.get('sub_stage',''), d.get('progress',''), d.get('error',''))" 2>/dev/null || echo '')
+            echo "  [${ELAPSED}s] model status: $STATUS $DETAIL"
+            if [ "$STATUS" = "ready" ]; then READY=1; break; fi
+            kill -0 $SERVER_PID 2>/dev/null || fail "backend died during model load"
+            sleep 15
+            ELAPSED=$((ELAPSED+15))
+          done
+          [ "$READY" = "1" ] || fail "required model not ready after 1800s (last status: $LAST)"
+          echo "Phase 2 OK — required model downloaded + loaded in ~${ELAPSED}s"
+
+          # Phase 3: one REAL synthesis through the default engine — the
+          # end-to-end proof that a fresh install can produce audio.
+          echo "Phase 3 — POST /generate (real synthesis)…"
+          HTTP_CODE=$(curl -sS -o smoke_out.wav -w "%{http_code}" --max-time 1200 \
+            -F "text=OmniVoice Studio first run smoke test. This sentence validates a fresh installation with the required model." \
+            -F "num_step=4" \
+            "$BASE/generate") || fail "generate request failed (curl transport error)"
+          if [ "$HTTP_CODE" != "200" ]; then
+            echo "response body (first 2000 bytes):"; head -c 2000 smoke_out.wav || true; echo
+            fail "generate returned HTTP $HTTP_CODE"
+          fi
+          SIZE=$(wc -c < smoke_out.wav | tr -d ' ')
+          HEAD4=$(head -c 4 smoke_out.wav)
+          [ "$HEAD4" = "RIFF" ] || fail "output is not a RIFF/WAV file (got: $HEAD4)"
+          [ "$SIZE" -gt 40000 ] || fail "output WAV suspiciously small (${SIZE} bytes)"
+          echo "Phase 3 OK — real synthesis produced a ${SIZE}-byte WAV on a fresh install"
+
+          # Phase 4: report what was downloaded (model cache inventory).
+          echo "Phase 4 — downloaded model inventory:"
+          for C in "$HOME/.cache/huggingface" "${LOCALAPPDATA:-}/OmniVoice/hf_cache" "${HF_HOME:-}"; do
+            if [ -n "$C" ] && [ -d "$C" ]; then
+              du -sh "$C" 2>/dev/null || true
+              find "$C" -maxdepth 3 -type d -name "models--*" 2>/dev/null | sed 's/^/  /' || true
+            fi
+          done
+
+          echo "FIRST-RUN SMOKE PASSED on ${{ matrix.label }}"
+
+      - name: Upload smoke evidence (log + WAV)
+        if: always() && steps.disk.outputs.proceed == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: first-run-smoke-${{ matrix.slug }}
+          path: |
+            backend.log
+            smoke_out.wav
+          retention-days: 7
+          if-no-files-found: ignore
