@@ -307,6 +307,8 @@ async def dub_upload(
         _ingest_gen, job_id, job_dir,
         {"kind": "file", "path": video_path, "input_type": input_type}, filename,
     )
+    from core.analytics import capture as _ph_capture
+    _ph_capture("dub_project_started", {"source": "upload", "input_type": input_type})
     return JSONResponse(
         status_code=202,
         content={"job_id": job_id, "task_id": task_id, "filename": filename},
@@ -357,6 +359,8 @@ async def dub_ingest_url(req: DubIngestUrlRequest):
         _ingest_gen, job_id, job_dir,
         source, None,
     )
+    from core.analytics import capture as _ph_capture
+    _ph_capture("dub_project_started", {"source": "url"})
     return JSONResponse(
         status_code=202,
         content={"job_id": job_id, "task_id": task_id, "filename": ""},

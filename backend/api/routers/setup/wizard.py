@@ -552,4 +552,6 @@ async def setup_warmup():
             logger.warning("setup/warmup: model load failed: %s", e)
 
     loop.create_task(_do_warmup())
+    from core.analytics import capture as _ph_capture
+    _ph_capture("setup_completed", {})
     return {"status": "warmup_started"}

@@ -533,6 +533,8 @@ async def install_model(req: InstallModelRequest):
             # aggregator can sit below 100% even though every file landed.
             download_aggregator.complete(req.repo_id)
             logger.info("model install done: %s", req.repo_id)
+            from core.analytics import capture as _ph_capture
+            _ph_capture("model_installed", {"repo_id": req.repo_id})
             hf_progress.emit({
                 "repo_id": req.repo_id,
                 "filename": req.repo_id,

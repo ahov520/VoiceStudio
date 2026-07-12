@@ -567,6 +567,9 @@ async def lifespan(app: FastAPI):
     except Exception:
         pass
 
+    from core.analytics import setup_posthog
+    setup_posthog()
+
     init_db()
     # Network sharing is loopback-only by default; the PIN middleware stays
     # inert until enable() sets a PIN. Seed the (disabled) state so the
@@ -741,6 +744,8 @@ async def lifespan(app: FastAPI):
         await close_http_client()
     except Exception:
         pass
+    from core.analytics import teardown_posthog
+    teardown_posthog()
     logger.info("Shutdown: done.")
 
 

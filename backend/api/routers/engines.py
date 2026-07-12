@@ -587,6 +587,12 @@ def select_engine(req: SelectEngineRequest):
             )
         prefs.set_("mlx_audio_model_id", req.model_id)
     prefs.set_(pref_key, req.backend_id)
+    from core.analytics import capture as _ph_capture
+    _ph_capture("engine_selected", {
+        "family": req.family,
+        "backend_id": req.backend_id,
+        "routing_status": entry.get("routing_status", "cpu_only"),
+    })
     return {
         "family": req.family,
         "active": module.active_backend_id(),

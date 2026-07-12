@@ -13,6 +13,7 @@ from core.config import VOICES_DIR, OUTPUTS_DIR
 from core import event_bus
 from core.personalities import get_personalities
 from omnivoice.utils.voice_design import heal_design_instruct, sanitize_instruct
+from core.analytics import capture as ph_capture
 
 router = APIRouter()
 
@@ -158,6 +159,7 @@ async def create_profile(
             os.remove(audio_path)
         raise
     event_bus.emit("profiles", {"action": "created", "id": profile_id})
+    ph_capture("voice_profile_created", {"kind": kind, "language": language})
     return {"id": profile_id, "name": name, "kind": kind}
 
 @router.get("/profiles/{profile_id}")
@@ -384,6 +386,7 @@ async def lock_profile(
             (locked_filename, seed, ref_text, profile_id)
         )
     event_bus.emit("profiles", {"action": "locked", "id": profile_id})
+    ph_capture("voice_profile_locked", {})
     return {"locked": True, "profile_id": profile_id, "locked_audio_path": locked_filename}
 
 @router.post("/profiles/{profile_id}/unlock")
@@ -529,4 +532,5 @@ def delete_profile(profile_id: str):
         conn.execute("UPDATE generation_history SET profile_id = NULL WHERE profile_id=?", (profile_id,))
         conn.execute("DELETE FROM voice_profiles WHERE id=?", (profile_id,))
     event_bus.emit("profiles", {"action": "deleted", "id": profile_id})
+    ph_capture("voice_profile_deleted", {})
     return {"deleted": profile_id}

@@ -461,6 +461,12 @@ async def enqueue_batch_job(
     await _queue.put(job_id)
 
     logger.info("Batch job %s enqueued: %s → %s", job_id, video.filename, lang_list)
+    from core.analytics import capture as _ph_capture
+    _ph_capture("batch_job_submitted", {
+        "target_language_count": len(lang_list),
+        "has_voice_id": bool(voice_id),
+        "preserve_bg": preserve_bg,
+    })
     return {"job_id": job_id, "status": "queued", "queue_position": _queue.qsize()}
 
 

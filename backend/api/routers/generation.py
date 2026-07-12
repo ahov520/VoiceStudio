@@ -24,6 +24,7 @@ from services.model_manager import (
 from services.audio_io import _safe_torchaudio_save
 from core import event_bus
 from omnivoice.utils.voice_design import heal_design_instruct
+from core.analytics import capture as ph_capture
 
 router = APIRouter()
 logger = logging.getLogger("omnivoice.generate")
@@ -1265,6 +1266,16 @@ async def generate_speech(
         audio_filename = _meta["filename"]
         audio_dur = _meta["duration"]
         gen_time = _meta["gen_time"]
+        ph_capture("speech_generated", {
+            "engine_id": engine_id,
+            "language": language or "auto",
+            "duration_seconds": audio_dur,
+            "gen_time_seconds": gen_time,
+            "text_length": len(text),
+            "has_profile": bool(resolved_profile_id),
+            "effect_preset": effect_preset,
+            "stream": False,
+        })
 
         buffer = io.BytesIO()
         _safe_torchaudio_save(buffer, audio_tensor, sample_rate, format="wav")
@@ -1311,6 +1322,12 @@ async def generate_speech(
     except Exception as e:
         tb = traceback.format_exc()
         logger.error("Inference failed: %s\n%s", e, tb)
+        ph_capture("generation_failed", {
+            "engine_id": engine_id,
+            "language": language or "auto",
+            "text_length": len(text),
+            "error_type": type(e).__name__,
+        })
         raise HTTPException(
             status_code=500,
             detail=(
