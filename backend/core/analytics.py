@@ -71,8 +71,8 @@ def get_installation_id() -> str:
         iid = str(uuid.uuid4())
         try:
             set_(_KEY, iid)
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug("Failed to persist installation_id (non-fatal): %s", e)
     return iid
 
 
