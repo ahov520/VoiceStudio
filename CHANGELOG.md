@@ -14,9 +14,14 @@ The bundled TTS model package (`pyproject.toml`) is versioned independently.
 - Two synth failures that used to say "an error OmniVoice doesn't recognize" now say what actually went wrong
 - A dub URL ingest that fails on a disk problem now says which folder and why
 - A broken audio dependency no longer takes the whole backend down at startup
+- A GPU too small for the chosen engine now says so up front, not after a five-minute wait
+
 ### Docs
+
 - Docker: ROCm section explains that `torch.cuda.is_available() == True` isn't proof the app is on the GPU, and notes the `--group-add` needed for `/dev/kfd` on rootless hosts (#1228)
+
 ### Fixed
+
 - AMD/ROCm: every ROCm host was silently force-routed to the CPU — the compatibility gate compared a CUDA `sm_` tag against a ROCm build's `gfx` list, which can never match — thanks @simmessa! (#1228)
 - AMD/ROCm: `torch.compile` was disabled on all AMD hosts by the same mismatched comparison (#1228)
 - AMD/ROCm: `HSA_OVERRIDE_GFX_VERSION` is auto-set only when your card genuinely needs it and the remap target exists in your build; gfx1150/gfx1151 (Strix Point/Halo) added to the map (#1228)
@@ -27,7 +32,6 @@ The bundled TTS model package (`pyproject.toml`) is versioned independently.
 - The backend no longer dies at startup when transformers can't resolve its audio tokenizer (a missing or mismatched torchaudio, common on Google Colab) — it starts, and the error arrives with a repair hint — thanks @Navdeep-Chauhan-777! (#1229)
 - Importing `omnivoice.utils.*` no longer drags in torch, torchaudio, transformers and the full model definition — thanks @Navdeep-Chauhan-777! (#1229)
 - Colab notebook: the install cell now catches a broken environment with the real error, instead of a 5-minute health timeout two cells later — thanks @Navdeep-Chauhan-777! (#1229)
-- A GPU too small for the chosen engine now says so up front, not after a five-minute wait
 - A GPU with less VRAM than the chosen engine needs is flagged in Settings → Engines before you generate, instead of showing a clean green "accelerated" until the job times out — thanks @AdityaHemantBhat and @beingavais! (#1226, #1222)
 - A generation timeout now names your actual card and its VRAM and recommends a lighter engine (#1226, #1222)
 
