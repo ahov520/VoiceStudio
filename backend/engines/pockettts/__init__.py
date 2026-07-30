@@ -5,8 +5,10 @@ render / lowest latency" job, the row the engine-acceptance framework leaves
 unheld: every CPU engine OmniVoice ships is either English-only or a quality
 engine falling back to CPU. PocketTTS is the complementary opposite end of the
 spectrum from the quality engines (omnivoice, IndexTTS, Supertonic-3): small,
-fast, CPU-only, zero-shot cloning from a reference clip. Measured ~8-9x
-real-time on an Apple M3 Pro (see scripts/bench_engines_latency.py, PR #1322).
+fast, CPU-only, zero-shot cloning from a reference clip. Six languages
+(en/fr/de/pt/it/es), one model per language, selected via the ``language``
+kwarg. Measured ~8-9x real-time on an Apple M3 Pro (see
+scripts/bench_engines_latency.py, PR #1322).
 
 This engine runs PocketTTS in a child process via :class:`SubprocessBackend`,
 mirroring engines/omnivoice_subprocess and engines/supertonic3. Crash isolation:
@@ -51,7 +53,7 @@ class PocketTTSBackend(SubprocessBackend):
     """Kyutai PocketTTS in a killable, CPU-only sidecar process."""
 
     id = "pockettts"
-    display_name = "PocketTTS (Kyutai, CPU-only, low-latency, MIT/CC-BY-4.0)"
+    display_name = "PocketTTS (Kyutai, 6 langs, CPU-only, MIT/CC-BY-4.0)"
     _DEFAULT_SAMPLE_RATE = 24_000
     # CPU-only by design (honest hardware reporting, like supertonic3): Kyutai
     # ships no CUDA/MPS path and reports no GPU speedup for this model.
@@ -89,7 +91,8 @@ class PocketTTSBackend(SubprocessBackend):
 
     @property
     def supported_languages(self) -> list[str]:
-        # Protocol tag; per-engine language coverage follows the model card.
+        # Protocol tag; six languages (en/fr/de/pt/it/es), one model per
+        # language, selected via the language kwarg.
         return ["multi"]
 
 

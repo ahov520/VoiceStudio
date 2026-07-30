@@ -13,7 +13,8 @@ Op flow:
     1. sidecar -> parent: {"op":"ready","engine":"pockettts","sample_rate":24000}
     2. parent -> sidecar: {"op":"ping"} -> {"op":"pong","vram_mb":0}
     3. parent -> sidecar: {"op":"synthesize","text":"...",
-                            "ref_audio":"/path/to/ref.wav"}
+                            "ref_audio":"/path/to/ref.wav",
+                            "language":"it"}
        -> {"op":"progress",...} (cold load) then
        -> {"op":"audio","audio_pcm_b64":"...","sample_rate":24000,
            "n_samples":N}
@@ -23,7 +24,12 @@ Stdlib-only at import time; torch + pocket_tts are imported lazily on the first
 synthesize so the ready frame fits the parent's 30s spawn handshake even on a
 cold filesystem.
 
-Note: ``TTSModel.load_model()`` pulls the gated kyutai/pocket-tts weights from
+Languages: PocketTTS ships one model per language (en/fr/de/pt/it/es), selected
+by ``language``. The first synth in a given language cold-loads + caches that
+model; later calls reuse it. (The HF model card's "English only at the moment"
+line is stale; the GitHub README and pocket-tts 2.1.0 confirm six languages.)
+
+Note: ``TTSModel.load_model(language=...)`` pulls the gated kyutai weights from
 HuggingFace, so it needs HF auth + the access agreement accepted. A failure here
 currently surfaces as a raw error frame; the typed "weights are gated" preflight
 (condition 6) is built on top of this shape, not in it.
@@ -42,13 +48,36 @@ MAX_FRAME_BYTES = 64 * 1024 * 1024
 #: PocketTTS emits 24 kHz mono. Re-read from the loaded model on each generate.
 POCKETTTS_SAMPLE_RATE = 24_000
 
-#: Default preset voice when no reference clip is supplied (a public preset, so
-#: the run has no local-file dependency). Voice source does not affect synth speed.
-_DEFAULT_VOICE = "alba"
+#: OmniVoice language (ISO code, name, or sentinel) -> pocket-tts model language.
+#: "auto"/"multi"/"na"/None default to english (the library default).
+_LANG_MAP = {
+    "en": "english", "eng": "english", "english": "english",
+    "fr": "french", "fra": "french", "french": "french",
+    "de": "german", "deu": "german", "german": "german",
+    "pt": "portuguese", "por": "portuguese", "portuguese": "portuguese",
+    "it": "italian", "ita": "italian", "italian": "italian",
+    "es": "spanish", "esp": "spanish", "spanish": "spanish",
+}
 
-_model = None
-# ref_audio path (or "" for the default) -> voice_state. get_state_for_audio_prompt
-# is relatively slow, so cache per ref to avoid re-encoding on every call.
+#: Default preset voice per language when no reference clip is supplied (public
+#: presets from kyutai/tts-voices; voice source does not affect synth speed).
+_DEFAULT_VOICE_BY_LANG = {
+    "english": "alba",
+    "italian": "giovanni",
+    "spanish": "lola",
+    "german": "juergen",
+    "portuguese": "rafael",
+    "french": "estelle",
+}
+
+# Per-language model cache: load_model(language=...) is slow and PocketTTS ships
+# one model per language, so cache each. Bounded by the distinct languages used
+# in a session (at most six); an eviction policy is a later refinement if memory
+# matters.
+_MODELS: dict[str, object] = {}
+
+# (language, voice) -> voice_state. get_state_for_audio_prompt is relatively
+# slow, so cache per (language, voice) to avoid re-encoding on every call.
 _voice_cache: dict[str, object] = {}
 
 
@@ -83,34 +112,47 @@ def _measure_vram_mb() -> float:
     return 0.0
 
 
-# -- model loading (lazy, on first synthesize) -------------------------------
+# -- model loading (lazy, on first synthesize per language) ------------------
 
 
-def _load_model(stdout):
-    """Cold-construct the PocketTTS model. Emits progress frames for the parent
-    watchdog. Raises on failure (e.g. gated-weights access without HF auth); the
-    caller emits an error frame and stays alive for a retry."""
-    global _model
-    if _model is not None:
-        return _model
+def _pocket_language(raw) -> str:
+    """Map an OmniVoice language value to a pocket-tts model language."""
+    if not raw:
+        return "english"
+    s = str(raw).strip().lower()
+    if s in ("", "auto", "multi", "na"):
+        return "english"
+    return _LANG_MAP.get(s, "english")
+
+
+def _load_model(stdout, language: str):
+    """Cold-construct the PocketTTS model for ``language`` (cached per language).
+    Emits progress frames for the parent watchdog. Raises on failure (e.g.
+    gated-weights access without HF auth); the caller emits an error frame and
+    stays alive for a retry."""
+    model = _MODELS.get(language)
+    if model is not None:
+        return model
 
     _send(stdout, {"op": "progress", "stage": "loading_model", "percent": 0})
 
     from pocket_tts import TTSModel  # type: ignore[import-not-found]  # noqa: PLC0415
 
-    _model = TTSModel.load_model()
+    model = TTSModel.load_model(language=language)
+    _MODELS[language] = model
     _send(stdout, {"op": "progress", "stage": "loading_model", "percent": 100})
-    return _model
+    return model
 
 
-def _voice_state(model, ref_audio):
-    """Return a (cached) voice state for ``ref_audio`` (path/URL) or the default
-    preset when none is given."""
-    key = ref_audio or ""
+def _voice_state(model, language: str, ref_audio):
+    """Return a (cached) voice state for ``ref_audio`` (path/URL) or the
+    language's default preset voice when none is given."""
+    voice = ref_audio or _DEFAULT_VOICE_BY_LANG.get(language, "alba")
+    key = f"{language}|{voice}"
     state = _voice_cache.get(key)
     if state is not None:
         return state
-    state = model.get_state_for_audio_prompt(ref_audio or _DEFAULT_VOICE)
+    state = model.get_state_for_audio_prompt(voice)
     _voice_cache[key] = state
     return state
 
@@ -133,9 +175,10 @@ def _handle_synthesize(msg: dict, stdout) -> None:
     if not text or not isinstance(text, str):
         raise ValueError("synthesize: missing or non-string 'text'")
 
-    model = _load_model(stdout)
+    language = _pocket_language(msg.get("language"))
+    model = _load_model(stdout, language)
     ref_audio = msg.get("ref_audio") or None
-    voice_state = _voice_state(model, ref_audio)
+    voice_state = _voice_state(model, language, ref_audio)
 
     audio = model.generate_audio(voice_state, text)
     sample_rate = int(getattr(model, "sample_rate", POCKETTTS_SAMPLE_RATE))
