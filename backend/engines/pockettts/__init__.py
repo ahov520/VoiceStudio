@@ -36,7 +36,6 @@ the PR.
 """
 from __future__ import annotations
 
-import logging
 import sys
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -45,8 +44,6 @@ from services.subprocess_backend import SubprocessBackend
 
 if TYPE_CHECKING:
     import torch  # noqa: F401
-
-logger = logging.getLogger("omnivoice.pockettts")
 
 
 class PocketTTSBackend(SubprocessBackend):
