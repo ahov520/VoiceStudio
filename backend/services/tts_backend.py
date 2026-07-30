@@ -1902,6 +1902,11 @@ _LAZY_REGISTRY: dict[str, tuple[str, str]] = {
     # engine stays the default). Unlike the entries above it runs under the
     # parent interpreter (crash isolation, not dependency isolation).
     "omnivoice-subprocess": ("engines.omnivoice_subprocess", "OmniVoiceSubprocessBackend"),
+    # Issue #1306: Kyutai PocketTTS, CPU-only, low-latency TTS hired for the
+    # "fastest CPU render / lowest latency" job. Opt-in, subprocess-isolated
+    # under the parent interpreter (crash isolation, not dependency isolation,
+    # same as omnivoice-subprocess: pocket-tts deps sit at the parent's pins).
+    "pockettts": ("engines.pockettts", "PocketTTSBackend"),
     # Issue #590: Confucius4-TTS (netease-youdao) — LLM-based, 14-language
     # cross-lingual zero-shot cloning, Apache-2.0. Opt-in + subprocess-isolated
     # (own Python 3.10 venv) like the entries above. Validated end-to-end
@@ -2008,6 +2013,7 @@ _INSTALL_HINTS: dict[str, str] = {
     "sherpa-onnx":   "pip install sherpa-onnx  (universal ONNX runtime, WASM-ready)",
     "omnivoice-gguf":"Bundled — runs the C++ omnivoice-tts binary in bin/. Quants download lazily from Serveurperso/OmniVoice-GGUF on first generate.",
     "supertonic3":   "uv sync --extra supertonic  (CPU-only ONNX, 31 langs, ~400 MB model on first use; OpenRAIL-M model license)",
+    "pockettts":     "pip install pocket-tts  (Kyutai, CPU-only, ~100 MB model on first use; MIT code + CC-BY-4.0 weights; weights are HF-gated, set HF_TOKEN)",
     "moss-tts-v15":  "git clone OpenMOSS/MOSS-TTS + set OMNIVOICE_MOSS_TTS_V15_DIR  (own venv, transformers==5.0; 8B, ~16 GB weights; CUDA/CPU, no MPS; Apache-2.0)",
     "dots-tts":      "git clone rednote-hilab/dots.tts + set OMNIVOICE_DOTS_TTS_DIR  (own venv, transformers==4.57; 2B, ~9 GB weights; CUDA/CPU, Linux/macOS only — no Windows; Apache-2.0)",
     "confucius4-tts":"git clone netease-youdao/Confucius4-TTS + set OMNIVOICE_CONFUCIUS4_TTS_DIR  (own Python 3.10 venv; 14-lang cross-lingual zero-shot clone; ~5 GB weights auto-download; CUDA/CPU, no MPS; Apache-2.0)",
