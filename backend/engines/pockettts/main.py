@@ -38,6 +38,7 @@ from __future__ import annotations
 
 import base64
 import json
+import os
 import re
 import struct
 import sys
@@ -190,7 +191,16 @@ def _voice_state(model, language: str, ref_audio):
             "ref_audio must be a local file path; URLs are not accepted (local-first)."
         )
     voice = ref_audio or _DEFAULT_VOICE_BY_LANG.get(language, "alba")
-    key = f"{language}|{voice}"
+    # For a local file ref, fold mtime+size into the cache key so a file replaced
+    # at the same path does not return a stale voice from the previous contents.
+    fingerprint = ""
+    if ref_audio:
+        try:
+            st = os.stat(ref_audio)
+            fingerprint = f"|m{int(st.st_mtime)}s{st.st_size}"
+        except OSError:
+            fingerprint = ""
+    key = f"{language}|{voice}{fingerprint}"
     state = _voice_cache.get(key)
     if state is not None:
         _voice_cache.move_to_end(key)

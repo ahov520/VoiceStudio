@@ -36,6 +36,7 @@ the PR.
 """
 from __future__ import annotations
 
+import math
 import os
 import sys
 from pathlib import Path
@@ -89,9 +90,12 @@ class PocketTTSBackend(SubprocessBackend):
         # so allow a long recv deadline; the sidecar also heartbeats progress frames
         # during the download (main.py) to keep the watchdog armed.
         try:
-            return max(30.0, float(os.environ.get("OMNIVOICE_POCKETTTS_RECV_TIMEOUT_S", "600")))
+            v = float(os.environ.get("OMNIVOICE_POCKETTTS_RECV_TIMEOUT_S", "600"))
         except (ValueError, TypeError):
             return 600.0
+        if not math.isfinite(v):  # reject inf/nan so the deadline can't be disabled
+            return 600.0
+        return max(30.0, v)
 
     @property
     def sample_rate(self) -> int:
