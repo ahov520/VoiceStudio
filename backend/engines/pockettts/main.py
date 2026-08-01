@@ -197,7 +197,7 @@ def _voice_state(model, language: str, ref_audio):
     if ref_audio:
         try:
             st = os.stat(ref_audio)
-            fingerprint = f"|m{int(st.st_mtime)}s{st.st_size}"
+            fingerprint = f"|m{st.st_mtime_ns}s{st.st_size}"
         except OSError:
             fingerprint = ""
     key = f"{language}|{voice}{fingerprint}"
