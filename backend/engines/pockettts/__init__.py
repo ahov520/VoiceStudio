@@ -36,6 +36,7 @@ the PR.
 """
 from __future__ import annotations
 
+import os
 import sys
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -81,6 +82,16 @@ class PocketTTSBackend(SubprocessBackend):
     @classmethod
     def sidecar_script(cls) -> Path:
         return Path(__file__).resolve().parent / "main.py"
+
+    @property
+    def recv_timeout_s(self) -> float:
+        # A cold load pulls gated weights (a 24-layer model can be hundreds of MB),
+        # so allow a long recv deadline; the sidecar also heartbeats progress frames
+        # during the download (main.py) to keep the watchdog armed.
+        try:
+            return max(30.0, float(os.environ.get("OMNIVOICE_POCKETTTS_RECV_TIMEOUT_S", "600")))
+        except (ValueError, TypeError):
+            return 600.0
 
     @property
     def sample_rate(self) -> int:

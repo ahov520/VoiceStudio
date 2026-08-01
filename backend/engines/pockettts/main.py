@@ -38,9 +38,12 @@ from __future__ import annotations
 
 import base64
 import json
+import re
 import struct
 import sys
+import threading
 import traceback
+from collections import OrderedDict
 
 # Mirrors services/subprocess_backend.py::MAX_FRAME_BYTES.
 MAX_FRAME_BYTES = 64 * 1024 * 1024
@@ -70,15 +73,26 @@ _DEFAULT_VOICE_BY_LANG = {
     "french": "estelle",
 }
 
+#: Emit a progress frame at least this often during a cold load so the parent's
+#: recv watchdog doesn't kill a healthy sidecar on a slow first download.
+_HEARTBEAT_S = 5.0
+
+#: ref_audio must be a local file path, not a URL (local-first; no SSRF).
+_URL_RE = re.compile(r"^[a-z][a-z0-9+.\-]*://", re.IGNORECASE)
+
+#: Bound the per-(language, voice) voice-state cache (LRU) so a long session
+#: with many distinct reference clips can't grow memory without limit.
+_VOICE_CACHE_MAX = 8
+
 # Per-language model cache: load_model(language=...) is slow and PocketTTS ships
 # one model per language, so cache each. Bounded by the distinct languages used
-# in a session (at most six); an eviction policy is a later refinement if memory
-# matters.
+# in a session (at most six).
 _MODELS: dict[str, object] = {}
 
-# (language, voice) -> voice_state. get_state_for_audio_prompt is relatively
-# slow, so cache per (language, voice) to avoid re-encoding on every call.
-_voice_cache: dict[str, object] = {}
+# (language, voice) -> voice_state, LRU-bounded to _VOICE_CACHE_MAX entries.
+# get_state_for_audio_prompt is relatively slow, so cache per (language, voice)
+# to avoid re-encoding on every call.
+_voice_cache: OrderedDict[str, object] = OrderedDict()
 
 
 # -- wire protocol -----------------------------------------------------------
@@ -116,13 +130,19 @@ def _measure_vram_mb() -> float:
 
 
 def _pocket_language(raw) -> str:
-    """Map an OmniVoice language value to a pocket-tts model language."""
+    """Map an OmniVoice language value to a pocket-tts model language. A specific
+    but unsupported language raises rather than silently fall back to English and
+    mispronounce; empty / "auto" / "multi" / "na" default to English."""
     if not raw:
         return "english"
     s = str(raw).strip().lower()
     if s in ("", "auto", "multi", "na"):
         return "english"
-    return _LANG_MAP.get(s, "english")
+    if s in _LANG_MAP:
+        return _LANG_MAP[s]
+    raise ValueError(
+        f"PocketTTS does not support language {raw!r}; supported: en, fr, de, pt, it, es."
+    )
 
 
 def _load_model(stdout, language: str):
@@ -136,24 +156,49 @@ def _load_model(stdout, language: str):
 
     _send(stdout, {"op": "progress", "stage": "loading_model", "percent": 0})
 
-    from pocket_tts import TTSModel  # type: ignore[import-not-found]  # noqa: PLC0415
+    # Heartbeat: a cold load (gated weights download) can outlast the parent's
+    # recv timeout. Emit a progress frame every few seconds while it runs so the
+    # parent's watchdog sees activity and does not kill a healthy sidecar.
+    stop = threading.Event()
 
-    model = TTSModel.load_model(language=language)
-    _MODELS[language] = model
+    def _heartbeat() -> None:
+        pct = 1
+        while not stop.wait(_HEARTBEAT_S):
+            pct = min(pct + 1, 99)
+            _send(stdout, {"op": "progress", "stage": "loading_model", "percent": pct})
+
+    hb = threading.Thread(target=_heartbeat, daemon=True)
+    hb.start()
+    try:
+        from pocket_tts import TTSModel  # type: ignore[import-not-found]  # noqa: PLC0415
+
+        model = TTSModel.load_model(language=language)
+        _MODELS[language] = model
+    finally:
+        stop.set()
+        hb.join(timeout=_HEARTBEAT_S + 1)
     _send(stdout, {"op": "progress", "stage": "loading_model", "percent": 100})
     return model
 
 
 def _voice_state(model, language: str, ref_audio):
-    """Return a (cached) voice state for ``ref_audio`` (path/URL) or the
-    language's default preset voice when none is given."""
+    """Return a (cached, LRU-bounded) voice state for ``ref_audio`` (a local
+    file path) or the language's default preset voice when none is given. URLs
+    are rejected to keep the sidecar local-first (no SSRF)."""
+    if ref_audio and _URL_RE.match(ref_audio):
+        raise ValueError(
+            "ref_audio must be a local file path; URLs are not accepted (local-first)."
+        )
     voice = ref_audio or _DEFAULT_VOICE_BY_LANG.get(language, "alba")
     key = f"{language}|{voice}"
     state = _voice_cache.get(key)
     if state is not None:
+        _voice_cache.move_to_end(key)
         return state
     state = model.get_state_for_audio_prompt(voice)
     _voice_cache[key] = state
+    if len(_voice_cache) > _VOICE_CACHE_MAX:
+        _voice_cache.popitem(last=False)  # evict oldest
     return state
 
 
