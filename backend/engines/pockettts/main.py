@@ -98,12 +98,17 @@ _voice_cache: OrderedDict[str, object] = OrderedDict()
 
 # -- wire protocol -----------------------------------------------------------
 
+#: Serializes _send across threads (the cold-load heartbeat + the main loop) so
+#: concurrent length+body writes can't interleave and corrupt the framing.
+_send_lock = threading.Lock()
+
 
 def _send(stream, obj: dict) -> None:
     body = json.dumps(obj, separators=(",", ":")).encode("utf-8")
-    stream.write(struct.pack("!I", len(body)))
-    stream.write(body)
-    stream.flush()
+    with _send_lock:
+        stream.write(struct.pack("!I", len(body)))
+        stream.write(body)
+        stream.flush()
 
 
 def _recv(stream):
