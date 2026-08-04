@@ -218,7 +218,10 @@ def _tensor_to_pcm_b64(audio, sample_rate: int) -> tuple[str, int, int]:
 
     arr = np.asarray(audio, dtype=np.float32).squeeze()
     if arr.ndim > 1:
-        arr = arr.mean(axis=0)  # defensive downmix to mono
+        raise ValueError(
+            f"expected mono audio (1-D after squeeze), got shape {arr.shape}; "
+            f"PocketTTS returns mono, so a multi-channel array means an upstream change."
+        )
     arr = np.clip(arr, -1.0, 1.0)
     pcm = (arr * 32767.0).astype(np.int16).tobytes()
     return base64.b64encode(pcm).decode("ascii"), int(sample_rate), int(arr.shape[-1])
