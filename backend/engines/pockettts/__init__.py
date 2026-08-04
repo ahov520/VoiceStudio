@@ -68,8 +68,8 @@ class PocketTTSBackend(SubprocessBackend):
             import pocket_tts  # type: ignore[import-not-found]  # noqa: F401
         except Exception as e:
             return False, (
-                "pocket_tts package not installed. Enable in Settings -> Engines "
-                "(pip install pocket-tts)."
+                f"pocket_tts package not installed or failed to import ({e}). "
+                f"Enable in Settings -> Engines (pip install pocket-tts)."
             )
         return True, "ready (CPU-only)"
 
