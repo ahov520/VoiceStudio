@@ -298,7 +298,7 @@ export default function Header({
             <path d="M16 9v6" />
           </svg>
           <span className="text-[0.92rem] font-semibold text-[var(--chrome-fg)] tracking-[0.02em] [font-family:var(--font-sans)] not-italic">
-            Omni<span className="text-[var(--chrome-accent)]">Voice</span>
+            Voice<span className="text-[var(--chrome-accent)]">Studio</span>
           </span>
         </div>
       )}

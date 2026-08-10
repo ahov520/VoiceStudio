@@ -30,7 +30,7 @@ describe('Header — rail mode (default)', () => {
     expect(container.querySelector('.header-area--tabs')).toBeNull();
     expect(screen.queryByTestId('titletab-dub')).toBeNull();
     // Breadcrumb (current view) + centred wordmark both stay.
-    expect(container.textContent).toMatch(/OmniVoice/);
+    expect(container.textContent).toMatch(/VoiceStudio/);
     expect(container.textContent).toMatch(/Dub/);
   });
 });
@@ -45,6 +45,6 @@ describe('Header — titlebar tabs mode', () => {
 
   it('drops the centred wordmark — the tabs need that room', () => {
     const { container } = renderHeader({ navStyle: 'tabs' });
-    expect(container.textContent).not.toMatch(/OmniVoice/);
+    expect(container.textContent).not.toMatch(/VoiceStudio/);
   });
 });

@@ -165,7 +165,7 @@ def resolve_indextts_venv() -> Path:
             "IndexTTS-2 is not installed. Set the OMNIVOICE_INDEXTTS_DIR "
             "environment variable to your IndexTTS clone (the directory "
             "that contains checkpoints/ and pyproject.toml), then restart "
-            "OmniVoice. See docs/engines/indextts.md for the full install "
+            "VoiceStudio. See docs/engines/indextts.md for the full install "
             "walk-through."
         )
 
@@ -237,7 +237,7 @@ def _bootstrap_engines_venv(indextts_clone: Path) -> Path:
             "uv is required to bootstrap the IndexTTS-2 venv but was not "
             "found on PATH (and the bundled uv path was not set via the "
             "OMNIVOICE_BUNDLED_UV env var). Install uv from "
-            "https://docs.astral.sh/uv/ and re-launch OmniVoice, or set "
+            "https://docs.astral.sh/uv/ and re-launch VoiceStudio, or set "
             "OMNIVOICE_BUNDLED_UV to the absolute path of a uv binary."
         )
 

@@ -102,13 +102,13 @@ class IndexTTS2Backend(SubprocessBackend):
             return False, (
                 "IndexTTS-2 venv not found. Set OMNIVOICE_INDEXTTS_DIR to "
                 "your IndexTTS clone (the directory containing checkpoints/) "
-                "and restart OmniVoice. See docs/engines/indextts.md for the "
+                "and restart VoiceStudio. See docs/engines/indextts.md for the "
                 "full install walk-through."
             )
         if not INDEXTTS_SIDECAR_SCRIPT.exists():
             return False, (
                 "IndexTTS sidecar script missing at "
-                f"{INDEXTTS_SIDECAR_SCRIPT} — reinstall OmniVoice."
+                f"{INDEXTTS_SIDECAR_SCRIPT} — reinstall VoiceStudio."
             )
         return True, "ok"
 
