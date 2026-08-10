@@ -111,8 +111,9 @@ def create_mcp_server():
     # sub-mounted. Harmless for the standalone CLI run() path.
     try:
         mcp.settings.streamable_http_path = "/"
-    except Exception:
-        pass
+    except Exception as exc:
+        logger.error("MCP transport path configuration failed")
+        raise RuntimeError("MCP transport could not be configured.") from exc
 
     # Extend the MCP SDK's DNS-rebinding allowlist so agents on non-localhost
     # hosts (Docker's host.containers.internal, a LAN IP, a reverse proxy) can

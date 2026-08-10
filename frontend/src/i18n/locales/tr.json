@@ -1545,7 +1545,19 @@
     "saving": "Kaydediliyor…",
     "accept": "Kabul et",
     "accepted_toast": "Supertonic-3 lisansı kabul edildi.",
-    "accept_error": "Lisans kabulü kaydedilemedi: {{message}}"
+    "accept_error": "Lisans kabulü kaydedilemedi: {{message}}",
+    "pockettts_title": "PocketTTS Lisans Kabulü",
+    "pockettts_intro": "Kyutai'nin PocketTTS ürünü iki lisansla sunulur ve ağırlıkları ayrıca Hugging Face erişim koşullarına tabidir. Motoru etkinleştirmeden önce hepsini inceleyin.",
+    "pockettts_sdk_desc": "pocket-tts Python kitaplığı, ticari kullanıma da izin veren esnek MIT lisansına sahiptir.",
+    "pockettts_model_heading": "Model Ağırlıkları (CC-BY-4.0)",
+    "pockettts_model_desc": "PocketTTS model ağırlıkları CC-BY-4.0 ile yayımlanır. Atıf yapılarak ticari kullanıma izin verilir.",
+    "read_cc_by": "CC-BY-4.0 lisansını okuyun",
+    "gate_heading": "Kısıtlı Erişim",
+    "gate_desc": "Ağırlıklar Hugging Face'te kısıtlıdır. İlk indirmeden önce ücretsiz bir hesap açmalı, iletişim bilgilerinizi paylaşmalı ve erişim koşullarını kabul etmelisiniz.",
+    "pockettts_conditions_desc": "Erişim koşulları yasa dışı, zararlı, aldatıcı, hileli, yetkisiz veya rızasız ses kullanımını yasaklar. Devam etmeden önce koşulların tamamını inceleyin.",
+    "review_access_conditions": "Erişim koşullarını inceleyin",
+    "pockettts_footer": "Kabul Et'e tıklamak, onayınızı yalnızca VoiceStudio'nun yerel ayarlarına kaydeder ve motoru etkinleştirir. Model erişimi ve indirmeleri Hugging Face üzerinden yapılır; olağan istek ve hesap bilgileri bu hizmete iletilir.",
+    "pockettts_accepted_toast": "PocketTTS koşulları kabul edildi."
   },
   "voicePreview": {
     "title": "Ses Önizleme",

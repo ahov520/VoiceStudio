@@ -25,6 +25,7 @@ the 4-step mirror contract documented there.
 from __future__ import annotations
 
 import json
+import logging
 import os
 import threading
 import time
@@ -32,6 +33,8 @@ from collections import OrderedDict
 
 from core.config import DATA_DIR
 from core.scrub import scrub_text
+
+logger = logging.getLogger("omnivoice.error_journal")
 
 JOURNAL_PATH = os.path.join(DATA_DIR, "error_journal.jsonl")
 
@@ -137,17 +140,20 @@ def _fingerprint(error_class: str, exc: BaseException) -> str:
     return hashlib.sha1(raw.encode("utf-8", "replace"), usedforsecurity=False).hexdigest()[:16]
 
 
-def _persist_locked() -> None:
+def _persist_locked() -> bool:
     """Rewrite the JSONL mirror from the in-memory ring. Caller holds _lock.
-    Never raises — losing persistence must not break the exception handler."""
+    Never raises — losing persistence must not break the exception handler.
+    Returns whether the durable mirror was updated."""
     try:
         tmp = JOURNAL_PATH + ".tmp"
         with open(tmp, "w", encoding="utf-8") as f:
             for entry in _entries.values():
                 f.write(json.dumps(entry, ensure_ascii=False) + "\n")
         os.replace(tmp, JOURNAL_PATH)
+        return True
     except Exception:
-        pass
+        logger.warning("Error journal persistence failed; entries remain available in memory")
+        return False
 
 
 def _hydrate() -> None:
@@ -168,7 +174,7 @@ def _hydrate() -> None:
     except FileNotFoundError:
         pass
     except Exception:
-        pass
+        logger.warning("Error journal could not be loaded; starting with an empty in-memory journal")
 
 
 _hydrate()
@@ -231,10 +237,16 @@ def recent(limit: int = 20) -> list[dict]:
     return list(reversed(items))[: max(1, min(limit, _MAX_ENTRIES))]
 
 
-def clear() -> None:
+def clear() -> bool:
+    """Clear the journal, retaining memory state if durable deletion fails."""
     with _lock:
-        _entries.clear()
         try:
             os.remove(JOURNAL_PATH)
+        except FileNotFoundError:
+            # Idempotent clear: an already-absent durable mirror is success.
+            logger.debug("Error journal mirror already absent during clear")
         except OSError:
-            pass
+            logger.warning("Error journal could not be cleared; keeping entries available for retry")
+            return False
+        _entries.clear()
+        return True

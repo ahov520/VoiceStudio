@@ -223,11 +223,23 @@ def _segmented_snapshot(repo_id: str, *, endpoint: "str | None", revision: str) 
             _create_symlink(blob_path, pointer, new_blob=True)
 
     # refs/main → commit so scan_cache_dir maps the revision correctly.
+    ref_path = os.path.join(refs_dir, "main")
+    ref_tmp = ref_path + ".tmp"
     try:
-        with open(os.path.join(refs_dir, "main"), "w") as f:
+        with open(ref_tmp, "w") as f:
             f.write(commit)
-    except OSError:
-        pass
+        os.replace(ref_tmp, ref_path)
+    except OSError as exc:
+        logger.warning("Downloaded model revision could not be finalized")
+        try:
+            os.remove(ref_tmp)
+        except FileNotFoundError:
+            pass  # Idempotent cleanup: the failed write may not create it.
+        except OSError:
+            logger.warning("Downloaded model revision temporary-file cleanup did not complete")
+        raise RuntimeError(
+            "Downloaded model revision could not be finalized. Retry the install."
+        ) from exc
     return snap_dir
 
 

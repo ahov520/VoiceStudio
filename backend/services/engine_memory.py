@@ -19,6 +19,7 @@ switch — ~8 s for the VoiceStudio core, ~1–2 s for the lighter engines).
 from __future__ import annotations
 
 import logging
+from core.logging_utils import log_safe
 import os
 
 logger = logging.getLogger("omnivoice.engine_memory")
@@ -95,5 +96,5 @@ async def evict_other_tts_engines(keep_id: str) -> list[str]:
     evicted.extend(_evict_instance_cache(keep_cls))
 
     if evicted:
-        logger.info("single-engine eviction: freed %s (keeping %s)", evicted, keep_id)
+        logger.info("single-engine eviction: freed %s (keeping %s)", log_safe(evicted), log_safe(keep_id))
     return evicted

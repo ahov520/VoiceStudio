@@ -103,7 +103,7 @@ jobs:
       # Backend tests need ffmpeg (subprocess calls in fixtures). Cache the
       # resolved .debs so warm runs skip the apt-get update + install.
       - name: System deps (ffmpeg)
-        uses: awalsh128/cache-apt-pkgs-action@latest
+        uses: awalsh128/cache-apt-pkgs-action@v1.6.3
         with:
           packages: ffmpeg
           version: 1.0

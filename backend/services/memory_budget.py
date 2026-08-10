@@ -19,6 +19,7 @@ from __future__ import annotations
 import logging
 import os
 from typing import Optional
+from core.logging_utils import log_safe
 
 logger = logging.getLogger("omnivoice.memory_budget")
 
@@ -90,5 +91,5 @@ def log_if_low(context: str, headroom_gb: float = _LOW_RAM_HEADROOM_GB) -> Optio
     regardless; this is forensics, so a later OOM death has a breadcrumb."""
     msg = low_memory_warning(headroom_gb)
     if msg:
-        logger.warning("%s: %s", context, msg)
+        logger.warning("%s: %s", log_safe(context), log_safe(msg))
     return msg

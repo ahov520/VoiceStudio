@@ -507,7 +507,8 @@ async def _sherpa_load_with_status(websocket: WebSocket, backend, spec) -> bool:
     try:
         await websocket.send_json({"type": "status", "stage": stage})
     except Exception:
-        pass
+        logger.warning("Sherpa load status could not be delivered; stopping stream setup")
+        return False
     try:
         await asyncio.to_thread(backend.ensure_loaded)
     except Exception as e:
@@ -522,7 +523,8 @@ async def _sherpa_load_with_status(websocket: WebSocket, backend, spec) -> bool:
     try:
         await websocket.send_json({"type": "status", "stage": "ready"})
     except Exception:
-        pass
+        logger.warning("Sherpa ready status could not be delivered; stopping stream setup")
+        return False
     return True
 
 
@@ -1001,5 +1003,3 @@ def _chunks_to_wav(chunks: list[bytes]) -> str | None:
         # WhisperX) can decode WebM/Opus containers natively.
         logger.debug("Falling back to raw WebM input for ASR")
         return tmp_in.name
-
-

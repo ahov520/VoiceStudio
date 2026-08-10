@@ -12,6 +12,7 @@ from typing import Optional
 
 from core.config import DUB_DIR
 from core.http_headers import content_disposition
+from core.logging_utils import log_safe
 from core.path_security import UnsafePath, resolve_within
 from core.tasks import task_manager
 from fastapi import APIRouter, Header, HTTPException, Query, Response
@@ -197,7 +198,7 @@ def _native_save(source: str, destination: str, display_name: str, media_type: s
         raise HTTPException(status_code=500, detail=f"Copy failed: {e}")
     if not os.path.exists(dest) or os.path.getsize(dest) == 0:
         raise HTTPException(status_code=500, detail="Copy produced empty file at destination")
-    logger.info("Native save wrote %s (%d bytes)", dest, os.path.getsize(dest))
+    logger.info("Native save completed (%d bytes)", os.path.getsize(dest))
     return {
         "saved": True,
         "path": dest,
@@ -689,7 +690,7 @@ async def dub_download(
         logger.warning(
             "stretch_video + burn_subs is not supported in one pass; "
             "skipping subtitle burn for job %s. Export the SRT/VTT separately.",
-            job_id,
+            log_safe(job_id),
         )
         burn_subs = False
 
@@ -748,7 +749,7 @@ async def dub_download(
             logger.exception(
                 "Smart Fit video retime failed for job %s — exporting "
                 "without per-segment retime",
-                job_id.replace("\n", " ").replace("\r", " "),
+                log_safe(job_id),
             )
 
     cmd = [ffmpeg, "-i", video_path]
@@ -926,7 +927,7 @@ async def dub_download(
 
     if not os.path.exists(output_path) or os.path.getsize(output_path) == 0:
         raise HTTPException(status_code=500, detail="ffmpeg mux produced no output file")
-    logger.info("Dub mux wrote %s (%d bytes)", output_path, os.path.getsize(output_path))
+    logger.info("Dub mux completed (%d bytes)", os.path.getsize(output_path))
 
     base_name = os.path.splitext(job.get('filename', 'output'))[0]
     safe_name = ''.join(c for c in base_name if c.isalnum() or c in '-_ ').strip() or 'output'
@@ -1103,7 +1104,7 @@ async def dub_preview_video(
                 logger.exception(
                     "Smart Fit preview retime failed for job %s — previewing "
                     "without per-segment retime",
-                    job_id.replace("\n", " ").replace("\r", " "),
+                    log_safe(job_id),
                 )
 
         cmd = [ffmpeg, "-i", video_path]

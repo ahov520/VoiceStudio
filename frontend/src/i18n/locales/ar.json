@@ -1545,7 +1545,19 @@
     "saving": "جارٍ الحفظ…",
     "accept": "قبول",
     "accepted_toast": "تم قبول ترخيص Supertonic-3.",
-    "accept_error": "فشل في تسجيل قبول الترخيص: {{message}}"
+    "accept_error": "فشل في تسجيل قبول الترخيص: {{message}}",
+    "pockettts_title": "قبول ترخيص PocketTTS",
+    "pockettts_intro": "يُوزَّع PocketTTS من Kyutai بموجب ترخيصين، كما تخضع أوزانه لشروط وصول على Hugging Face. راجعها جميعًا قبل تمكين المحرك.",
+    "pockettts_sdk_desc": "مكتبة pocket-tts بلغة Python مرخّصة بموجب MIT، وهو ترخيص متساهل يسمح بالاستخدام التجاري.",
+    "pockettts_model_heading": "أوزان النموذج (CC-BY-4.0)",
+    "pockettts_model_desc": "أوزان نموذج PocketTTS مرخّصة بموجب CC-BY-4.0. يُسمح بالاستخدام التجاري مع نسب العمل إلى أصحابه.",
+    "read_cc_by": "قراءة ترخيص CC-BY-4.0",
+    "gate_heading": "وصول مقيّد",
+    "gate_desc": "الأوزان مقيّدة على Hugging Face. تحتاج إلى حساب مجاني ومشاركة معلومات الاتصال وقبول شروط الوصول قبل أول تنزيل.",
+    "pockettts_conditions_desc": "تحظر شروط الوصول الاستخدام غير القانوني أو الضار أو الخادع أو الاحتيالي أو غير المصرح به، وكذلك استخدام الأصوات دون موافقة. راجع الشروط كاملة قبل المتابعة.",
+    "review_access_conditions": "مراجعة شروط الوصول",
+    "pockettts_footer": "بالنقر على قبول، يُحفظ إقرارك محليًا فقط في إعدادات VoiceStudio ويُفعّل المحرك. يتم الوصول إلى النموذج وتنزيله عبر Hugging Face، التي تتلقى بيانات الطلب والحساب المعتادة.",
+    "pockettts_accepted_toast": "تم قبول شروط PocketTTS."
   },
   "voicePreview": {
     "title": "معاينة الصوت",

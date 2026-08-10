@@ -191,7 +191,8 @@ def _hf_endpoint_host() -> tuple[str, int]:
         from core.failure import configured_hf_mirror
         mirror = configured_hf_mirror()
     except Exception:
-        mirror = ""
+        logger.warning("Configured Hugging Face endpoint could not be read")
+        return "", 0
     if mirror:
         try:
             from urllib.parse import urlsplit
@@ -199,7 +200,10 @@ def _hf_endpoint_host() -> tuple[str, int]:
             if u.hostname:
                 return u.hostname, u.port or (80 if u.scheme == "http" else 443)
         except Exception:
-            pass
+            logger.warning("Configured Hugging Face endpoint could not be parsed")
+            return "", 0
+        logger.warning("Configured Hugging Face endpoint has no host")
+        return "", 0
     return "huggingface.co", 443
 
 
@@ -272,6 +276,14 @@ def _network_check() -> dict:
 
     # Manual mode (explicit endpoint) — probe exactly what the user chose.
     net_host, net_port = _hf_endpoint_host()
+    if not net_host:
+        return {
+            "id": "network", "label": "Network (configured endpoint)",
+            "status": "warn",
+            "detail": "The configured Hugging Face endpoint could not be validated.",
+            "fix": "Review the endpoint in Settings → Models, then re-check.",
+            "mirror_reachable": False,
+        }
     net_ok = _probe_network(net_host, net_port)
     mirror_reachable = False
     if not net_ok and net_host == "huggingface.co":

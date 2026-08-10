@@ -20,6 +20,7 @@ from pydantic import BaseModel
 
 from core.config import DATA_DIR
 from core import failure
+from core.logging_utils import log_safe
 from core.file_cleanup import FileCleanupError, unlink_if_present
 
 router = APIRouter()
@@ -532,7 +533,10 @@ async def enqueue_batch_job(
     _jobs[job_id] = job
     await _queue.put(job_id)
 
-    logger.info("Batch job %s enqueued: %s → %s", job_id, video.filename, lang_list)
+    logger.info(
+        "Batch job %s enqueued (%d target languages)",
+        log_safe(job_id), len(lang_list),
+    )
     return {"job_id": job_id, "status": "queued", "queue_position": _queue.qsize()}
 
 

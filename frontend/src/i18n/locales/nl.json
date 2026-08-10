@@ -1545,7 +1545,19 @@
     "saving": "Opslaan…",
     "accept": "Accepteer",
     "accepted_toast": "Supertonic-3-licentie geaccepteerd.",
-    "accept_error": "Kan licentieacceptatie niet vastleggen: {{message}}"
+    "accept_error": "Kan licentieacceptatie niet vastleggen: {{message}}",
+    "pockettts_title": "Licenties van PocketTTS accepteren",
+    "pockettts_intro": "PocketTTS van Kyutai wordt onder twee licenties geleverd en voor de gewichten gelden ook toegangsvoorwaarden op Hugging Face. Lees alles voordat je de engine inschakelt.",
+    "pockettts_sdk_desc": "De Python-bibliotheek pocket-tts heeft de ruime MIT-licentie en mag commercieel worden gebruikt.",
+    "pockettts_model_heading": "Modelgewichten (CC-BY-4.0)",
+    "pockettts_model_desc": "De modelgewichten van PocketTTS zijn uitgebracht onder CC-BY-4.0. Commercieel gebruik is toegestaan met naamsvermelding.",
+    "read_cc_by": "CC-BY-4.0-licentie lezen",
+    "gate_heading": "Beperkte toegang",
+    "gate_desc": "De gewichten zijn afgeschermd op Hugging Face. Voor de eerste download heb je een gratis account nodig, moet je contactgegevens delen en de toegangsvoorwaarden accepteren.",
+    "pockettts_conditions_desc": "De voorwaarden verbieden illegaal, schadelijk, misleidend, frauduleus, onbevoegd of niet-consensueel stemgebruik. Lees de volledige voorwaarden voordat je doorgaat.",
+    "review_access_conditions": "Toegangsvoorwaarden bekijken",
+    "pockettts_footer": "Met Accepteren wordt je bevestiging alleen in de lokale instellingen van VoiceStudio opgeslagen en de engine ingeschakeld. Modeltoegang en downloads verlopen via Hugging Face, dat de gebruikelijke aanvraag- en accountgegevens ontvangt.",
+    "pockettts_accepted_toast": "Voorwaarden van PocketTTS geaccepteerd."
   },
   "voicePreview": {
     "title": "Stemvoorbeeld",

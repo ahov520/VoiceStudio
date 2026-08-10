@@ -565,6 +565,42 @@ describe('EngineCompatibilityMatrix', () => {
     });
   });
 
+  it('mounts the PocketTTS terms dialog from an unavailable engine row', async () => {
+    const apiListEngines = vi.fn().mockResolvedValue({
+      tts: {
+        active: 'omnivoice',
+        backends: [
+          {
+            id: 'pockettts',
+            display_name: 'PocketTTS',
+            available: false,
+            reason: 'PocketTTS license not accepted. Review the terms to enable it.',
+            install_hint: null,
+            last_error: null,
+            isolation_mode: 'subprocess',
+            gpu_compat: ['cpu'],
+          },
+        ],
+      },
+      asr: { active: '', backends: [] },
+      llm: { active: 'off', backends: [] },
+    });
+    render(
+      <EngineCompatibilityMatrix
+        family="tts"
+        apiListEngines={apiListEngines}
+        apiGetEngineHealth={vi.fn()}
+      />,
+    );
+
+    await waitFor(() => screen.getByText('PocketTTS'));
+    fireEvent.click(screen.getByRole('button', { name: /review and accept pockettts license/i }));
+    await waitFor(() => {
+      expect(screen.getByText('PocketTTS License Acceptance')).toBeInTheDocument();
+      expect(screen.getByText('Review the access conditions')).toBeInTheDocument();
+    });
+  });
+
   // ── Real-synthesis self-test (in-process TTS engines) ──────────────────
   it('clicking Self-test runs a real synthesis and renders audio seconds + sample rate', async () => {
     const apiListEngines = vi.fn().mockResolvedValue(makeEnginesResponse());

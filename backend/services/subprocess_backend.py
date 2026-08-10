@@ -401,6 +401,14 @@ class SubprocessBackend(TTSBackend):
         """Mark the sidecar as just-used so the idle reaper leaves it alone."""
         self._last_used = time.monotonic()
 
+    def _validate_generate_authorization(self) -> None:
+        """Revalidate subclass-specific authorization after queueing.
+
+        Called while ``_lock`` is held and immediately before sidecar access so
+        a request that waited behind another synthesis cannot outlive a revoked
+        capability. Most subprocess engines have no extra authorization.
+        """
+
     def idle_seconds(self) -> float:
         """Seconds since the last sidecar activity (spawn or frame I/O)."""
         return time.monotonic() - self._last_used
@@ -660,6 +668,7 @@ class SubprocessBackend(TTSBackend):
                     slot_future.cancel()
                 raise TimeoutError("timed out waiting for a free GPU worker")
             with self._lock:
+                self._validate_generate_authorization()
                 self._spawn()
                 msg = {"op": "synthesize", "text": text}
                 # Filter kwargs to JSON-safe primitives. Tensor / Path / etc.

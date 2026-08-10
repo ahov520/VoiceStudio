@@ -579,11 +579,10 @@ def check_gpu_admission(*, what: str = "GPU job", executor=None) -> None:
 
 
 def _log_safe(what: str) -> str:
-    """`what` is caller-supplied and can embed request data (engine ids reach
-    it via f-strings), so strip CR/LF and clamp the length before it lands in a
-    log line — a request must not be able to forge extra log entries
-    (CodeQL py/log-injection)."""
-    return str(what).replace("\r", " ").replace("\n", " ")[:120]
+    """Backward-compatible alias for the shared logging seam."""
+    from core.logging_utils import log_safe
+
+    return log_safe(what, limit=120)
 
 
 def _swallow_abandoned(fut) -> None:

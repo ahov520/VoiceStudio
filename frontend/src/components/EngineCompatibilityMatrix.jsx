@@ -29,12 +29,14 @@ import { Badge, Button, Segmented, Select, Table } from '../ui';
 import { cn } from '@/lib/utils';
 import EngineMark from './EngineMark';
 import SupertonicLicenseDialog from './SupertonicLicenseDialog';
+import PocketTTSLicenseDialog from './PocketTTSLicenseDialog';
 
 /** Engines that gate first use behind an in-app license acceptance dialog.
  *  Phase 3 Plan 03-01 ‑‑ Supertonic-3 today; future OpenRAIL-M engines
  *  add themselves here alongside an in-tree dialog component. */
 const LICENSE_DIALOGS = {
   supertonic3: SupertonicLicenseDialog,
+  pockettts: PocketTTSLicenseDialog,
 };
 
 /** Heuristic detector for the "license not accepted" backend reason

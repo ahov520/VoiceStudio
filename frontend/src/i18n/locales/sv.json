@@ -1545,7 +1545,19 @@
     "saving": "Sparar...",
     "accept": "Acceptera",
     "accepted_toast": "Supertonic-3-licens accepteras.",
-    "accept_error": "Det gick inte att registrera licensacceptans: {{message}}"
+    "accept_error": "Det gick inte att registrera licensacceptans: {{message}}",
+    "pockettts_title": "Godkänn PocketTTS-licenser",
+    "pockettts_intro": "Kyutais PocketTTS levereras under två licenser och modellvikterna omfattas även av åtkomstvillkor på Hugging Face. Granska allt innan du aktiverar motorn.",
+    "pockettts_sdk_desc": "Python-biblioteket pocket-tts har den tillåtande MIT-licensen, även för kommersiell användning.",
+    "pockettts_model_heading": "Modellvikter (CC-BY-4.0)",
+    "pockettts_model_desc": "PocketTTS-modellvikterna släpps under CC-BY-4.0. Kommersiell användning är tillåten med erkännande.",
+    "read_cc_by": "Läs CC-BY-4.0-licensen",
+    "gate_heading": "Begränsad åtkomst",
+    "gate_desc": "Vikterna är begränsade på Hugging Face. Före den första hämtningen behöver du ett kostnadsfritt konto, dela dina kontaktuppgifter och godkänna åtkomstvillkoren.",
+    "pockettts_conditions_desc": "Villkoren förbjuder olaglig, skadlig, vilseledande, bedräglig, obehörig eller icke-samtyckt röstanvändning. Läs de fullständiga villkoren innan du fortsätter.",
+    "review_access_conditions": "Granska åtkomstvillkoren",
+    "pockettts_footer": "När du klickar på Godkänn sparas din bekräftelse endast i VoiceStudios lokala inställningar och motorn aktiveras. Modellåtkomst och hämtningar går via Hugging Face, som tar emot vanliga begärande- och kontouppgifter.",
+    "pockettts_accepted_toast": "PocketTTS-villkoren har godkänts."
   },
   "voicePreview": {
     "title": "Röstförhandsgranskning",

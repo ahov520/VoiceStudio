@@ -13,8 +13,10 @@ Public API (consumed by `token_resolver.py`):
 from __future__ import annotations
 
 import logging
+import sqlite3
 import time
 from typing import Optional
+from core.logging_utils import log_safe
 
 logger = logging.getLogger("omnivoice.settings_store")
 
@@ -148,18 +150,20 @@ def get_secret(name: str) -> Optional[str]:
         try:
             from cryptography.fernet import InvalidToken
         except ImportError:  # pragma: no cover — dep should always be present
-            logger.error("cryptography unavailable; cannot decrypt secret %s", name)
+            logger.error("cryptography unavailable; encrypted setting cannot be decrypted")
             return None
         try:
             return _fernet().decrypt(row[0].encode("ascii")).decode("utf-8")
         except InvalidToken:
             logger.warning(
-                "Stored secret %r failed to decrypt (install moved across "
-                "machines or salt tampered) — falling back to env/default.", name,
+                "Stored encrypted setting failed to decrypt (install moved across "
+                "machines or salt tampered) — falling back to env/default."
             )
             return None
-    except Exception:
-        logger.exception("settings_store.get_secret(%s): SQLite read failed", name)
+    except sqlite3.Error:
+        # This path may hold plaintext/ciphertext secret values in locals.
+        # Keep the record fixed-shape; never attach exception state or traceback.
+        logger.error("settings_store.get_secret: SQLite read failed")
         return None
 
 
@@ -242,8 +246,11 @@ def get_text(key: str, default: Optional[str] = None) -> Optional[str]:
         if row is None or row[0] is None:
             return default
         return str(row[0])
-    except Exception:
-        logger.exception("settings_store.get_text(%s): SQLite read failed", key)
+    except Exception as exc:
+        logger.error(
+            "settings_store.get_text(%s): SQLite read failed: %s",
+            log_safe(key), log_safe(exc),
+        )
         return default
 
 

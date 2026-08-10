@@ -236,19 +236,22 @@ def touch_activity(kind: str, detail: str | None = None) -> None:
         logger.debug("run-sentinel activity touch failed (non-fatal)", exc_info=True)
 
 
-def clear_sentinel() -> None:
+def clear_sentinel() -> bool:
     """Clean shutdown — remove the sentinel so the next startup knows this
     run ended on purpose. Only removes a sentinel this run wrote."""
     with _lock:
         if not _state["owns"]:
-            return
+            return True
         try:
             os.remove(SENTINEL_PATH)
         except FileNotFoundError:
-            pass
+            # Idempotent success: there is no stale marker to misread.
+            logger.debug("run sentinel already absent during clear")
         except Exception:
-            logger.debug("run-sentinel clear failed (non-fatal)", exc_info=True)
+            logger.warning("run-sentinel clear failed; retaining ownership for retry")
+            return False
         _state["owns"] = False
+        return True
 
 
 # ── Unclean-shutdown detection + crash records ─────────────────────────────

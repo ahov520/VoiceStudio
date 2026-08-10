@@ -159,6 +159,24 @@ before the token works for downloads.
 
 **Linked issue:** [#35](https://github.com/debpalash/VoiceStudio/issues/35)
 
+### PocketTTS gated weights
+
+**Symptom:** PocketTTS reports `POCKETTTS_GATED_WEIGHTS`, `gated repo`, or
+asks you to share your contact information instead of generating audio.
+
+**Cause:** the PocketTTS model files are public but gated. Hugging Face only
+serves them after your account accepts Kyutai's access conditions. A token by
+itself does not grant access.
+
+**Fix:**
+
+1. Visit https://huggingface.co/kyutai/pocket-tts while signed in, review the
+   license and prohibited-use conditions, share the requested contact details,
+   and accept the conditions.
+2. Open **Settings → API Keys** and save a read token from that same account.
+3. Open **Settings → Engines**, review and accept the PocketTTS terms locally,
+   then retry. VoiceStudio stores this acknowledgement only on your machine.
+
 ## 3. Gatekeeper quarantine on macOS
 
 **Symptom:** "VoiceStudio.app is damaged and can't be opened."

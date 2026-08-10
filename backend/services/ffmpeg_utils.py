@@ -1,6 +1,7 @@
 import asyncio
 import errno
 import logging
+from core.logging_utils import log_safe
 import os
 import shutil
 import subprocess
@@ -578,7 +579,7 @@ async def probe_duration(path: str, *, allowed_root: str) -> float | None:
             return None
         return float(stdout.decode().strip())
     except Exception as e:
-        logger.debug("probe_duration failed for %s: %s", media_path.name, e)
+        logger.debug("probe_duration failed for %s: %s", log_safe(os.path.basename(str(path))), log_safe(e))
         return None
 
 
@@ -611,7 +612,7 @@ async def probe_frame_rates(path: str) -> "tuple[str, str] | None":
             return None
         return parts[0].strip(), parts[1].strip()
     except Exception as e:
-        logger.debug("probe_frame_rates failed for %s: %s", os.path.basename(str(path)), e)
+        logger.debug("probe_frame_rates failed for %s: %s", log_safe(os.path.basename(str(path))), log_safe(e))
         return None
 
 

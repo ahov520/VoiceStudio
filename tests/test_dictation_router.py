@@ -3,6 +3,7 @@ Tests for the dictation router (GET /dictation/models, GET/POST /dictation/prefs
 — the exact contract the frontend dictation UI binds to.
 """
 import os
+import importlib
 
 import pytest
 
@@ -91,3 +92,23 @@ def test_set_prefs_accepts_repo_id_and_normalizes(client):
     assert r.status_code == 200
     # Stored as the canonical dictation id, not the repo_id.
     assert r.json()["model_id"] == "sherpa-whisper-tiny"
+
+
+def test_reset_failure_does_not_persist_new_preferences(monkeypatch):
+    services = importlib.import_module("services")
+    from api.routers import dictation as dr
+
+    store = {dr.PREF_MODE: "toggle"}
+    monkeypatch.setattr(dr.prefs, "get", lambda key, default=None: store.get(key, default))
+    monkeypatch.setattr(dr.prefs, "set_", lambda key, value: store.__setitem__(key, value))
+
+    class _BrokenBackend:
+        def __setattr__(self, _name, _value):
+            raise RuntimeError("capture service unavailable")
+
+    monkeypatch.setattr(services, "asr_backend", _BrokenBackend())
+    with pytest.raises(Exception) as caught:
+        dr.set_dictation_prefs(dr.DictationPrefsUpdate(mode="hold"))
+
+    assert getattr(caught.value, "status_code", None) == 503
+    assert store == {dr.PREF_MODE: "toggle"}

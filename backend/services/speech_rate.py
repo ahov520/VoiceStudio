@@ -15,6 +15,7 @@ Returns the fit text + a `rate_ratio` (text chars / slot-aligned chars).
 from __future__ import annotations
 
 import logging
+from core.logging_utils import log_safe
 from typing import Iterable, Optional
 
 from services.llm_backend import get_active_llm_backend, OffBackend
@@ -201,7 +202,7 @@ def adjust_for_slot(
                 diverged = True
                 logger.warning(
                     "speech-rate attempt %d rejected (%s) — discarding candidate",
-                    attempt, reason,
+                    attempt, log_safe(reason),
                 )
                 continue  # attempt burned; current/best untouched
             current = candidate
@@ -301,7 +302,7 @@ async def adjust_for_slot_many(
                 out[k] = res
                 continue
             except Exception as e:  # noqa: BLE001 — one slow seg must not sink the pass
-                logger.warning("fit segment %s failed: %s", key, e)
+                logger.warning("fit segment %s failed: %s", log_safe(key), log_safe(e))
         else:
             task.cancel()  # stop awaiting; the executor thread is abandoned (#730 pattern)
         out[key] = _degraded(text, slot, tgt)

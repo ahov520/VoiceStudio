@@ -87,11 +87,8 @@ def test_pin_only_remote_discovery_never_returns_share_pin(monkeypatch):
 
     monkeypatch.setenv("OMNIVOICE_SERVER_MODE", "1")
     monkeypatch.delenv("OMNIVOICE_API_KEY", raising=False)
-    monkeypatch.setattr(
-        live_network_share,
-        "_state",
-        live_network_share.ShareState(True, 3901, "123456", ["192.168.1.10"]),
-    )
+    monkeypatch.setattr(live_network_share._runtime, "state",
+                        live_network_share.ShareState(True, 3901, "123456", ["192.168.1.10"]))
     # Keep the consumption middleware inert: this endpoint is testing the
     # intentional admin read-only exception itself, before a PIN is supplied.
     monkeypatch.setattr(app.state, "network_share", None, raising=False)

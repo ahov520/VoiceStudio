@@ -1545,7 +1545,19 @@
     "saving": "Đang lưu…",
     "accept": "Chấp nhận",
     "accepted_toast": "Giấy phép Supertonic-3 được chấp nhận.",
-    "accept_error": "Không ghi lại được việc chấp nhận giấy phép: {{message}}"
+    "accept_error": "Không ghi lại được việc chấp nhận giấy phép: {{message}}",
+    "pockettts_title": "Chấp nhận giấy phép PocketTTS",
+    "pockettts_intro": "PocketTTS của Kyutai được phát hành theo hai giấy phép và các trọng số cũng chịu điều kiện truy cập trên Hugging Face. Hãy xem lại tất cả trước khi bật bộ máy.",
+    "pockettts_sdk_desc": "Thư viện Python pocket-tts dùng giấy phép MIT rộng rãi, kể cả cho mục đích thương mại.",
+    "pockettts_model_heading": "Trọng số mô hình (CC-BY-4.0)",
+    "pockettts_model_desc": "Trọng số mô hình PocketTTS được phát hành theo CC-BY-4.0. Có thể sử dụng thương mại nếu ghi công.",
+    "read_cc_by": "Đọc giấy phép CC-BY-4.0",
+    "gate_heading": "Quyền truy cập hạn chế",
+    "gate_desc": "Trọng số bị hạn chế trên Hugging Face. Trước lần tải đầu tiên, bạn cần tài khoản miễn phí, phải chia sẻ thông tin liên hệ và chấp nhận điều kiện truy cập.",
+    "pockettts_conditions_desc": "Điều kiện cấm sử dụng giọng nói bất hợp pháp, gây hại, lừa dối, gian lận, trái phép hoặc không có sự đồng thuận. Hãy đọc đầy đủ điều kiện trước khi tiếp tục.",
+    "review_access_conditions": "Xem điều kiện truy cập",
+    "pockettts_footer": "Khi bấm Chấp nhận, xác nhận của bạn chỉ được lưu trong cài đặt cục bộ của VoiceStudio và bộ máy được bật. Việc truy cập và tải mô hình dùng Hugging Face, nơi nhận thông tin yêu cầu và tài khoản thông thường.",
+    "pockettts_accepted_toast": "Đã chấp nhận điều kiện PocketTTS."
   },
   "voicePreview": {
     "title": "Xem trước bằng giọng nói",

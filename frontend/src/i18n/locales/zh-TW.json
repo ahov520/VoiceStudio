@@ -1545,7 +1545,19 @@
     "saving": "正在儲存...",
     "accept": "接受",
     "accepted_toast": "已接受 Supertonic-3 許可證。",
-    "accept_error": "未能記錄許可證接受情況：{{message}}"
+    "accept_error": "未能記錄許可證接受情況：{{message}}",
+    "pockettts_title": "接受 PocketTTS 授權",
+    "pockettts_intro": "Kyutai 的 PocketTTS 採用兩項授權，其權重也受 Hugging Face 存取條件約束。啟用引擎前請全部查看。",
+    "pockettts_sdk_desc": "pocket-tts Python 函式庫採用寬鬆的 MIT 授權，允許商業使用。",
+    "pockettts_model_heading": "模型權重（CC-BY-4.0）",
+    "pockettts_model_desc": "PocketTTS 模型權重採用 CC-BY-4.0。標示出處後允許商業使用。",
+    "read_cc_by": "閱讀 CC-BY-4.0 授權",
+    "gate_heading": "受限存取",
+    "gate_desc": "權重在 Hugging Face 上受限。首次下載前，你需要免費帳戶、分享聯絡資訊並接受存取條件。",
+    "pockettts_conditions_desc": "存取條件禁止非法、有害、欺騙、詐欺、未經授權或未經同意的聲音使用。繼續前請查看完整條件。",
+    "review_access_conditions": "查看存取條件",
+    "pockettts_footer": "點擊「接受」只會將你的確認儲存在 VoiceStudio 本機設定中並啟用引擎。模型存取和下載使用 Hugging Face，該服務會收到一般請求和帳戶資訊。",
+    "pockettts_accepted_toast": "已接受 PocketTTS 條件。"
   },
   "voicePreview": {
     "title": "語音預覽",

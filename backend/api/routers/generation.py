@@ -25,6 +25,7 @@ from services.model_manager import (
 from services.audio_io import _safe_torchaudio_save
 from services.binary_preflight import InvalidBinaryError
 from core import event_bus
+from core.logging_utils import log_safe
 from omnivoice.utils.voice_design import heal_design_instruct
 
 router = APIRouter()
@@ -116,8 +117,11 @@ def _sanitize_audio(audio_out):
                 "sanitizing to silence to keep the WAV decodable (#629)."
             )
             return torch.nan_to_num(audio_out, nan=0.0, posinf=0.0, neginf=0.0)
-    except Exception:
-        pass
+    except Exception as exc:
+        logger.warning("Generated audio validation failed")
+        raise RuntimeError(
+            "Generated audio could not be validated. Retry the generation."
+        ) from exc
     return audio_out
 
 
@@ -840,7 +844,7 @@ def _persist_profile_ref_text(profile_id: str, ref_text: str) -> None:
     except Exception as e:  # noqa: BLE001 — cache write must not break generate
         logger.warning(
             "could not persist auto-transcribed ref_text onto profile %s: %s",
-            profile_id, e,
+            log_safe(profile_id), log_safe(e),
         )
 
 

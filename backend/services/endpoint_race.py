@@ -265,7 +265,10 @@ def env_opt_out() -> bool:
     return (os.environ.get(MODE_ENV) or "").strip().lower() in _OPT_OUT_VALUES
 
 
-def explicit_endpoint() -> str:
+_PREF_READ_FAILED = object()
+
+
+def explicit_endpoint():
     """The endpoint the user explicitly configured, or "".
 
     Same resolution the download paths use: ``HF_ENDPOINT`` env (what
@@ -282,7 +285,8 @@ def explicit_endpoint() -> str:
 
         return str(prefs.get("hf_endpoint", "") or "").strip().rstrip("/")
     except Exception:
-        return ""
+        logger.warning("Endpoint preference could not be read; using manual mode")
+        return _PREF_READ_FAILED
 
 
 def mode() -> str:
@@ -291,7 +295,8 @@ def mode() -> str:
     Settings (including explicitly choosing the official endpoint)."""
     if env_opt_out():
         return "manual"
-    if explicit_endpoint():
+    endpoint = explicit_endpoint()
+    if endpoint is _PREF_READ_FAILED or endpoint:
         return "manual"
     try:
         from core import prefs
@@ -299,7 +304,9 @@ def mode() -> str:
         if str(prefs.get(_MODE_PREF, "") or "").strip().lower() == "manual":
             return "manual"
     except Exception:
-        pass
+        # A failed preference read must not opt the user into network racing.
+        logger.warning("Endpoint mode preference could not be read; using manual mode")
+        return "manual"
     return "auto"
 
 
@@ -448,6 +455,8 @@ def effective_endpoint() -> Optional[str]:
     per-download hot path. Never raises."""
     try:
         ep = explicit_endpoint()
+        if ep is _PREF_READ_FAILED:
+            return None
         if ep:
             return ep
         if mode() != "auto":

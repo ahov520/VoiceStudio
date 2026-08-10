@@ -35,8 +35,8 @@ describe('errorDocsMap', () => {
     expect(openExternal).toHaveBeenCalledWith(DEFAULT_DOCS);
   });
 
-  // Sentinel test — locks the 5-class taxonomy in lockstep with the
-  // Python map (backend/core/error_docs_map.py). Adding a 6th class is
+  // Sentinel test — locks the taxonomy in step with the Python map
+  // (backend/core/error_docs_map.py). Adding a class is
   // a contract change; update both sides + this list.
   it('keys match the locked taxonomy (mirror of Python map)', () => {
     expect(Object.keys(ERROR_DOCS).sort()).toEqual([...ERROR_CLASS_KEYS].sort());
@@ -46,8 +46,15 @@ describe('errorDocsMap', () => {
         'GATEKEEPER_QUARANTINE',
         'HF_AUTH_FAILED',
         'PKG_RESOURCES_MISSING',
+        'POCKETTTS_GATED_WEIGHTS',
         'PYANNOTE_LICENSE_REQUIRED',
       ].sort(),
+    );
+  });
+
+  it('classifyError maps PocketTTS access failures to its setup guide', () => {
+    expect(classifyError(new Error('PocketTTS gated model: share your contact information'))).toBe(
+      'POCKETTTS_GATED_WEIGHTS',
     );
   });
 

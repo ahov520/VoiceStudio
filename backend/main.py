@@ -831,15 +831,17 @@ async def lifespan(app: FastAPI):
         await close_http_client()
     except Exception:
         pass
-    logger.info("Shutdown: done.")
     # Last thing on a clean shutdown: retire the run sentinel so the next
-    # startup doesn't misread this exit as a crash (#1164). After "Shutdown:
-    # done." on purpose — if anything above dies, the sentinel survives and
-    # the death still gets reported.
+    # startup doesn't misread this exit as a crash (#1164). If clearing fails,
+    # retain the sentinel and report a degraded shutdown truthfully.
     try:
-        run_sentinel.clear_sentinel()
+        sentinel_cleared = run_sentinel.clear_sentinel()
     except Exception:
-        pass
+        sentinel_cleared = False
+    if sentinel_cleared:
+        logger.info("Shutdown: done.")
+    else:
+        logger.warning("Shutdown completed, but the run sentinel could not be cleared")
 
 
 from core.version import APP_VERSION  # single source of truth (pyproject metadata)

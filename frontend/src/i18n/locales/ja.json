@@ -1545,7 +1545,19 @@
     "saving": "保存中…",
     "accept": "受け入れる",
     "accepted_toast": "Supertonic-3 ライセンスが受け入れられました。",
-    "accept_error": "ライセンスの受諾を記録できませんでした: {{message}}"
+    "accept_error": "ライセンスの受諾を記録できませんでした: {{message}}",
+    "pockettts_title": "PocketTTS ライセンスの確認",
+    "pockettts_intro": "Kyutai の PocketTTS には 2 つのライセンスがあり、重みには Hugging Face のアクセス条件も適用されます。エンジンを有効にする前にすべて確認してください。",
+    "pockettts_sdk_desc": "Python ライブラリ pocket-tts は、商用利用も許可する寛容な MIT ライセンスです。",
+    "pockettts_model_heading": "モデルの重み（CC-BY-4.0）",
+    "pockettts_model_desc": "PocketTTS のモデル重みは CC-BY-4.0 で公開されています。帰属表示を行えば商用利用できます。",
+    "read_cc_by": "CC-BY-4.0 ライセンスを読む",
+    "gate_heading": "制限付きアクセス",
+    "gate_desc": "重みは Hugging Face でアクセスが制限されています。初回ダウンロード前に無料アカウントを作成し、連絡先情報を共有してアクセス条件に同意する必要があります。",
+    "pockettts_conditions_desc": "アクセス条件は、違法、有害、欺瞞的、詐欺的、無許可、または同意のない音声利用を禁止しています。続行する前に全文を確認してください。",
+    "review_access_conditions": "アクセス条件を確認",
+    "pockettts_footer": "［同意する］を押すと、確認した記録は VoiceStudio のローカル設定にのみ保存され、エンジンが有効になります。モデルへのアクセスとダウンロードには Hugging Face を使用し、通常のリクエスト情報とアカウント情報が同社に送信されます。",
+    "pockettts_accepted_toast": "PocketTTS の条件に同意しました。"
   },
   "voicePreview": {
     "title": "音声プレビュー",

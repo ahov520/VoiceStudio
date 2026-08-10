@@ -675,7 +675,7 @@ def list_voices():
                 "language": row["language"],
             })
     except Exception:
-        pass
+        logger.warning("Voice profiles could not be loaded; returning built-in aliases only")
 
     return {"voices": voices, "engines": backends}
 

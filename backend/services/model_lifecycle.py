@@ -12,11 +12,14 @@ the flush dropdown) depends on ``{models, count}`` and
 """
 from __future__ import annotations
 
+import logging
 import os
 from typing import Optional
 
 import services.model_manager as mm
 from services.model_manager import get_best_device
+
+logger = logging.getLogger("omnivoice.model_lifecycle")
 
 
 def _tts_vram_mb() -> float:
@@ -71,6 +74,7 @@ def list_loaded() -> dict:
     "count": n}`` with per-model id/name/checkpoint/device/vram_mb/unloadable
     (+ optional ``note``)."""
     models: list[dict] = []
+    degraded_sources: list[str] = []
     active_tts = _active_tts_id()
 
     # 1. In-process TTS model (VoiceStudio)
@@ -131,7 +135,8 @@ def list_loaded() -> dict:
                 **_tts_attribution(s["id"], active_tts),
             })
     except Exception:
-        pass
+        logger.warning("Loaded-model inventory unavailable for subprocess sidecars")
+        degraded_sources.append("sidecars")
 
     # 5. In-process engine instances that hold a model (mlx-audio, cosyvoice,
     #    voxcpm2, kittentts, …). These live in the generate path's instance
@@ -161,7 +166,8 @@ def list_loaded() -> dict:
                 **_tts_attribution(eid, active_tts),
             })
     except Exception:
-        pass
+        logger.warning("Loaded-model inventory unavailable for in-process engines")
+        degraded_sources.append("engines")
 
     # 6. The warm capture/dictation ASR singleton — resident until idle-released
     #    (#1101 class). Held separately from the co-loaded WhisperX ASR above.
@@ -180,7 +186,8 @@ def list_loaded() -> dict:
                 "note": "released after the idle timeout",
             })
     except Exception:
-        pass
+        logger.warning("Loaded-model inventory unavailable for dictation")
+        degraded_sources.append("dictation")
 
     # System memory snapshot — free/total RAM (and VRAM on a dedicated GPU) plus
     # a low-memory advisory, so the panel can show pressure instead of leaving
@@ -196,7 +203,8 @@ def list_loaded() -> dict:
     except Exception:
         pass
 
-    return {"models": models, "count": len(models), "system": system}
+    return {"models": models, "count": len(models), "system": system,
+            "degraded_sources": degraded_sources}
 
 
 async def unload(model_id: str) -> dict:

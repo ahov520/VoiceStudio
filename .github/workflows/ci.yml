@@ -51,7 +51,7 @@ jobs:
 
       # apt install ffmpeg is ~30 s every run; cache the resolved .debs.
       - name: System deps (ffmpeg)
-        uses: awalsh128/cache-apt-pkgs-action@latest
+        uses: awalsh128/cache-apt-pkgs-action@v1.6.3
         with:
           packages: ffmpeg
           version: 1.0
@@ -272,10 +272,16 @@ jobs:
         include:
           - os: macos-14
             label: macOS
+            backend_supported: true
+          - os: macos-15-intel
+            label: macOS Intel
+            backend_supported: false
           - os: windows-2022
             label: Windows
+            backend_supported: true
           - os: ubuntu-22.04
             label: Linux
+            backend_supported: true
     runs-on: ${{ matrix.os }}
     # Priced for a COLD `uv sync`, on every platform.
     #
@@ -316,11 +322,11 @@ jobs:
       # though the silence WAV doesn't decode anything heavy — keeps test
       # collection from import-erroring on optional audio modules.
       - name: System deps (macOS)
-        if: runner.os == 'macOS'
+        if: runner.os == 'macOS' && matrix.backend_supported
         run: brew install ffmpeg libsndfile || true
 
       - name: System deps (Windows)
-        if: runner.os == 'Windows'
+        if: runner.os == 'Windows' && matrix.backend_supported
         shell: bash
         run: |
           # The community chocolatey feed 50x's intermittently (broke PR runs on
@@ -348,16 +354,44 @@ jobs:
           ffmpeg -version
 
       - name: System deps (Linux)
-        if: runner.os == 'Linux'
-        uses: awalsh128/cache-apt-pkgs-action@latest
+        if: runner.os == 'Linux' && matrix.backend_supported
+        uses: awalsh128/cache-apt-pkgs-action@v1.6.3
         with:
           packages: ffmpeg libsndfile1
           version: 1.0
 
-      - name: Install Python deps
-        run: uv sync
+      - name: Install Python deps (including PocketTTS)
+        # PocketTTS is an opt-in engine, but installing its pinned extra here
+        # proves that the same dependency set resolves on every supported local
+        # backend host. The Intel-Mac leg separately pins the documented
+        # unsupported contract: its UI is a remote-backend client only (#889).
+        if: matrix.backend_supported
+        run: uv sync --extra pockettts
+
+      - name: Verify the documented Intel Mac contract
+        if: ${{ !matrix.backend_supported }}
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import platform
+          import tomllib
+
+          assert platform.system() == "Darwin"
+          assert platform.machine() == "x86_64"
+          root = Path.cwd()
+          project = tomllib.loads((root / "pyproject.toml").read_text("utf-8"))
+          extra = project["project"]["optional-dependencies"]["pockettts"]
+          assert extra == [
+              "pocket-tts==2.1.0 ; sys_platform != 'darwin' or platform_machine != 'x86_64'"
+          ]
+          docs = (root / "docs/install/macos.md").read_text("utf-8")
+          assert "Intel Macs are not supported" in docs
+          PY
 
       - name: Run smoke tests
+        if: matrix.backend_supported
         run: uv run pytest tests/smoke/ -q --tb=short
         env:
           HF_HUB_OFFLINE: "1"  # same no-silent-downloads guard as the main pytest job
+          HF_HUB_CACHE: ${{ runner.temp }}/pockettts-empty-hf-cache

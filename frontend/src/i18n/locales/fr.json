@@ -1545,7 +1545,19 @@
     "saving": "Sauvegarde…",
     "accept": "Accepter",
     "accepted_toast": "Licence Supertonic-3 acceptée.",
-    "accept_error": "Échec de l'enregistrement de l'acceptation de la licence : {{message}}"
+    "accept_error": "Échec de l'enregistrement de l'acceptation de la licence : {{message}}",
+    "pockettts_title": "Acceptation des licences de PocketTTS",
+    "pockettts_intro": "PocketTTS de Kyutai est distribué sous deux licences et ses poids sont aussi soumis à des conditions d’accès sur Hugging Face. Lisez-les avant d’activer le moteur.",
+    "pockettts_sdk_desc": "La bibliothèque Python pocket-tts est sous licence MIT, permissive et compatible avec un usage commercial.",
+    "pockettts_model_heading": "Poids du modèle (CC-BY-4.0)",
+    "pockettts_model_desc": "Les poids du modèle PocketTTS sont publiés sous CC-BY-4.0. L’usage commercial est permis avec attribution.",
+    "read_cc_by": "Lire la licence CC-BY-4.0",
+    "gate_heading": "Accès restreint",
+    "gate_desc": "Les poids sont restreints sur Hugging Face. Avant le premier téléchargement, vous devez créer un compte gratuit, partager vos coordonnées et accepter les conditions d’accès.",
+    "pockettts_conditions_desc": "Les conditions interdisent tout usage vocal illégal, nuisible, trompeur, frauduleux, non autorisé ou sans consentement. Lisez les conditions complètes avant de continuer.",
+    "review_access_conditions": "Consulter les conditions d’accès",
+    "pockettts_footer": "Cliquer sur Accepter enregistre votre accord uniquement dans les réglages locaux de VoiceStudio, puis active le moteur. L’accès au modèle et son téléchargement passent par Hugging Face, qui reçoit les données habituelles de requête et de compte.",
+    "pockettts_accepted_toast": "Conditions de PocketTTS acceptées."
   },
   "voicePreview": {
     "title": "Aperçu vocal",

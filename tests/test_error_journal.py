@@ -91,3 +91,40 @@ def test_record_never_raises(monkeypatch):
     entry = record(ValueError("still works"))
     assert entry["error_class"] == "UNKNOWN"
     assert entry["count"] == 1
+
+
+def test_persistence_failure_is_observable_without_losing_memory(monkeypatch, caplog):
+    monkeypatch.setattr(error_journal, "JOURNAL_PATH", "/nonexistent/dir/x.jsonl")
+    with caplog.at_level("WARNING", logger="omnivoice.error_journal"):
+        entry = record(ValueError("still visible"))
+    assert entry in recent()
+    assert "persistence failed" in caplog.text
+
+
+def test_hydrate_failure_is_observable(monkeypatch, caplog, tmp_path):
+    journal_dir = tmp_path / "journal-dir"
+    journal_dir.mkdir()
+    monkeypatch.setattr(error_journal, "JOURNAL_PATH", str(journal_dir))
+    with caplog.at_level("WARNING", logger="omnivoice.error_journal"):
+        error_journal._hydrate()
+    assert "could not be loaded" in caplog.text
+
+
+def test_clear_failure_keeps_entries_retryable(monkeypatch, caplog):
+    entry = record(ValueError("keep me"))
+    monkeypatch.setattr(
+        error_journal.os,
+        "remove",
+        lambda _path: (_ for _ in ()).throw(PermissionError("locked")),
+    )
+    with caplog.at_level("WARNING", logger="omnivoice.error_journal"):
+        assert error_journal.clear() is False
+    assert entry in recent()
+    assert "keeping entries available for retry" in caplog.text
+
+
+def test_clear_is_idempotent_when_durable_mirror_is_already_absent(tmp_path, monkeypatch):
+    monkeypatch.setattr(error_journal, "JOURNAL_PATH", str(tmp_path / "absent.jsonl"))
+    error_journal._entries["entry"] = {"fingerprint": "entry"}
+    assert error_journal.clear() is True
+    assert recent() == []

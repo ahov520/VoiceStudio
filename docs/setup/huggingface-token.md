@@ -93,6 +93,8 @@ downloads work. Visit each page while signed in with the same HF account:
 - `pyannote/segmentation-3.0` — required transitively by the above.
 - `IndexTeam/IndexTTS-2` — required if you use IndexTTS for voice cloning.
 - `Supertone/supertonic-3` — required if you enable the Supertonic-3 engine.
+- `kyutai/pocket-tts` — required if you enable PocketTTS; first accept its
+  access conditions on Hugging Face, then use a token from the same account.
 
 After clicking **"Agree and access repository"** on each page, restart any
 in-flight VoiceStudio job (the gated check is cached for the lifetime of the

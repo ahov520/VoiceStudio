@@ -1545,7 +1545,19 @@
     "saving": "Menyimpan…",
     "accept": "Terima",
     "accepted_toast": "Lisensi Supertonic-3 diterima.",
-    "accept_error": "Gagal mencatat penerimaan lisensi: {{message}}"
+    "accept_error": "Gagal mencatat penerimaan lisensi: {{message}}",
+    "pockettts_title": "Penerimaan Lisensi PocketTTS",
+    "pockettts_intro": "PocketTTS dari Kyutai tersedia dengan dua lisensi dan bobotnya juga memiliki ketentuan akses di Hugging Face. Tinjau semuanya sebelum mengaktifkan mesin.",
+    "pockettts_sdk_desc": "Pustaka Python pocket-tts berlisensi MIT yang permisif, termasuk untuk penggunaan komersial.",
+    "pockettts_model_heading": "Bobot Model (CC-BY-4.0)",
+    "pockettts_model_desc": "Bobot model PocketTTS dirilis dengan CC-BY-4.0. Penggunaan komersial diizinkan dengan atribusi.",
+    "read_cc_by": "Baca lisensi CC-BY-4.0",
+    "gate_heading": "Akses Terbatas",
+    "gate_desc": "Bobot dibatasi di Hugging Face. Anda memerlukan akun gratis, harus membagikan informasi kontak, dan menerima ketentuan akses sebelum unduhan pertama.",
+    "pockettts_conditions_desc": "Ketentuan akses melarang penggunaan suara yang ilegal, merugikan, menipu, curang, tanpa izin, atau tanpa persetujuan. Tinjau ketentuan lengkap sebelum melanjutkan.",
+    "review_access_conditions": "Tinjau ketentuan akses",
+    "pockettts_footer": "Menekan Terima hanya menyimpan pengakuan Anda di pengaturan lokal VoiceStudio lalu mengaktifkan mesin. Akses dan unduhan model menggunakan Hugging Face, yang menerima informasi permintaan dan akun seperti biasa.",
+    "pockettts_accepted_toast": "Ketentuan PocketTTS diterima."
   },
   "voicePreview": {
     "title": "Pratinjau Suara",

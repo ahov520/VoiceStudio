@@ -225,6 +225,15 @@ ui = [
 supertonic = [
     "supertonic==1.3.1",
 ]
+# PocketTTS opt-in engine. Keep the SDK pinned: its model-loading and voice
+# APIs are the sidecar wire contract. The model weights remain an explicit
+# user download after the Hugging Face access conditions are accepted.
+pockettts = [
+    # pocket-tts requires torch>=2.5; PyTorch no longer publishes macOS x86_64
+    # wheels at those versions. Keep the opt-in extra installable everywhere,
+    # with an explicit engine availability reason on Intel Macs.
+    "pocket-tts==2.1.0 ; sys_platform != 'darwin' or platform_machine != 'x86_64'",
+]
 
 [project.scripts]
 omnivoice-infer = "omnivoice.cli.infer:main"

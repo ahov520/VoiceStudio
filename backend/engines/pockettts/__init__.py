@@ -36,13 +36,17 @@ the PR.
 """
 from __future__ import annotations
 
+import logging
 import math
 import os
+import platform
 import sys
 from pathlib import Path
 from typing import TYPE_CHECKING
 
 from services.subprocess_backend import SubprocessBackend
+
+logger = logging.getLogger("omnivoice.engines.pockettts")
 
 if TYPE_CHECKING:
     import torch  # noqa: F401
@@ -60,7 +64,63 @@ class PocketTTSBackend(SubprocessBackend):
     supports_cloning = True  # zero-shot clone from a reference clip
 
     @classmethod
+    def _platform_error(cls) -> str | None:
+        if sys.platform == "darwin" and platform.machine().lower() == "x86_64":
+            return (
+                "PocketTTS is unavailable on Intel Macs because its required "
+                "PyTorch version has no macOS x86_64 wheel."
+            )
+        return None
+
+    @classmethod
+    def _license_accepted(cls) -> bool:
+        """Read acknowledgement fail-closed at every construction path."""
+        try:
+            from services import settings_store
+
+            return bool(settings_store.get_license_accepted(cls.id))
+        except Exception:
+            logger.warning(
+                "pockettts: license acknowledgement could not be read; "
+                "treating as not accepted"
+            )
+            return False
+
+    def __init__(self) -> None:
+        # Availability probes are advisory. Construction is the shared
+        # authorization boundary for HTTP, WebSocket, audiobook, and direct
+        # backend selection, so none can reach gated weights before consent.
+        if platform_error := self._platform_error():
+            raise RuntimeError(platform_error)
+        if not self._license_accepted():
+            raise RuntimeError(
+                "PocketTTS license not accepted. Review it in Settings → Engines."
+            )
+        super().__init__()
+
+    def generate(self, *args, **kwargs):
+        # Active backends are cached. Recheck at the synthesis chokepoint so a
+        # later revocation takes effect without requiring process restart or
+        # relying on every caller to evict its cached instance.
+        if not self._license_accepted():
+            raise RuntimeError(
+                "PocketTTS license not accepted. Review it in Settings → Engines."
+            )
+        return super().generate(*args, **kwargs)
+
+    def _validate_generate_authorization(self) -> None:
+        # The preflight above rejects immediately when possible. This second
+        # check runs under SubprocessBackend._lock, after any queued synthesis,
+        # so revocation while waiting cannot reach the sidecar or return audio.
+        if not self._license_accepted():
+            raise RuntimeError(
+                "PocketTTS license not accepted. Review it in Settings → Engines."
+            )
+
+    @classmethod
     def is_available(cls) -> tuple[bool, str]:
+        if platform_error := cls._platform_error():
+            return False, platform_error
         # Optional-dep gate: the pocket-tts wheel is installed only when the user
         # opted in. The interpreter is the parent's own (sys.executable), so
         # there is no separate venv to validate.
@@ -69,7 +129,17 @@ class PocketTTSBackend(SubprocessBackend):
         except Exception as e:
             return False, (
                 f"pocket_tts package not installed or failed to import ({e}). "
-                f"Enable in Settings -> Engines (pip install pocket-tts)."
+                f"Enable in Settings -> Engines (uv sync --extra pockettts)."
+            )
+
+        # The model repository has an additional gated-access agreement and
+        # prohibited-use conditions beyond its CC-BY-4.0 license. Keep first
+        # use behind an explicit local acknowledgement, matching the dialog.
+        if not cls._license_accepted():
+            return False, (
+                "PocketTTS license not accepted. Open Settings → Engines → "
+                "PocketTTS and review the MIT code license, CC-BY-4.0 model "
+                "license, and gated-access conditions before enabling it."
             )
         return True, "ready (CPU-only)"
 

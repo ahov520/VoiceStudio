@@ -57,6 +57,7 @@ _HINTS: dict[str, str] = {
     "APPIMAGE_WEBKIT_WHITESCREEN": "Launch with WEBKIT_DISABLE_DMABUF_RENDERER=1 set.",
     "HF_AUTH_FAILED": "Set a valid HF_TOKEN in Settings → Hugging Face and retry.",
     "PYANNOTE_LICENSE_REQUIRED": "Accept the pyannote model licenses on Hugging Face, then retry.",
+    "POCKETTTS_GATED_WEIGHTS": "PocketTTS weights are gated on HuggingFace. Accept the access agreement at huggingface.co/kyutai/pocket-tts, then set HF_TOKEN in Settings → Hugging Face and retry.",
     "COMPUTE_TYPE_UNSUPPORTED": "Your GPU doesn't support float16 — VoiceStudio retried on int8. If transcription still fails, set OMNIVOICE/ASR_COMPUTE_TYPE=int8 or use CPU.",
     # Literal versions, not `--constraint deploy/torch-constraints.txt`:
     # desktop installs don't ship deploy/ (tauri.conf.json bundles only
@@ -307,6 +308,13 @@ def classify(reason: str) -> str:
         return "GATEKEEPER_QUARANTINE"
     if "webkit" in low or "white screen" in low or "dmabuf" in low or "appimage" in low:
         return "APPIMAGE_WEBKIT_WHITESCREEN"
+    if (
+        "gated" in low
+        or "share your contact" in low
+        or "access agreement" in low
+        or "access conditions" in low
+    ) and ("pocket" in low or "kyutai" in low):
+        return "POCKETTTS_GATED_WEIGHTS"
     if "pyannote" in low or ("gated" in low and "model" in low) or "accept the" in low:
         return "PYANNOTE_LICENSE_REQUIRED"
     # ASR robustness (#551 / #549): name the class so the no-segments toast is

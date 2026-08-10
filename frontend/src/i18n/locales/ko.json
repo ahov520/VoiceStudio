@@ -1545,7 +1545,19 @@
     "saving": "저장 중…",
     "accept": "수락",
     "accepted_toast": "Supertonic-3 라이센스가 허용됩니다.",
-    "accept_error": "라이센스 승인을 기록하지 못했습니다: {{message}}"
+    "accept_error": "라이센스 승인을 기록하지 못했습니다: {{message}}",
+    "pockettts_title": "PocketTTS 라이선스 동의",
+    "pockettts_intro": "Kyutai의 PocketTTS에는 두 가지 라이선스가 적용되며 가중치에는 Hugging Face 접근 조건도 적용됩니다. 엔진을 활성화하기 전에 모두 검토하세요.",
+    "pockettts_sdk_desc": "pocket-tts Python 라이브러리는 상업적 이용도 허용하는 관대한 MIT 라이선스입니다.",
+    "pockettts_model_heading": "모델 가중치(CC-BY-4.0)",
+    "pockettts_model_desc": "PocketTTS 모델 가중치는 CC-BY-4.0으로 공개됩니다. 저작자 표시와 함께 상업적으로 이용할 수 있습니다.",
+    "read_cc_by": "CC-BY-4.0 라이선스 읽기",
+    "gate_heading": "제한된 접근",
+    "gate_desc": "가중치는 Hugging Face에서 접근이 제한됩니다. 첫 다운로드 전에 무료 계정을 만들고 연락처 정보를 공유한 뒤 접근 조건에 동의해야 합니다.",
+    "pockettts_conditions_desc": "접근 조건은 불법, 유해, 기만, 사기, 무단 또는 동의 없는 음성 사용을 금지합니다. 계속하기 전에 전체 조건을 검토하세요.",
+    "review_access_conditions": "접근 조건 검토",
+    "pockettts_footer": "동의를 누르면 확인 기록은 VoiceStudio의 로컬 설정에만 저장되고 엔진이 활성화됩니다. 모델 접근 및 다운로드에는 Hugging Face가 사용되며 일반적인 요청 및 계정 정보가 전송됩니다.",
+    "pockettts_accepted_toast": "PocketTTS 조건에 동의했습니다."
   },
   "voicePreview": {
     "title": "음성 미리보기",
