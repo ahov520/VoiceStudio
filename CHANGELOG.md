@@ -72,6 +72,7 @@ the frozen-backend fallback mirror it for their toolchains.
 
 ### Fixed
 
+- Posting a binary body to a JSON endpoint now returns a proper 422 validation error instead of a 500, and the request body no longer lands in `omnivoice.log`. (#1513)
 - The Linux app icon is no longer blank: the AppImage shipped `.DirIcon` as a symlink into the machine that built it, so file managers and app menus drew nothing. (#1518)
 - The Linux desktop entry no longer ships an empty `Categories=`, which `desktop-file-validate` rejects and menu builders skip. (#1518)
 - The Simplified Chinese (zh-CN) translation no longer mistranslates brand names and technical terms — Discord, Tailscale, Hugging Face, IPA, and LLM (Cinematic) were rendered as nonsensical literal translations, and ~250 more awkward machine-translation strings are now natural Chinese. (#1508) — thanks @anyingiit!

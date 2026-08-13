@@ -346,6 +346,7 @@ import time
 import threading
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
@@ -920,6 +921,103 @@ def _cors_headers_for(request: Request) -> "dict[str, str]":
             "Vary": "Origin",
         }
     return {}
+
+
+# Longest raw value a validation error may echo back. Long enough to show what
+# was wrong with a field, far too short to replay a pasted document.
+_VALIDATION_VALUE_MAX_CHARS = 200
+# Containers are echoed shallowly — a handful of items identifies the payload
+# shape without replaying a whole segments table.
+_VALIDATION_MAX_ITEMS = 10
+_VALIDATION_MAX_DEPTH = 3
+
+
+def _scrub_validation_value(value, _depth: int = 0):
+    """A jsonable, size-bounded stand-in for a validation error's ``input``.
+
+    ``jsonable_encoder`` (what FastAPI's default handler runs the raw value
+    through) decodes ``bytes`` as strict UTF-8, so any binary body raises
+    UnicodeDecodeError *inside the error handler* (#1513). Binary is reported
+    by size only, long strings are truncated, containers are walked shallowly,
+    and anything else (UploadFile, the exception objects pydantic parks in
+    ``ctx``) becomes a bounded ``repr`` — always encodable, never the body.
+    """
+    if isinstance(value, (bytes, bytearray, memoryview)):
+        return f"<{len(value)} bytes of binary data>"
+    if isinstance(value, str):
+        if len(value) <= _VALIDATION_VALUE_MAX_CHARS:
+            return value
+        return (
+            value[:_VALIDATION_VALUE_MAX_CHARS]
+            + f"… (+{len(value) - _VALIDATION_VALUE_MAX_CHARS} more chars)"
+        )
+    if value is None or isinstance(value, (bool, int, float)):
+        return value
+    if _depth < _VALIDATION_MAX_DEPTH:
+        if isinstance(value, dict):
+            items = list(value.items())
+            out = {
+                str(k): _scrub_validation_value(v, _depth + 1)
+                for k, v in items[:_VALIDATION_MAX_ITEMS]
+            }
+            if len(items) > _VALIDATION_MAX_ITEMS:
+                out["…"] = f"(+{len(items) - _VALIDATION_MAX_ITEMS} more keys)"
+            return out
+        if isinstance(value, (list, tuple, set, frozenset)):
+            items = list(value)
+            out = [
+                _scrub_validation_value(v, _depth + 1)
+                for v in items[:_VALIDATION_MAX_ITEMS]
+            ]
+            if len(items) > _VALIDATION_MAX_ITEMS:
+                out.append(f"… (+{len(items) - _VALIDATION_MAX_ITEMS} more items)")
+            return out
+    text = repr(value)
+    if len(text) > _VALIDATION_VALUE_MAX_CHARS:
+        text = text[:_VALIDATION_VALUE_MAX_CHARS] + "…"
+    return text
+
+
+@app.exception_handler(RequestValidationError)
+async def request_validation_exception_handler(
+    request: Request, exc: RequestValidationError
+):
+    """422 with a sanitized ``detail`` for malformed requests (#1513).
+
+    Without this handler FastAPI's default one runs — it jsonable-encodes
+    ``exc.errors()``, and for a body-level failure ``errors()[i]["input"]``
+    holds the RAW request body. Strict UTF-8 decoding of a binary body (an
+    audio upload posted to a JSON route — one wrong path in an MCP or
+    OpenAI-compat client) then raised UnicodeDecodeError *inside the error
+    handler*: the client got a 500 instead of a 422, and the escaping
+    traceback carried the whole request body into omnivoice.log — user audio
+    on disk, in the very file bug reports ask people to paste.
+    """
+    errors = []
+    for err in exc.errors():
+        clean = {
+            "type": err.get("type"),
+            "loc": _scrub_validation_value(err.get("loc", ())),
+            "msg": err.get("msg"),
+        }
+        if "input" in err:
+            clean["input"] = _scrub_validation_value(err["input"])
+        ctx = err.get("ctx")
+        if ctx:
+            clean["ctx"] = {
+                str(k): _scrub_validation_value(v) for k, v in ctx.items()
+            }
+        errors.append(clean)
+    # `.path`, not the full URL — a query string can carry tokens (same rule
+    # as the shutdown handler below); the body itself stays out entirely.
+    logger.info(
+        "422 validation error for %s: %d error(s)", request.url.path, len(errors)
+    )
+    return JSONResponse(
+        status_code=422,
+        content={"detail": errors},
+        headers=_cors_headers_for(request),
+    )
 
 
 @app.exception_handler(Exception)
