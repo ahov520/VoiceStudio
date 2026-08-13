@@ -12,6 +12,8 @@ import { useTranslation } from 'react-i18next';
 import { useAppStore, FONT_OPTIONS, FONT_STACKS } from '../../store';
 import { SettingsSection, SettingRow, InfoHint, SettingsToggle } from './primitives';
 
+// Append-only: the keyboard-navigation test walks the list from Gruvbox with
+// ArrowDown and expects Midnight next — inserting mid-list breaks that order.
 const THEMES = [
   { id: 'gruvbox', label: 'Gruvbox', dot: '#d3869b' },
   { id: 'midnight', label: 'Midnight', dot: '#8b5cf6' },
@@ -19,6 +21,11 @@ const THEMES = [
   { id: 'solarized', label: 'Solarized', dot: '#268bd2' },
   { id: 'rose-pine', label: 'Rosé Pine', dot: '#ebbcba' },
   { id: 'catppuccin', label: 'Catppuccin', dot: '#cba6f7' },
+  { id: 'tokyo-night', label: 'Tokyo Night', dot: '#7aa2f7' },
+  { id: 'dracula', label: 'Dracula', dot: '#bd93f9' },
+  { id: 'everforest', label: 'Everforest', dot: '#a7c080' },
+  { id: 'one-dark', label: 'One Dark', dot: '#61afef' },
+  { id: 'kanagawa', label: 'Kanagawa', dot: '#7e9cd8' },
 ];
 
 /**

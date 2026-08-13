@@ -10,7 +10,18 @@ import type { StateCreator } from 'zustand';
 import { apiJson, apiPost } from '../api/client';
 
 type TranslateQuality = 'fast' | 'autofit' | 'cinematic';
-type ThemeId = 'gruvbox' | 'midnight' | 'nord' | 'solarized' | 'rose-pine' | 'catppuccin';
+type ThemeId =
+  | 'gruvbox'
+  | 'midnight'
+  | 'nord'
+  | 'solarized'
+  | 'rose-pine'
+  | 'catppuccin'
+  | 'tokyo-night'
+  | 'dracula'
+  | 'everforest'
+  | 'one-dark'
+  | 'kanagawa';
 
 /** Dictation start/stop semantics — mirror of the backend `dictation.mode`. */
 type DictationMode = 'toggle' | 'hold';

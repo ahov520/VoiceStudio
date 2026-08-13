@@ -103,6 +103,11 @@ describe('theme cascade on documentElement (:root) — per-theme chrome recolori
     solarized: '#073642',
     'rose-pine': '#1f1d2e',
     catppuccin: '#313244',
+    'tokyo-night': '#1f2335',
+    dracula: '#21222c',
+    everforest: '#232a2e',
+    'one-dark': '#21252b',
+    kanagawa: '#16161d',
   };
 
   it('each [data-theme] wins over the default :root for --chrome-bg on <html>', () => {

@@ -563,6 +563,198 @@
   --select-caret: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2210%22%20height%3D%226%22%3E%3Cpath%20d%3D%22M1%201l4%204%204-4%22%20fill%3D%22none%22%20stroke%3D%22%23a6adc8%22%20stroke-width%3D%221.5%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fsvg%3E");
 }
 
+/* ── Tokyo Night ───────────────────────────────────────────────────── */
+[data-theme="tokyo-night"] {
+  --color-fg:            #c0caf5;
+  --color-fg-muted:      #a9b1d6;
+  --color-fg-subtle:     #565f89;
+  --color-fg-inverse:    #1a1b26;
+
+  --color-bg:            #1a1b26;
+  --color-bg-elev-1:     rgba(36, 40, 59, 0.85);
+  --color-bg-elev-2:     rgba(26, 27, 38, 0.40);
+  --color-bg-elev-3:     rgba(36, 40, 59, 0.25);
+
+  --color-border:        rgba(169, 177, 214, 0.08);
+  --color-border-strong: rgba(169, 177, 214, 0.16);
+  --color-border-warm:   rgba(122, 162, 247, 0.10);
+
+  --color-brand:         #7aa2f7;
+  --color-brand-hover:   #7dcfff;
+  --color-brand-glow:    rgba(122, 162, 247, 0.3);
+
+  --color-accent:        #e0af68;
+  --color-success:       #9ece6a;
+  --color-warn:          #ff9e64;
+  --color-danger:        #f7768e;
+  --color-info:          #7dcfff;
+
+  --chrome-bg:           #1f2335;
+  --chrome-fg:           #c0caf5;
+  /* #a9b1d6 on #1f2335 ≈ 8.0:1 — clears WCAG AA (4.5:1) with room. */
+  --chrome-fg-muted:     #a9b1d6;
+  --chrome-fg-dim:       #565f89;
+  --chrome-border:       #292e42;
+
+  /* Tokyo Night — bg #1a1b26 is dark. */
+  color-scheme: dark;
+  --select-caret: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2210%22%20height%3D%226%22%3E%3Cpath%20d%3D%22M1%201l4%204%204-4%22%20fill%3D%22none%22%20stroke%3D%22%23a9b1d6%22%20stroke-width%3D%221.5%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fsvg%3E");
+}
+
+/* ── Dracula ───────────────────────────────────────────────────────── */
+[data-theme="dracula"] {
+  --color-fg:            #f8f8f2;
+  /* Dracula's canonical "comment" #6272a4 is only ~3.5:1 on #282a36 —
+     lightened to #9ea8d8 (same hue) so secondary text clears WCAG AA. */
+  --color-fg-muted:      #9ea8d8;
+  --color-fg-subtle:     #6272a4;
+  --color-fg-inverse:    #282a36;
+
+  --color-bg:            #282a36;
+  --color-bg-elev-1:     rgba(68, 71, 90, 0.85);
+  --color-bg-elev-2:     rgba(40, 42, 54, 0.40);
+  --color-bg-elev-3:     rgba(68, 71, 90, 0.25);
+
+  --color-border:        rgba(158, 168, 216, 0.08);
+  --color-border-strong: rgba(158, 168, 216, 0.16);
+  --color-border-warm:   rgba(255, 121, 198, 0.10);
+
+  --color-brand:         #bd93f9;
+  --color-brand-hover:   #ff79c6;
+  --color-brand-glow:    rgba(189, 147, 249, 0.3);
+
+  --color-accent:        #f1fa8c;
+  --color-success:       #50fa7b;
+  --color-warn:          #ffb86c;
+  --color-danger:        #ff5555;
+  --color-info:          #8be9fd;
+
+  --chrome-bg:           #21222c;
+  --chrome-fg:           #f8f8f2;
+  --chrome-fg-muted:     #9ea8d8;
+  --chrome-fg-dim:       #6272a4;
+  --chrome-border:       #44475a;
+
+  /* Dracula — bg #282a36 is dark. */
+  color-scheme: dark;
+  --select-caret: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2210%22%20height%3D%226%22%3E%3Cpath%20d%3D%22M1%201l4%204%204-4%22%20fill%3D%22none%22%20stroke%3D%22%239ea8d8%22%20stroke-width%3D%221.5%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fsvg%3E");
+}
+
+/* ── Everforest (dark) ─────────────────────────────────────────────── */
+[data-theme="everforest"] {
+  --color-fg:            #d3c6aa;
+  --color-fg-muted:      #9da9a0;
+  --color-fg-subtle:     #7a8478;
+  --color-fg-inverse:    #2d353b;
+
+  --color-bg:            #2d353b;
+  --color-bg-elev-1:     rgba(52, 63, 68, 0.85);
+  --color-bg-elev-2:     rgba(45, 53, 59, 0.40);
+  --color-bg-elev-3:     rgba(52, 63, 68, 0.25);
+
+  --color-border:        rgba(157, 169, 160, 0.08);
+  --color-border-strong: rgba(157, 169, 160, 0.16);
+  --color-border-warm:   rgba(167, 192, 128, 0.10);
+
+  --color-brand:         #a7c080;
+  --color-brand-hover:   #83c092;
+  --color-brand-glow:    rgba(167, 192, 128, 0.3);
+
+  --color-accent:        #dbbc7f;
+  --color-success:       #a7c080;
+  --color-warn:          #e69875;
+  --color-danger:        #e67e80;
+  --color-info:          #7fbbb3;
+
+  --chrome-bg:           #232a2e;
+  --chrome-fg:           #d3c6aa;
+  /* #9da9a0 on #232a2e ≈ 6.4:1 — clears WCAG AA. */
+  --chrome-fg-muted:     #9da9a0;
+  --chrome-fg-dim:       #7a8478;
+  --chrome-border:       #3d484d;
+
+  /* Everforest — bg #2d353b is dark. */
+  color-scheme: dark;
+  --select-caret: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2210%22%20height%3D%226%22%3E%3Cpath%20d%3D%22M1%201l4%204%204-4%22%20fill%3D%22none%22%20stroke%3D%22%239da9a0%22%20stroke-width%3D%221.5%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fsvg%3E");
+}
+
+/* ── One Dark ──────────────────────────────────────────────────────── */
+[data-theme="one-dark"] {
+  --color-fg:            #abb2bf;
+  /* Atom's comment grey #5c6370 is ~2.7:1 on #282c34 — lifted to #9aa2b1
+     for secondary text so it clears WCAG AA on both bg and chrome-bg. */
+  --color-fg-muted:      #9aa2b1;
+  --color-fg-subtle:     #5c6370;
+  --color-fg-inverse:    #282c34;
+
+  --color-bg:            #282c34;
+  --color-bg-elev-1:     rgba(44, 49, 60, 0.85);
+  --color-bg-elev-2:     rgba(40, 44, 52, 0.40);
+  --color-bg-elev-3:     rgba(44, 49, 60, 0.25);
+
+  --color-border:        rgba(171, 178, 191, 0.08);
+  --color-border-strong: rgba(171, 178, 191, 0.16);
+  --color-border-warm:   rgba(97, 175, 239, 0.10);
+
+  --color-brand:         #61afef;
+  --color-brand-hover:   #528bff;
+  --color-brand-glow:    rgba(97, 175, 239, 0.3);
+
+  --color-accent:        #e5c07b;
+  --color-success:       #98c379;
+  --color-warn:          #d19a66;
+  --color-danger:        #e06c75;
+  --color-info:          #56b6c2;
+
+  --chrome-bg:           #21252b;
+  --chrome-fg:           #abb2bf;
+  --chrome-fg-muted:     #9aa2b1;
+  --chrome-fg-dim:       #5c6370;
+  --chrome-border:       #3e4451;
+
+  /* One Dark — bg #282c34 is dark. */
+  color-scheme: dark;
+  --select-caret: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2210%22%20height%3D%226%22%3E%3Cpath%20d%3D%22M1%201l4%204%204-4%22%20fill%3D%22none%22%20stroke%3D%22%239aa2b1%22%20stroke-width%3D%221.5%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fsvg%3E");
+}
+
+/* ── Kanagawa (wave) ───────────────────────────────────────────────── */
+[data-theme="kanagawa"] {
+  --color-fg:            #dcd7ba;
+  --color-fg-muted:      #c8c093;
+  --color-fg-subtle:     #727169;
+  --color-fg-inverse:    #1f1f28;
+
+  --color-bg:            #1f1f28;
+  --color-bg-elev-1:     rgba(42, 42, 55, 0.85);
+  --color-bg-elev-2:     rgba(31, 31, 40, 0.40);
+  --color-bg-elev-3:     rgba(42, 42, 55, 0.25);
+
+  --color-border:        rgba(200, 192, 147, 0.08);
+  --color-border-strong: rgba(200, 192, 147, 0.16);
+  --color-border-warm:   rgba(126, 156, 216, 0.10);
+
+  --color-brand:         #7e9cd8;
+  --color-brand-hover:   #7fb4ca;
+  --color-brand-glow:    rgba(126, 156, 216, 0.3);
+
+  --color-accent:        #e6c384;
+  --color-success:       #98bb6c;
+  --color-warn:          #ffa066;
+  --color-danger:        #e46876;
+  --color-info:          #7fb4ca;
+
+  --chrome-bg:           #16161d;
+  --chrome-fg:           #dcd7ba;
+  /* #c8c093 on #16161d ≈ 10:1 — clears WCAG AA comfortably. */
+  --chrome-fg-muted:     #c8c093;
+  --chrome-fg-dim:       #727169;
+  --chrome-border:       #2a2a37;
+
+  /* Kanagawa — bg #1f1f28 is dark. */
+  color-scheme: dark;
+  --select-caret: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2210%22%20height%3D%226%22%3E%3Cpath%20d%3D%22M1%201l4%204%204-4%22%20fill%3D%22none%22%20stroke%3D%22%23c8c093%22%20stroke-width%3D%221.5%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fsvg%3E");
+}
+
 /* ── System-preference sync ────────────────────────────────────────── */
 /* When theme is "auto", the light theme activates on light-mode OS.
    Currently we don't ship a light theme; this is scaffolding for
