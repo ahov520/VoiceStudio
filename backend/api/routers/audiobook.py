@@ -155,6 +155,34 @@ _IMPORT_MAX_BYTES = 64 * 1024 * 1024
 _MAX_CHAPTERS = 10_000
 
 
+def _parse_import_payload(name: str, data: bytes) -> str:
+    """CPU-bound import parsing, shared by the async route below.
+
+    Split out so the route can run it via ``asyncio.to_thread``: a multi-
+    hundred-page PDF (pypdf) or a large EPUB takes seconds to minutes, and
+    running that inline in the ``async def`` route blocked the whole event
+    loop — every other request (SSE streams, audio playback, health checks)
+    stalled until the import finished.
+    """
+    from services.longform_import import (
+        chapterize_plaintext,
+        epub_to_chapter_script,
+        pdf_to_chapter_script,
+    )
+
+    if name.endswith(".epub"):
+        try:
+            return epub_to_chapter_script(data)
+        except ValueError as e:
+            raise HTTPException(status_code=400, detail=f"couldn't parse EPUB: {e}")
+    if name.endswith(".pdf"):
+        try:
+            return pdf_to_chapter_script(data)
+        except ValueError as e:
+            raise HTTPException(status_code=400, detail=f"couldn't parse PDF: {e}")
+    return chapterize_plaintext(data.decode("utf-8", "ignore"))
+
+
 @router.post("/audiobook/import")
 async def audiobook_import(file: UploadFile = File(...)) -> dict:
     """Import a ``.txt``/``.md``/``.epub``/``.pdf`` into a chapter-delimited script.
@@ -162,34 +190,18 @@ async def audiobook_import(file: UploadFile = File(...)) -> dict:
     EPUB is parsed in spine order (stdlib only, local); PDF text is extracted
     with pypdf (pure-Python) then chapterized; plain text gets ``# `` headings
     inserted ahead of obvious chapter-title lines. Returns the script text (for
-    the editor) + the resulting chapter count."""
-    from services.longform_import import (
-        chapterize_plaintext,
-        epub_to_chapter_script,
-        pdf_to_chapter_script,
-    )
-
+    the editor) + the resulting chapter count. Parsing runs in a worker thread
+    (``asyncio.to_thread``) so a slow PDF/EPUB never stalls the event loop."""
     name = (file.filename or "").lower()
     data = await file.read()
     if not data:
         raise HTTPException(status_code=400, detail="empty file")
     if len(data) > _IMPORT_MAX_BYTES:
         raise HTTPException(status_code=400, detail="file too large (max 64 MB)")
-    if name.endswith(".epub"):
-        try:
-            script = epub_to_chapter_script(data)
-        except ValueError as e:
-            raise HTTPException(status_code=400, detail=f"couldn't parse EPUB: {e}")
-    elif name.endswith(".pdf"):
-        try:
-            script = pdf_to_chapter_script(data)
-        except ValueError as e:
-            raise HTTPException(status_code=400, detail=f"couldn't parse PDF: {e}")
-    else:
-        script = chapterize_plaintext(data.decode("utf-8", "ignore"))
+    script = await asyncio.to_thread(_parse_import_payload, name, data)
     if not script.strip():
         raise HTTPException(status_code=400, detail="no text found in the file")
-    plan = parse_audiobook_script(script)
+    plan = await asyncio.to_thread(parse_audiobook_script, script)
     return {"text": script, "chapters": plan.chapter_count}
 
 

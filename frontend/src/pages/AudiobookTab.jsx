@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   audiobookPlan,
@@ -143,7 +143,15 @@ export default function AudiobookTab({ profiles = [] }) {
   // and an absent map keeps today's render). Warnings are non-blocking hints.
   const textareaRef = useRef(null);
   const [warningsDismissed, setWarningsDismissed] = useState(false);
-  const castNames = useMemo(() => parseCastNames(text), [text]);
+  // Derivations below run full-text scans (parseCastNames + validateScript +
+  // StatsBar's scriptStats — measured ~60-100ms per keystroke on a whole
+  // imported book). Drive them from a deferred snapshot of the script so
+  // typing stays responsive: React updates the textarea first and recomputes
+  // these when it has idle time. Actions (Preview/Create) read `text`
+  // directly, and the deferred value has always caught up by the time a
+  // button can be clicked.
+  const deferredText = useDeferredValue(text);
+  const castNames = useMemo(() => parseCastNames(deferredText), [deferredText]);
   const voiceMap = useMemo(() => {
     const m = {};
     for (const name of castNames) if (voiceCast[name]) m[name] = voiceCast[name];
@@ -152,8 +160,11 @@ export default function AudiobookTab({ profiles = [] }) {
   const voiceMapArg = Object.keys(voiceMap).length ? voiceMap : null;
   const warnings = useMemo(() => {
     const mappedNames = Object.keys(voiceCast).filter((n) => voiceCast[n]);
-    return validateScript(text, { mappedNames, profileIds: profiles.map((p) => p.id) });
-  }, [text, voiceCast, profiles]);
+    return validateScript(deferredText, { mappedNames, profileIds: profiles.map((p) => p.id) });
+  }, [deferredText, voiceCast, profiles]);
+  // `text.trim()` on a multi-MB script is itself an O(n) scan — memoize the
+  // boolean the JSX gates on instead of trimming inline per render.
+  const hasText = useMemo(() => text.trim().length > 0, [text]);
 
   const onCoverPick = useCallback((e) => {
     const f = e.target.files?.[0];
@@ -373,7 +384,7 @@ export default function AudiobookTab({ profiles = [] }) {
   }, []);
 
   const busy = planLoading || generating || importing;
-  const canRun = text.trim().length > 0 && !busy;
+  const canRun = hasText && !busy;
   // Cmd/Ctrl+Enter in the editor triggers Create when runnable; a no-op while
   // generating (canRun is false when busy).
   const onScriptKeyDown = useCallback(
@@ -407,7 +418,7 @@ export default function AudiobookTab({ profiles = [] }) {
         <div className="audiobook-tab__script flex flex-col min-h-0 gap-[7px]">
           <div className="flex min-h-[18px] items-center justify-between gap-[12px] px-[4px]">
             <label className={FIELD_LABEL}>{t('audiobook.script')}</label>
-            {text.trim() ? <StatsBar t={t} text={text} /> : null}
+            {hasText ? <StatsBar t={t} text={deferredText} /> : null}
           </div>
           <div className="audiobook-tab__manuscript flex min-h-0 flex-1 flex-col overflow-hidden rounded-[14px]">
             <div className="border-b border-transparent px-[10px] py-[7px]">
@@ -425,7 +436,7 @@ export default function AudiobookTab({ profiles = [] }) {
               placeholder={t('audiobook.script_placeholder')}
               aria-label={t('audiobook.script')}
             />
-            {!text.trim() && (
+            {!hasText && (
               <p className="m-0 border-t border-transparent px-[14px] py-[9px] text-[var(--text-sm)] text-fg-muted">
                 {t('audiobook.empty_hint')}
               </p>

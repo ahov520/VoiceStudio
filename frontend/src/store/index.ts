@@ -17,6 +17,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 
+import { createDebouncedStorage } from './debouncedStorage';
 import type { PrefsSlice } from './prefsSlice';
 import { createPrefsSlice, FONT_OPTIONS, FONT_STACKS } from './prefsSlice';
 
@@ -79,7 +80,15 @@ export const useAppStore = create<AppStore>()(
     }),
     {
       name: 'omnivoice.app',
-      storage: createJSONStorage(() => localStorage),
+      // Write-behind localStorage: persist fires on every set(), and with a
+      // whole book in storyTracks/script the synchronous stringify+write per
+      // keystroke made the entire app stutter. The wrapper batches writes
+      // (~300ms) and flushes on pagehide/beforeunload/tab-hide, so nothing
+      // is lost on close. See ./debouncedStorage.
+      storage: (() => {
+        const json = createJSONStorage(() => localStorage);
+        return json ? createDebouncedStorage(json) : undefined;
+      })(),
       // Only persist user prefs + glossary. Pipeline / transient state is opt-out.
       partialize: (s) => ({
         translateQuality: s.translateQuality,
