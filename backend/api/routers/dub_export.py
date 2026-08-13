@@ -1434,16 +1434,29 @@ async def dub_qc_pass(job_id: str, lang: str = Query(None), drift_threshold: flo
         )
 
     def _recognize():
-        from services.asr_backend import get_active_asr_backend
-        backend = get_active_asr_backend()
+        # Loading selector (#1512): degrades past an engine whose deep import
+        # chain is broken instead of failing QC while a healthy engine works.
+        from services.asr_backend import load_active_asr_backend
+        backend = load_active_asr_backend()
         result = backend.transcribe(wav_path, word_timestamps=False)
         return result.get("segments", []), backend.id
 
     try:
-        from services.asr_backend import ASRTimeoutError, run_transcribe_guarded
+        from services.asr_backend import (
+            ASRModelMissingError,
+            ASRTimeoutError,
+            run_transcribe_guarded,
+        )
         from services.model_manager import _get_gpu_pool
         recognized, engine_id = await run_transcribe_guarded(
             _get_gpu_pool(), _recognize, what="QC",
+        )
+    except ASRModelMissingError as e:
+        # A broken primary degraded to a fallback whose weights aren't
+        # installed — same typed 409 + download CTA as the preflight above.
+        raise HTTPException(
+            status_code=409,
+            detail={**e.payload, "message": asr_model_missing_detail(e.payload)},
         )
     except ASRTimeoutError as e:
         # Backend is alive; ASR just couldn't finish in time. 504, not 500/connection.

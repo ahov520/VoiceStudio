@@ -688,7 +688,7 @@ async def dub_transcribe_stream(
             preflight_error = "Job not found. It may have been cleaned up or was never created."
         else:
             # The TTS core model is loaded here for exactly one reason: to harvest a
-            # preloaded `_asr_pipe` off it (passed to get_active_asr_backend below).
+            # preloaded `_asr_pipe` off it (passed to load_active_asr_backend below).
             # That attribute is only ever set by VoiceStudio.from_pretrained under
             # OMNIVOICE_PRELOAD_TTS_ASR, which is off by default — so in the default
             # config this loaded ~3 GB, harvested None, and then offload_tts_for_asr()
@@ -1657,6 +1657,7 @@ async def dub_transcribe(job_id: str, num_speakers: Optional[int] = None):
     # a preloaded `_asr_pipe` only substitutes for the *pytorch-whisper*
     # backend (its sole consumer), so it only skips the preflight there.
     from services.asr_backend import (
+        ASRModelMissingError,
         active_backend_id,
         asr_model_missing_detail,
         asr_model_missing_error,
@@ -1687,8 +1688,11 @@ async def dub_transcribe(job_id: str, num_speakers: Optional[int] = None):
         # / mlx / pytorch based on what's installed + user preference. Works
         # identically on all platforms; the older mlx-vs-pytorch branching
         # here duplicated the logic in asr_backend.py and skipped WhisperX.
-        from services.asr_backend import get_active_asr_backend
-        _asr = get_active_asr_backend(asr_pipe=getattr(_model, "_asr_pipe", None))
+        # Loading selector (#1512): degrades past an engine whose deep import
+        # chain is broken instead of 500ing the request while a healthy engine
+        # is next in line — same loader the SSE endpoint already uses.
+        from services.asr_backend import load_active_asr_backend
+        _asr = load_active_asr_backend(asr_pipe=getattr(_model, "_asr_pipe", None))
         try:
             try:
                 logger.info("Transcribing full audio via %s ...", _asr.id)
@@ -1792,6 +1796,13 @@ async def dub_transcribe(job_id: str, num_speakers: Optional[int] = None):
         raise
     except asyncio.CancelledError:
         raise
+    except ASRModelMissingError as e:
+        # A broken primary degraded to a fallback whose weights aren't
+        # installed — same typed 409 + download CTA as the preflight above.
+        raise HTTPException(
+            status_code=409,
+            detail={**e.payload, "message": asr_model_missing_detail(e.payload)},
+        )
     except Exception as e:
         import traceback
         traceback.print_exc()

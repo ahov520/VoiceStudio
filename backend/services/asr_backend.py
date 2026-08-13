@@ -2697,6 +2697,18 @@ def transcribe_reference(audio_path: str) -> str | None:
         # model load it lazily rather than constructing a second copy here.
         return None
     try:
+        try:
+            backend.ensure_loaded()
+        except ImportError:
+            # Deep-import env rot (#1185): the loading selector records the
+            # broken engine and degrades to the next candidate, instead of
+            # giving up on the reference transcript while a healthy engine
+            # is installed (#1512).
+            backend = load_active_asr_backend()
+            if isinstance(backend, PyTorchWhisperBackend):
+                # Degraded all the way to the last resort — defer to the
+                # model-attached pipeline exactly as if it were picked first.
+                return None
         result = backend.transcribe(audio_path, word_timestamps=False)
     except Exception as e:  # noqa: BLE001 — degrade to the model fallback
         logger.warning(

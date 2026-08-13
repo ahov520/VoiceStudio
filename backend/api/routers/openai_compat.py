@@ -517,9 +517,10 @@ async def create_transcription(
 ):
     """Transcribe audio to text. Compatible with OpenAI's POST /v1/audio/transcriptions."""
     from services.asr_backend import (
+        ASRModelMissingError,
         asr_model_missing_detail,
         asr_model_missing_error,
-        get_active_asr_backend,
+        load_active_asr_backend,
     )
 
     # TTS-only install: no ASR model on disk → actionable 409, BEFORE any
@@ -546,18 +547,21 @@ async def create_transcription(
         raise HTTPException(status_code=400, detail=f"Could not read audio file: {e}")
 
     try:
-        backend = get_active_asr_backend()
-
-        # Run transcription in the thread pool to avoid blocking the event loop,
-        # bounded so a stuck/starved ASR returns a 504 with guidance instead of
+        # Select + eagerly load the engine, then transcribe — all in the thread
+        # pool. The LOADING selector (not the pure, construct-only one)
+        # degrades past an engine whose deep import chain is broken instead of
+        # 500ing the request while a healthy engine is next in line (#1512),
+        # and a possibly minutes-long first load never blocks the event loop.
+        # Bounded so a stuck/starved ASR returns a 504 with guidance instead of
         # hanging the request forever (see run_transcribe_guarded).
         from services.asr_backend import run_transcribe_guarded
         word_ts = response_format == "verbose_json"
-        result = await run_transcribe_guarded(
-            _gpu_pool,
-            lambda: backend.transcribe(tmp_path, word_timestamps=word_ts),
-            what="OpenAI",
-        )
+
+        def _run():
+            backend = load_active_asr_backend()
+            return backend.transcribe(tmp_path, word_timestamps=word_ts)
+
+        result = await run_transcribe_guarded(_gpu_pool, _run, what="OpenAI")
 
         # Extract the full text from segments
         segments = result.get("segments", [])
@@ -625,6 +629,13 @@ async def create_transcription(
 
     except HTTPException:
         raise
+    except ASRModelMissingError as e:
+        # A broken primary degraded to a fallback whose weights aren't
+        # installed — same typed 409 + download CTA as the preflight above.
+        raise HTTPException(
+            status_code=409,
+            detail={**e.payload, "message": asr_model_missing_detail(e.payload)},
+        )
     except TimeoutError as e:
         # ASRTimeoutError (subclass): backend alive, ASR too heavy for compute.
         logger.warning("OpenAI transcription timed out: %s", e)

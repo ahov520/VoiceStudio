@@ -124,3 +124,24 @@ def test_every_candidate_broken_raises_instead_of_looping(monkeypatch):
     assert set(ab._DEEP_IMPORT_BROKEN) == {
         "whisperx", "faster-whisper", "pytorch-whisper",
     }
+
+
+def test_transcribe_reference_degrades_past_broken_engine(monkeypatch, tmp_path):
+    """#1512: the voice-clone reference transcript used the pure selector, so
+    a broken-import engine degraded it to None (silently skipping the
+    transcript) even with a healthy engine next in line. The loading selector
+    transcribes with the fallback instead."""
+    monkeypatch.setattr(ab.WhisperXBackend, "ensure_loaded", _broken("lightning_fabric"))
+    monkeypatch.setattr(ab.FasterWhisperBackend, "ensure_loaded", lambda self: None)
+    monkeypatch.setattr(
+        ab.FasterWhisperBackend, "transcribe",
+        lambda self, path, *, word_timestamps=True: {"text": "hello reference"},
+    )
+    clip = tmp_path / "ref-1512.wav"
+    clip.write_bytes(b"RIFF-1512-fake-audio")
+    with ab._ref_transcript_lock:
+        ab._ref_transcript_cache.clear()
+
+    assert ab.transcribe_reference(str(clip)) == "hello reference"
+    # The broken engine was recorded, same as every other loader path.
+    assert "lightning_fabric" in ab._DEEP_IMPORT_BROKEN["whisperx"]

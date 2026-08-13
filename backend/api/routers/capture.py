@@ -8,7 +8,7 @@ raw audio bytes and get back transcribed text immediately.  Used by:
     • The MCP server's future `transcribe_audio` tool
     • CLI consumers that just want speech-to-text
 
-The ASR engine is whatever `get_active_asr_backend()` returns — WhisperX
+The ASR engine is whatever `load_active_asr_backend()` returns — WhisperX
 by default, or MLX Whisper on Apple Silicon when configured.
 """
 from __future__ import annotations
@@ -97,8 +97,11 @@ async def transcribe_audio(
             if use_accurate:
                 # Accurate mode: full WhisperX with forced alignment —
                 # for when the user explicitly wants word-level timing.
-                from services.asr_backend import get_active_asr_backend
-                backend = get_active_asr_backend()
+                # Loading selector (#1512): degrades past an engine whose deep
+                # import chain is broken instead of 500ing the request while a
+                # healthy engine is next in line.
+                from services.asr_backend import load_active_asr_backend
+                backend = load_active_asr_backend()
                 result = backend.transcribe(tmp.name, word_timestamps=True)
             else:
                 # Fast mode (default): use the fastest available engine
@@ -110,11 +113,23 @@ async def transcribe_audio(
             return result, backend.id
 
         from services.model_manager import _gpu_pool
-        from services.asr_backend import ASRTimeoutError, run_transcribe_guarded
+        from services.asr_backend import (
+            ASRModelMissingError,
+            ASRTimeoutError,
+            run_transcribe_guarded,
+        )
         t0 = time.perf_counter()
         try:
             result, engine_id = await run_transcribe_guarded(
                 _gpu_pool, _run, what="Dictation",
+            )
+        except ASRModelMissingError as e:
+            # Accurate mode degraded past a broken engine to a fallback whose
+            # weights aren't installed (#1512) — same typed 409 + download CTA
+            # as the preflight above.
+            raise HTTPException(
+                status_code=409,
+                detail={**e.payload, "message": asr_model_missing_detail(e.payload)},
             )
         except ASRTimeoutError as e:
             # Backend is alive — ASR couldn't finish. 504 with guidance, not a

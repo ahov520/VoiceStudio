@@ -151,14 +151,20 @@ async def _run_batch_pipeline(job_id: str, job: dict):
     # ── 2. Transcribe ─────────────────────────────────────────────────
     _set_progress(job, "transcribe", 0)
 
-    from services.asr_backend import get_active_asr_backend
+    from services.asr_backend import load_active_asr_backend
     from services.model_manager import _gpu_pool, _cpu_pool, run_on_gpu_pool_guarded
     from services.segmentation import (
         segment_transcript, assign_speakers_heuristic,
     )
 
     def _transcribe():
-        backend = get_active_asr_backend()
+        # Loading selector (#1512): degrades past an engine whose deep import
+        # chain is broken instead of failing the job while a healthy engine
+        # works. An ASRModelMissingError from a weightless fallback propagates
+        # to _worker's structured job-failure handling, same as any other
+        # transcribe-stage error (the submit route already preflights the
+        # initial selection).
+        backend = load_active_asr_backend()
         result = backend.transcribe(audio_path, word_timestamps=True)
         detected_lang = result.get("language", "en")
         segments = segment_transcript(result, duration=duration)
