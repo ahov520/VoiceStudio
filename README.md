@@ -153,8 +153,8 @@ Cloud voice tools are convenient, but they put your workflow behind an account, 
 | **API Keys** | Account required | Not needed for the local workflow |
 | **GPU Support** | N/A (cloud) | CUDA · Apple Silicon · ROCm (Linux) · CPU |
 | **Desktop App** | ❌ | ✅ macOS · Windows · Linux |
-| **TTS Engines** | 1 | **14** — [full matrix](#tts-engines) |
-| **ASR Engines** | 1 | **11** — [full lineup](#asr-engines) |
+| **TTS Engines** | 1 | **17** — [full matrix](#tts-engines) |
+| **ASR Engines** | 1 | **13** — [full lineup](#asr-engines) |
 | **MCP Server** | ❌ | ✅ Use from Claude, Cursor, any MCP client |
 | **Self-check** | ❌ | ✅ Diagnostics suite, error journal, scrubbed debug bundles |
 | **Customizable** | ❌ Closed | ✅ Fork it, extend it, ship it |
@@ -188,10 +188,10 @@ Professional-grade voice AI, minus the subscription and the cloud.
 
 ### 🗣️ TTS Engines
 
-**14 engines, one picker.** VoiceStudio (default, 600+ languages) is always available; seven more are opt-in and auto-detected (CosyVoice 3, GPT-SoVITS, VoxCPM2, MOSS-TTS-Nano, KittenTTS, MLX-Audio, Sherpa-ONNX), plus six lazy-installed heavyweights (IndexTTS 2.5, OmniVoice GGUF, Supertonic 3, MOSS-TTS-v1.5, dots.tts, Confucius4-TTS). Switch in **Settings → TTS Engine**; the choice applies everywhere synthesis happens.
+**17 engines, one picker.** VoiceStudio (default, 600+ languages) is always available; seven more are opt-in and auto-detected (CosyVoice 3, GPT-SoVITS, VoxCPM2, MOSS-TTS-Nano, KittenTTS, MLX-Audio, Sherpa-ONNX), six lazy-installed heavyweights (IndexTTS 2.5, OmniVoice GGUF, Supertonic 3, MOSS-TTS-v1.5, dots.tts, Confucius4-TTS), and three opt-in cloud clients (any OpenAI-compatible `/v1/audio/speech` server, ElevenLabs, Alibaba Cloud CosyVoice via DashScope — see [docs/engines/cloud-engines.md](docs/engines/cloud-engines.md)). Switch in **Settings → TTS Engine**; the choice applies everywhere synthesis happens.
 
 <details>
-<summary><b>📊 The full matrix</b> — 14 engines × platform × clone/instruct × license</summary>
+<summary><b>📊 The full matrix</b> — 17 engines × platform × clone/instruct × license</summary>
 
 <br/>
 
@@ -211,6 +211,9 @@ Professional-grade voice AI, minus the subscription and the cloud.
 | **MOSS-TTS-v1.5** ⚡ (8B) | 31 | ✅ | — | ✅ CUDA/CPU | ✅ CPU | ✅ CUDA/CPU | Apache-2.0 |
 | **dots.tts** ⚡ (2B) | 24 | ✅ | — | ✅ CUDA/CPU | ✅ CPU | ❌ | Apache-2.0 |
 | **Confucius4-TTS** ⚡ | 14 | ✅ | — | ✅ CUDA/CPU | ✅ CPU | ✅ CUDA/CPU | Apache-2.0 |
+| **OpenAI-compatible** ☁ remote | Server-dependent | — | — | ✅ any | ✅ any | ✅ any | Server-dependent |
+| **ElevenLabs** ☁ remote | Multi | — | — | ✅ any | ✅ any | ✅ any | Commercial API |
+| **DashScope CosyVoice** ☁ remote | Multi | — | — | ✅ any | ✅ any | ✅ any | Commercial API |
 
 ¹ IndexTTS 2.5 requires a separate written Bilibili license above 100 million
 monthly active users or RMB 1 billion in annual revenue. Review its
@@ -222,7 +225,7 @@ another machine, set `OMNIVOICE_GPTSOVITS_URL` to its credential-free
 `http://` or `https://` origin and add that machine's CIDR to
 `OMNIVOICE_TRUSTED_NETWORKS`; redirects and untrusted destinations are rejected.
 
-> **CUDA** = GPU-accelerated · **MPS** = Apple Silicon Metal · **CPU** = runs everywhere, slower for large models · KittenTTS and MOSS-TTS-Nano run realtime on CPU · MLX-Audio is Apple Silicon only · ⚡ = lazy-registered (installed on first use)
+> **CUDA** = GPU-accelerated · **MPS** = Apple Silicon Metal · **CPU** = runs everywhere, slower for large models · KittenTTS and MOSS-TTS-Nano run realtime on CPU · MLX-Audio is Apple Silicon only · ⚡ = lazy-registered (installed on first use) · ☁ = opt-in cloud client (no local compute; text goes to the provider — keys live in **Settings → Cloud providers**, see [docs/engines/cloud-engines.md](docs/engines/cloud-engines.md))
 >
 > **Clone** matters beyond single-clip generation: Video Dubbing (and any Batch job with a pinned voice) needs reference-audio cloning to preserve speaker identity, so picking a Clone-less engine (KittenTTS, Sherpa-ONNX, Supertonic 3) as the active engine fails those jobs up front with an actionable message instead of silently falling back to VoiceStudio.
 >
@@ -234,10 +237,10 @@ another machine, set `OMNIVOICE_GPTSOVITS_URL` to its credential-free
 
 ### 🎧 ASR Engines
 
-**11 engines** — they power dictation, video dubbing, and subtitles. **WhisperX** is the cross-platform default (~100 languages, word-level timing); the rest are opt-in and auto-detected. Switch in **Model Catalogue → Engines**. Ten run fully on-device; the eleventh (OpenAI-compatible) is an optional remote client for Qwen3-ASR or any compatible server.
+**13 engines** — they power dictation, video dubbing, and subtitles. **WhisperX** is the cross-platform default (~100 languages, word-level timing); the rest are opt-in and auto-detected. Switch in **Model Catalogue → Engines**. Ten run fully on-device; the other three (OpenAI-compatible, ElevenLabs Scribe, Alibaba Cloud DashScope) are optional remote clients that never win auto-detect.
 
 <details>
-<summary><b>📊 The full lineup</b> — 11 engines, what each is best at, and compute-type notes</summary>
+<summary><b>📊 The full lineup</b> — 13 engines, what each is best at, and compute-type notes</summary>
 
 <br/>
 
@@ -254,8 +257,10 @@ another machine, set `OMNIVOICE_GPTSOVITS_URL` to its credential-free
 | **FunASR** | `funasr` | 50+ | All-in-one multilingual — built-in VAD + inline speaker diarization (SenseVoice) |
 | **sherpa-onnx** (live dictation) | `sherpa-onnx-asr` | 25 EU + 90+ | Live, faster-than-real-time dictation — small streaming/offline ONNX models (Parakeet TDT v3/v2, streaming Zipformer & Paraformer, Whisper Tiny), CPU, identical on macOS / Windows / Linux. Picked per-model in **Settings → Voice**. |
 | **OpenAI-compatible** ⚠️ remote | `openai-compat-asr` | Server-dependent | A path to **Qwen3-ASR** today (self-hosted server, no transformers wait), any OpenAI-compatible transcription endpoint, or OpenAI's own API — no install, configure + test the connection in **Model Catalogue → Engines** (ASR tab). Audio leaves your machine to whatever server you point it at; see [docs/engines/openai-compatible-asr.md](docs/engines/openai-compatible-asr.md). |
+| **ElevenLabs Scribe** ☁ remote | `elevenlabs-asr` | 90+ | Cloud transcription with word-level timestamps, files up to 10 h in one call — needs an ElevenLabs key in **Settings → Cloud providers**. Audio is uploaded to ElevenLabs; see [docs/engines/cloud-engines.md](docs/engines/cloud-engines.md). |
+| **Alibaba Cloud DashScope** ☁ remote | `dashscope-asr` | Multi | Qwen-Audio-3.0-ASR-Flash (sentence timestamps) on Alibaba Cloud Model Studio — reachable from mainland China, long audio chunked automatically. Needs a DashScope key in **Settings → Cloud providers**; audio is uploaded to Alibaba Cloud. |
 
-> Whisper-family engines cover ~100 languages; **FunASR / SenseVoice** adds an all-in-one multilingual path with built-in voice-activity detection and inline speaker diarization. **sherpa-onnx** powers the live dictation model picker — you talk and text appears as you speak. Every engine runs on-device — no API keys, no cloud.
+> Whisper-family engines cover ~100 languages; **FunASR / SenseVoice** adds an all-in-one multilingual path with built-in voice-activity detection and inline speaker diarization. **sherpa-onnx** powers the live dictation model picker — you talk and text appears as you speak. Every on-device engine needs no API key and no cloud; the ☁ engines are explicit opt-ins that send audio to their provider.
 
 > If Dubbing needs an ASR model that is not installed yet, it offers the recommended download in place, shows its progress, and retries transcription on the same job when the model is ready.
 
@@ -297,7 +302,7 @@ A **Tauri v2** desktop shell (Rust) wraps a **React** UI and a bundled **Python/
 - **Shell (Rust)** — native OS integration: the system-wide dictation hotkey, tray, signed auto-updater (stable + preview channels), single-instance lock, and the first-run bootstrap that installs `uv` and a Python 3.11 venv.
 - **Frontend (React)** — every workspace tab over a Zustand store, with a WebSocket event bus that live-refreshes the UI when backend data changes.
 - **Backend (FastAPI)** — the bundled Python sidecar: 100+ endpoints, SSE/WSS streaming, a SQLite DB migrated by Alembic, and the OpenAI-compatible API surface.
-- **Engines** — 14 TTS + 11 ASR, plus Demucs (isolation), Pyannote (diarization), and AudioSeal (watermark), all behind routing that GPU-preflights each engine and refuses to silently fall back to CPU.
+- **Engines** — 17 TTS + 13 ASR, plus vocal separation (local Demucs default; MVSEP / ElevenLabs cloud opt-ins), Pyannote (diarization), and AudioSeal (watermark), all behind routing that GPU-preflights each engine and refuses to silently fall back to CPU.
 
 <a id="openai-api"></a>
 
@@ -392,11 +397,11 @@ Ships two [skills](https://skills.sh):
 | **Longform** | Audiobook editor (text/EPUB/PDF → chaptered .m4b) with multi-voice cast, expressive controls, live per-chapter progress + Stop, and a one-click sample; Stories multi-voice editor, two-pass loudnorm mastering, crash-resume for interrupted renders, pronunciation control + SSML-lite prosody |
 | **Dubbing** | Full pipeline (transcribe→translate→synthesize→mux), scene-aware splitting, lip-sync scoring, streaming TTS, per-speaker voice assignment, Smart Fit timing + second-pass QC, paste-in translations from any external tool, dedicated Dub home |
 | **Voice** | Zero-shot cloning, voice design, A/B comparison, voice preview widget, gallery with favorites/tags (its voices selectable in every picker — Studio, Audiobook, Stories, Dubbing), portable persona bundles (`.ovsvoice`), voice console workspace |
-| **Audio** | Demucs vocal isolation, per-segment gain, selective track export, stem/SRT/VTT/MP3 export, unlimited-length TTS via sentence-chunked generation |
+| **Audio** | Vocal separation (local Demucs default; MVSEP and ElevenLabs Voice Isolator as cloud opt-ins), per-segment gain, selective track export, stem/SRT/VTT/MP3 export, unlimited-length TTS via sentence-chunked generation |
 | **Multi-Lang** | Translate All preserves the primary language plus every extra language chip; Generate renders and exports one retained track per language with sequential GPU execution |
 | **Diarization** | Pyannote ML diarization, auto speaker clone extraction, per-speaker voice assignment |
-| **ASR** | 11 engines (WhisperX, Faster-Whisper, isolated Faster-Whisper, MLX Whisper, PyTorch Whisper, Parakeet TDT, Parakeet TDT v3 MLX, Moonshine, FunASR/SenseVoice, sherpa-onnx live dictation, OpenAI-compatible remote), crash-isolated subprocess backend |
-| **TTS** | 14 engines (VoiceStudio, CosyVoice 3, GPT-SoVITS, VoxCPM2, MOSS-TTS-Nano, KittenTTS, MLX-Audio, Sherpa-ONNX, + lazy: IndexTTS 2.5, OmniVoice GGUF, Supertonic 3, MOSS-TTS-v1.5, dots.tts, Confucius4-TTS), engine routing with GPU preflight |
+| **ASR** | 13 engines (WhisperX, Faster-Whisper, isolated Faster-Whisper, MLX Whisper, PyTorch Whisper, Parakeet TDT, Parakeet TDT v3 MLX, Moonshine, FunASR/SenseVoice, sherpa-onnx live dictation, + cloud: OpenAI-compatible remote, ElevenLabs Scribe, Alibaba Cloud DashScope), crash-isolated subprocess backend |
+| **TTS** | 17 engines (VoiceStudio, CosyVoice 3, GPT-SoVITS, VoxCPM2, MOSS-TTS-Nano, KittenTTS, MLX-Audio, Sherpa-ONNX, + lazy: IndexTTS 2.5, OmniVoice GGUF, Supertonic 3, MOSS-TTS-v1.5, dots.tts, Confucius4-TTS, + cloud: OpenAI-compatible remote, ElevenLabs, DashScope CosyVoice), engine routing with GPU preflight |
 | **Infra** | Docker deployment, CUDA/MPS/ROCm auto-detect, cuDNN 8 compat, VRAM-aware model offloading, engine routing (no silent CPU fallback), diagnostics suite & error journal, restricted-network mirror support |
 | **AI Provenance** | AudioSeal invisible watermarking (SynthID-like), video logo overlay, watermark detection API |
 | **UX** | Undo/redo, keyboard shortcuts, drag-and-drop, session persistence, screen-sized first-run UI scaling, and native WebKitGTK scaling |
@@ -502,7 +507,7 @@ Yes please — bug fixes, new TTS engine adapters, UI improvements, docs, transl
 <br/>
 Honest answer: <b>it depends on what you're doing.</b>
 
-<b>Where VoiceStudio is genuinely competitive:</b> voice cloning from a clean reference clip (state-of-the-art open diffusion TTS), language coverage (646 languages vs. their 32), and everything structural — no per-character billing, no usage caps, no audio leaving your machine, full pipeline customizability (14 TTS engines, 11 ASR engines, your choice of translation).
+<b>Where VoiceStudio is genuinely competitive:</b> voice cloning from a clean reference clip (state-of-the-art open diffusion TTS), language coverage (646 languages vs. their 32), and everything structural — no per-character billing, no usage caps, no audio leaving your machine, full pipeline customizability (17 TTS engines, 13 ASR engines, your choice of translation — and if you do want ElevenLabs or another cloud voice, it plugs in as just another engine).
 
 <b>Where ElevenLabs still wins:</b> out-of-the-box consistency and polish, especially for English TTS. Their one model is heavily tuned; our quality depends on which engine you pick, your hardware, and — for cloning — the reference audio (a dry, close-mic clip clones dramatically better than a noisy or echoey one).
 
@@ -548,7 +553,7 @@ Yes. MPS acceleration is auto-detected. MLX-optimized Whisper models are availab
 <details>
 <summary><b>Can I add my own TTS engine?</b></summary>
 <br/>
-Yes. Subclass <code>TTSBackend</code> in <code>backend/services/tts_backend.py</code> and add it to the <code>_REGISTRY</code> dictionary — ~50 lines. The fourteen built-in engines all work this way; see <a href="#tts-engines">TTS Engines</a>.
+Yes. Subclass <code>TTSBackend</code> in <code>backend/services/tts_backend.py</code> and add it to the <code>_REGISTRY</code> dictionary — ~50 lines. The seventeen built-in engines all work this way; see <a href="#tts-engines">TTS Engines</a>.
 </details>
 
 <details>

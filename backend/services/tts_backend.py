@@ -1953,6 +1953,13 @@ _LAZY_REGISTRY: dict[str, tuple[str, str]] = {
     # 2026-07-02 (CPU, Apple Silicon; 22.05 kHz output). Gated behind
     # OMNIVOICE_CONFUCIUS4_TTS_DIR so it's inert until enabled.
     "confucius4-tts": ("engines.confucius4", "Confucius4Backend"),
+    # Cloud TTS (services.tts_cloud) — pure network clients, explicit opt-in:
+    # an OpenAI-compatible /v1/audio/speech server (SiliconFlow, OpenAI, or
+    # self-hosted), ElevenLabs, and Alibaba Cloud CosyVoice via DashScope.
+    # Lazy so the registry import doesn't pull httpx/openai/dashscope.
+    "openai-compat-tts": ("services.tts_cloud", "OpenAICompatTTSBackend"),
+    "elevenlabs-tts": ("services.tts_cloud", "ElevenLabsTTSBackend"),
+    "dashscope-tts": ("services.tts_cloud", "DashScopeTTSBackend"),
 }
 
 
@@ -2057,6 +2064,26 @@ _INSTALL_HINTS: dict[str, str] = {
     "moss-tts-v15":  "git clone OpenMOSS/MOSS-TTS + set OMNIVOICE_MOSS_TTS_V15_DIR  (own venv, transformers==5.0; 8B, ~16 GB weights; CUDA/CPU, no MPS; Apache-2.0)",
     "dots-tts":      "git clone rednote-hilab/dots.tts + set OMNIVOICE_DOTS_TTS_DIR  (own venv, transformers==4.57; 2B, ~9 GB weights; CUDA/CPU, Linux/macOS only — no Windows; Apache-2.0)",
     "confucius4-tts":"git clone netease-youdao/Confucius4-TTS + set OMNIVOICE_CONFUCIUS4_TTS_DIR  (own Python 3.10 venv; 14-lang cross-lingual zero-shot clone; ~5 GB weights auto-download; CUDA/CPU, no MPS; Apache-2.0)",
+    "openai-compat-tts": (
+        "No install needed — configure a server URL in Model Catalogue → "
+        "Engines (TTS tab). Points speech synthesis at any OpenAI-compatible "
+        "/v1/audio/speech server: SiliconFlow (CosyVoice2 etc.), OpenAI's own "
+        "TTS API, or a self-hosted box. Text is sent to the server you "
+        "configure."
+    ),
+    "elevenlabs-tts": (
+        "No install needed — add an ElevenLabs API key in Settings → Cloud "
+        "providers (or set ELEVENLABS_API_KEY), then pick a voice in the "
+        "panel below the engine list. Preset/library voices only through "
+        "this adapter; text is sent to ElevenLabs."
+    ),
+    "dashscope-tts": (
+        "uv pip install dashscope — then add a DashScope API key in Settings "
+        "→ Cloud providers (or set DASHSCOPE_API_KEY). Alibaba Cloud Model "
+        "Studio CosyVoice/Qwen-TTS; reachable from mainland China. Model and "
+        "voice versions must match (cosyvoice-v2 → *_v2 voices). Text is "
+        "sent to Alibaba Cloud."
+    ),
 }
 
 

@@ -40,6 +40,8 @@ import TranslationTab from '../components/settings/TranslationTab';
 import NetworkTab from '../components/settings/NetworkTab';
 import AudioToolsPanel from '../components/settings/AudioToolsPanel';
 import ApiKeysPanel from '../components/settings/ApiKeysPanel';
+import CloudProvidersPanel from '../components/settings/CloudProvidersPanel';
+import SeparationPanel from '../components/settings/SeparationPanel';
 import LLMProvidersPanel from '../components/settings/LLMProvidersPanel';
 import LLMSkillsPanel from '../components/settings/LLMSkillsPanel';
 import AboutTab from '../components/settings/AboutTab';
@@ -450,6 +452,10 @@ export default function Settings() {
         return <OpenApiPanel />;
       case 'credentials':
         return <ApiKeysPanel />;
+      case 'cloud-providers':
+        return <CloudProvidersPanel />;
+      case 'separation':
+        return <SeparationPanel />;
       case 'llm-providers':
         return <LLMProvidersPanel />;
       case 'llm-skills':

@@ -282,7 +282,9 @@
     "models_dir_effective": "Şu anda kullanılan",
     "models_dir_configured": "Yapılandırılan",
     "models_dir_default": "Varsayılan kullanılıyor",
-    "models_dir_restart": "↻ Yeni konumu kullanmak için VoiceStudio’yu yeniden başlatın."
+    "models_dir_restart": "↻ Yeni konumu kullanmak için VoiceStudio’yu yeniden başlatın.",
+    "cloud_providers": "Bulut sağlayıcıları",
+    "separation": "Vokal ayırma"
   },
   "bootstrap": {
     "title": "VoiceStudio",
@@ -435,7 +437,8 @@
     "learn_more": "Daha fazla bilgi edinin",
     "saving": "Kaydediliyor…",
     "remove": "{{term}} öğesini kaldır",
-    "not_set": "Ayarlanmadı"
+    "not_set": "Ayarlanmadı",
+    "saved": "Kaydedildi"
   },
   "launchpad": {
     "greeting": "merhaba orada",
@@ -1913,7 +1916,22 @@
     "voice_previews_checked": "{{when}} kontrol edildi",
     "voice_previews_never": "henüz kontrol edilmedi",
     "voice_previews_check": "Şimdi kontrol et",
-    "voice_previews_rejected": "Ses galerisi güncellemesi reddedildi: {{message}}"
+    "voice_previews_rejected": "Ses galerisi güncellemesi reddedildi: {{message}}",
+    "ttsOpenAICompatTitle": "OpenAI uyumlu TTS (uzak sunucu)",
+    "ttsOpenAICompatDescription": "Ses sentezini herhangi bir OpenAI uyumlu /v1/audio/speech sunucusuna yönlendirir — SiliconFlow (CosyVoice2), OpenAI’ın resmi API’si veya kendi sunucunuz. Burada yapılandırıp test edin, sonra yukarıdaki TTS listesinde bu motorun Use düğmesine tıklayın. Bu motor üzerinden gönderilen metin, yapılandırdığınız sunucuya gider.",
+    "ttsOpenAICompatBaseUrlHint": "örn. https://api.siliconflow.cn/v1 (SiliconFlow) veya https://api.openai.com/v1. Değişiklikler bir sonraki üretimde geçerli olur — yeniden başlatma gerekmez.",
+    "ttsOpenAICompatVoiceHint": "Sunucunun beklediği ses adı — örn. alloy (OpenAI) veya FunAudioLLM/CosyVoice2-0.5B:alex (SiliconFlow).",
+    "ttsOpenAICompatTestHint": "Yukarıdaki alanları kaydeder, ardından sunucunun /models uç noktasını yoklar — ses üretilmez, ücret alınmaz.",
+    "ttsOpenAICompatTestOkNoModels": "Sunucuya {{ms}} ms içinde ulaşıldı — model listelemiyor; sentez yine de çalışabilir",
+    "ttsElevenLabsTitle": "ElevenLabs TTS (bulut)",
+    "ttsElevenLabsDescription": "ElevenLabs hesabınız üzerinden ses sentezi. API anahtarı Ayarlar → Bulut sağlayıcıları bölümündedir; burada sesi ve modeli seçin, sonra yukarıdaki TTS listesinde bu motorun Use düğmesine tıklayın.",
+    "ttsElevenLabsVoiceHint": "ElevenLabs ses kitaplığınızdan bir voice_id — elevenlabs.io’da klonladığınız sesler dahil. İsme göre seçmek için listeyi yükleyin.",
+    "ttsElevenLabsLoadVoices": "Sesleri yükle",
+    "ttsElevenLabsVoicesEmpty": "Ses dönmedi — API anahtarını kontrol edin.",
+    "ttsDashScopeTitle": "Alibaba Cloud CosyVoice TTS (bulut)",
+    "ttsDashScopeDescription": "Alibaba Cloud Model Studio (DashScope) üzerinde CosyVoice / Qwen-TTS; Çin ana karasından erişilebilir. API anahtarı Ayarlar → Bulut sağlayıcıları bölümündedir; burada modeli ve sesi ayarlayın, sonra yukarıdaki TTS listesinde bu motorun Use düğmesine tıklayın.",
+    "ttsDashScopeModelHint": "cosyvoice-v2 (varsayılan), cosyvoice-v3-flash, qwen-audio-3.0-tts-flash… Model ve ses sürümleri eşleşmelidir.",
+    "ttsDashScopeVoiceHint": "Seçilen model için bir ses — örn. cosyvoice-v2 için longxiaochun_v2."
   },
   "enterprise_faq": {
     "q_internal_tools": "Dahili araçlar için lisansa ihtiyacım var mı?",
@@ -2531,5 +2549,39 @@
       "longform": "hikâye seslendirme",
       "asr": "deşifre"
     }
+  },
+  "cloud": {
+    "title": "Bulut sağlayıcı anahtarları",
+    "description": "Sağlayıcı başına tek API anahtarı; ses sentezi, transkripsiyon ve vokal ayırma dahil tüm bulut motorlarınca paylaşılır. Anahtarlar bu makinede şifreli saklanır ve bir daha gösterilmez; ortam değişkenleri kayıtlı anahtarlara her zaman baskındır.",
+    "apiKey": "API anahtarı",
+    "keyFromEnv": "Ortam değişkeniyle ayarlandı — burada kayıtlı her anahtarı geçersiz kılar.",
+    "getKey": "Anahtar al",
+    "keyMissing": "{{provider}} anahtarı yapılandırılmadı — Ayarlar → Bulut sağlayıcıları bölümünden ekleyin.",
+    "model": "Model",
+    "voice": "Ses",
+    "serverUrl": "Sunucu URL’si",
+    "loadError": "Ayarlar yüklenemedi",
+    "saveError": "Kaydedilemedi",
+    "testKey": "Anahtarı test et",
+    "testOk": "Anahtar çalışıyor ({{ms}} ms)",
+    "testAuthFailed": "Sağlayıcı bu anahtarı reddetti (HTTP {{code}})",
+    "testNotConfigured": "Önce bir anahtar kaydedin",
+    "testUnreachable": "Sağlayıcıya ulaşılamadı — ağı veya proxy’yi kontrol edin",
+    "testTimeout": "Sağlayıcı zamanında yanıt vermedi",
+    "testFailed": "Anahtar testi başarısız",
+    "elevenlabsNotes": "Ses sentezi, Scribe transkripsiyonu ve ses izolasyonu. Uluslararası ağ erişimi gerektirir.",
+    "dashscopeNotes": "Alibaba Cloud Model Studio — CosyVoice ses sentezi ve Qwen konuşma tanıma. Çin ana karasından erişilebilir.",
+    "mvsepNotes": "Uzmanlaşmış müzik/vokal ayırma servisi — Ayarlar → Vokal ayırma altındaki MVSEP motorunu besler."
+  },
+  "separation": {
+    "title": "Vokal ayırma motoru",
+    "description": "Dublaj hazırlığında ve mikrofon temizliğinde vokali arka plandan hangi motorun ayıracağı. Yerel Demucs bu makinede çalışır (varsayılan); bulut motorları ses parçasını sağlayıcıya yükler ve Ayarlar → Bulut sağlayıcıları bölümünden bir anahtar ister.",
+    "engine": "Motor",
+    "engineFromEnv": "OMNIVOICE_SEPARATION_BACKEND ile sabitlendi — aşağıdaki seçim yok sayılır.",
+    "localBadge": "yerel",
+    "cloudBadge": "bulut",
+    "noBackground": "Yalnızca ses parçası — bu motorla dublaj dışa aktarmaları arka plan müziğini korumaz.",
+    "mvsepSepType": "MVSEP algoritma kimliği",
+    "mvsepSepTypeHint": "MVSEP API belgelerindeki sayısal sep_type. Varsayılan 40 = BS Roformer (vokal + enstrümantal)."
   }
 }

@@ -282,7 +282,9 @@
     "models_dir_effective": "目前使用",
     "models_dir_configured": "已設定",
     "models_dir_default": "使用預設值",
-    "models_dir_restart": "↻ 重新啟動 VoiceStudio 以使用新位置。"
+    "models_dir_restart": "↻ 重新啟動 VoiceStudio 以使用新位置。",
+    "cloud_providers": "雲端服務商",
+    "separation": "人聲分離"
   },
   "bootstrap": {
     "title": "VoiceStudio",
@@ -435,7 +437,8 @@
     "learn_more": "了解更多",
     "saving": "儲存中…",
     "remove": "刪除 {{term}}",
-    "not_set": "未設定"
+    "not_set": "未設定",
+    "saved": "已儲存"
   },
   "launchpad": {
     "greeting": "你好",
@@ -1913,7 +1916,22 @@
     "voice_previews_checked": "{{when}}檢查",
     "voice_previews_never": "尚未檢查",
     "voice_previews_check": "立即檢查",
-    "voice_previews_rejected": "語音庫更新遭拒：{{message}}"
+    "voice_previews_rejected": "語音庫更新遭拒：{{message}}",
+    "ttsOpenAICompatTitle": "OpenAI 相容 TTS(遠端伺服器)",
+    "ttsOpenAICompatDescription": "將語音合成指向任一 OpenAI 相容的 /v1/audio/speech 伺服器——SiliconFlow(CosyVoice2)、OpenAI 官方 API 或自建服務。在此設定並測試,然後在上方 TTS 清單點選該引擎的「使用」。經此引擎送出的文字會傳送到你設定的伺服器。",
+    "ttsOpenAICompatBaseUrlHint": "例如 https://api.siliconflow.cn/v1(SiliconFlow)或 https://api.openai.com/v1。變更於下次產生時生效——無需重新啟動。",
+    "ttsOpenAICompatVoiceHint": "伺服器要求的語音名稱——例如 alloy(OpenAI)或 FunAudioLLM/CosyVoice2-0.5B:alex(SiliconFlow)。",
+    "ttsOpenAICompatTestHint": "先儲存上方欄位,再探測伺服器的 /models 端點——不會合成音訊,也不會產生費用。",
+    "ttsOpenAICompatTestOkNoModels": "伺服器可連線({{ms}} ms)——它不提供模型清單;合成可能仍然可用",
+    "ttsElevenLabsTitle": "ElevenLabs TTS(雲端)",
+    "ttsElevenLabsDescription": "透過你的 ElevenLabs 帳戶進行語音合成。API 金鑰在 設定 → 雲端服務商 設定;在此選擇語音與模型,然後在上方 TTS 清單點選該引擎的「使用」。",
+    "ttsElevenLabsVoiceHint": "來自你 ElevenLabs 語音庫的 voice_id——包含你在 elevenlabs.io 複製的語音。可載入清單依名稱選擇。",
+    "ttsElevenLabsLoadVoices": "載入語音",
+    "ttsElevenLabsVoicesEmpty": "未回傳任何語音——請檢查 API 金鑰。",
+    "ttsDashScopeTitle": "阿里雲 CosyVoice TTS(雲端)",
+    "ttsDashScopeDescription": "阿里雲百煉(DashScope)上的 CosyVoice / Qwen-TTS,中國大陸可直連。API 金鑰在 設定 → 雲端服務商 設定;在此設定模型與語音,然後在上方 TTS 清單點選該引擎的「使用」。",
+    "ttsDashScopeModelHint": "cosyvoice-v2(預設)、cosyvoice-v3-flash、qwen-audio-3.0-tts-flash……模型與語音版本必須相符。",
+    "ttsDashScopeVoiceHint": "所選模型對應的語音——例如 cosyvoice-v2 用 longxiaochun_v2。"
   },
   "enterprise_faq": {
     "q_internal_tools": "我需要內部工具的授權嗎？",
@@ -2531,5 +2549,39 @@
       "longform": "故事朗讀",
       "asr": "轉錄"
     }
+  },
+  "cloud": {
+    "title": "雲端服務商金鑰",
+    "description": "每個服務商一組 API 金鑰,供其全部雲端引擎共用——語音合成、語音辨識與人聲分離。金鑰加密儲存在本機,儲存後不再顯示;環境變數永遠優先於已儲存的金鑰。",
+    "apiKey": "API 金鑰",
+    "keyFromEnv": "由環境變數提供——它會覆蓋此處儲存的任何金鑰。",
+    "getKey": "取得金鑰",
+    "keyMissing": "尚未設定 {{provider}} 金鑰——請到 設定 → 雲端服務商 新增。",
+    "model": "模型",
+    "voice": "語音",
+    "serverUrl": "伺服器網址",
+    "loadError": "設定載入失敗",
+    "saveError": "儲存失敗",
+    "testKey": "測試金鑰",
+    "testOk": "金鑰可用({{ms}} ms)",
+    "testAuthFailed": "服務商拒絕了該金鑰(HTTP {{code}})",
+    "testNotConfigured": "請先儲存金鑰",
+    "testUnreachable": "無法連線服務商——請檢查網路或代理",
+    "testTimeout": "服務商回應逾時",
+    "testFailed": "金鑰測試失敗",
+    "elevenlabsNotes": "語音合成、Scribe 語音辨識與人聲隔離。需要國際網路環境。",
+    "dashscopeNotes": "阿里雲百煉(Model Studio)——CosyVoice 語音合成與 Qwen 語音辨識。中國大陸可直連。",
+    "mvsepNotes": "專業音樂/人聲分離服務——供 設定 → 人聲分離 中的 MVSEP 引擎使用。"
+  },
+  "separation": {
+    "title": "人聲分離引擎",
+    "description": "決定配音準備與麥克風清理時用哪個引擎將人聲與背景分開。本機 Demucs 在本機執行(預設);雲端引擎會將音軌上傳給服務商,需在 設定 → 雲端服務商 設定金鑰。",
+    "engine": "引擎",
+    "engineFromEnv": "已被 OMNIVOICE_SEPARATION_BACKEND 固定——下方選擇將被忽略。",
+    "localBadge": "本機",
+    "cloudBadge": "雲端",
+    "noBackground": "僅回傳人聲軌——使用此引擎時,配音匯出不會保留背景音樂。",
+    "mvsepSepType": "MVSEP 演算法 ID",
+    "mvsepSepTypeHint": "MVSEP API 文件中的數字 sep_type。預設 40 = BS Roformer(人聲 + 伴奏)。"
   }
 }

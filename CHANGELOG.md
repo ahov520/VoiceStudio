@@ -10,6 +10,7 @@ the frozen-backend fallback mirror it for their toolchains.
 
 **Highlights**
 
+- Speech synthesis, transcription and vocal separation can each run on a cloud service now — OpenAI-compatible servers, ElevenLabs, Alibaba Cloud DashScope, and MVSEP — all opt-in, with the local engines staying the default
 - A faster, cleaner Dub workspace for multilingual production (#1489)
 - VoiceStudio now gives the app, desktop chrome, documentation, and package metadata one clear identity
 - A local-first creative studio: voice cloning, design, dubbing, dictation, stories, audiobooks, and transcription without a subscription meter
@@ -35,6 +36,10 @@ the frozen-backend fallback mirror it for their toolchains.
 
 ### Added
 
+- Cloud TTS engines: any OpenAI-compatible `/v1/audio/speech` server (SiliconFlow, OpenAI, self-hosted), ElevenLabs (with a voice picker fed by your voice library), and Alibaba Cloud CosyVoice via DashScope — configured and tested under Model Catalogue → Engines, activated like any other engine. — thanks @ahov520!
+- Cloud transcription engines: ElevenLabs Scribe (word timestamps, 10-hour files) and Alibaba Cloud DashScope (sentence timestamps, long audio chunked automatically), joining the existing OpenAI-compatible remote ASR; neither ever wins auto-detect. — thanks @ahov520!
+- Vocal separation is engine-driven now: local Demucs stays the default, with MVSEP (vocals + instrumental, algorithm selectable) and ElevenLabs Voice Isolator (voice only) as cloud options under Settings → Vocal separation — same progress bar, same fall-back-to-mixed-audio safety. — thanks @ahov520!
+- One Settings → Cloud providers panel holds the ElevenLabs / DashScope / MVSEP keys — encrypted at rest, shared by every engine of that provider, each testable with one click; env vars still win for CI. — thanks @ahov520!
 - The demo audio the app has always advertised now actually ships: previews for all seven voice-design presets, the three dictation replay clips, and the dubbing demo's source video plus four dubbed languages with subtitles. Every one of those was a dead link before — the tooling that renders them required macOS, so on Windows and Linux the files were never built. (#1517)
 - Demo assets are rendered by VoiceStudio's own engine, so the tooling runs wherever the app does, and the demos are made by the thing they demonstrate. (#1517)
 

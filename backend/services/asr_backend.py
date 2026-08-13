@@ -2253,12 +2253,28 @@ def _isolated_faster_whisper():
     return IsolatedFasterWhisperBackend
 
 
+def _elevenlabs_asr():
+    """Lazy import — the cloud engines live in services.asr_cloud so this
+    module doesn't grow another provider block per vendor."""
+    from services.asr_cloud import ElevenLabsASRBackend
+    return ElevenLabsASRBackend
+
+
+def _dashscope_asr():
+    from services.asr_cloud import DashScopeASRBackend
+    return DashScopeASRBackend
+
+
 class _LazyASRRegistry(dict):
-    """Registry with one lazily-resolved entry (Wave 4.2). Mirrors the TTS
+    """Registry with lazily-resolved entries (Wave 4.2). Mirrors the TTS
     registry's lazy pattern so listing/selecting the crash-isolated ASR
     backend doesn't import the subprocess stack unless it's used."""
 
-    _LAZY = {"faster-whisper-isolated": _isolated_faster_whisper}
+    _LAZY = {
+        "faster-whisper-isolated": _isolated_faster_whisper,
+        "elevenlabs-asr": _elevenlabs_asr,
+        "dashscope-asr": _dashscope_asr,
+    }
 
     def __contains__(self, key):
         return dict.__contains__(self, key) or key in self._LAZY
@@ -2304,6 +2320,8 @@ _REGISTRY: dict[str, type[ASRBackend]] = _LazyASRRegistry({
     "sherpa-onnx-asr": SherpaDictationBackend,
     "openai-compat-asr": OpenAICompatASRBackend,
     # "faster-whisper-isolated": resolved lazily (crash-isolated subprocess).
+    # "elevenlabs-asr" / "dashscope-asr": resolved lazily (cloud clients in
+    # services.asr_cloud — explicit opt-in, never part of auto-detect).
 })
 
 
@@ -2344,6 +2362,20 @@ _INSTALL_HINTS: dict[str, str] = {
         "transcribes: runs ASR in a separate process that can be force-killed "
         "to reclaim a hung transcribe and its VRAM (#730). Slightly slower per "
         "call than in-process faster-whisper."
+    ),
+    "elevenlabs-asr": (
+        "No install needed — add an ElevenLabs API key in Settings → Cloud "
+        "providers (or set ELEVENLABS_API_KEY). Scribe transcription with "
+        "word-level timestamps, 90+ languages; audio is uploaded to "
+        "ElevenLabs. Model override: ASR_ELEVENLABS_MODEL_ID."
+    ),
+    "dashscope-asr": (
+        "uv pip install dashscope — then add a DashScope API key in Settings "
+        "→ Cloud providers (or set DASHSCOPE_API_KEY). Alibaba Cloud Model "
+        "Studio sync recognition (Qwen-Audio-3.0-ASR-Flash by default; "
+        "override with ASR_DASHSCOPE_MODEL). Reachable from mainland China; "
+        "audio is uploaded to Alibaba Cloud. Long audio is chunked "
+        "automatically (5-minute API cap)."
     ),
 }
 

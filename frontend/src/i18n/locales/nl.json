@@ -282,7 +282,9 @@
     "models_dir_effective": "Nu in gebruik",
     "models_dir_configured": "Geconfigureerd",
     "models_dir_default": "Standaard wordt gebruikt",
-    "models_dir_restart": "↻ Start VoiceStudio opnieuw om de nieuwe locatie te gebruiken."
+    "models_dir_restart": "↻ Start VoiceStudio opnieuw om de nieuwe locatie te gebruiken.",
+    "cloud_providers": "Cloudproviders",
+    "separation": "Zangscheiding"
   },
   "bootstrap": {
     "title": "VoiceStudio",
@@ -435,7 +437,8 @@
     "learn_more": "Meer informatie",
     "saving": "Opslaan…",
     "remove": "{{term}} verwijderen",
-    "not_set": "Niet ingesteld"
+    "not_set": "Niet ingesteld",
+    "saved": "Opgeslagen"
   },
   "launchpad": {
     "greeting": "Hallo daar",
@@ -1913,7 +1916,22 @@
     "voice_previews_checked": "gecontroleerd {{when}}",
     "voice_previews_never": "nog niet gecontroleerd",
     "voice_previews_check": "Nu controleren",
-    "voice_previews_rejected": "Update van de stemgalerij geweigerd: {{message}}"
+    "voice_previews_rejected": "Update van de stemgalerij geweigerd: {{message}}",
+    "ttsOpenAICompatTitle": "OpenAI-compatibele TTS (externe server)",
+    "ttsOpenAICompatDescription": "Richt spraaksynthese op elke OpenAI-compatibele /v1/audio/speech-server — SiliconFlow (CosyVoice2), de officiële OpenAI-API of een zelf gehoste server. Configureer en test hier, en klik daarna op Use bij deze engine in de TTS-lijst hierboven. Tekst via deze engine gaat naar de geconfigureerde server.",
+    "ttsOpenAICompatBaseUrlHint": "bijv. https://api.siliconflow.cn/v1 (SiliconFlow) of https://api.openai.com/v1. Wijzigingen gelden bij de volgende generatie — geen herstart nodig.",
+    "ttsOpenAICompatVoiceHint": "De stemnaam die de server verwacht — bijv. alloy (OpenAI) of FunAudioLLM/CosyVoice2-0.5B:alex (SiliconFlow).",
+    "ttsOpenAICompatTestHint": "Slaat de velden hierboven op en peilt daarna het /models-endpoint van de server — er wordt geen audio gesynthetiseerd en niets in rekening gebracht.",
+    "ttsOpenAICompatTestOkNoModels": "Server bereikbaar in {{ms}} ms — hij toont geen modellen; synthese kan alsnog werken",
+    "ttsElevenLabsTitle": "ElevenLabs TTS (cloud)",
+    "ttsElevenLabsDescription": "Spraaksynthese via je ElevenLabs-account. De API-sleutel staat onder Instellingen → Cloudproviders; kies hier de stem en het model, en klik daarna op Use bij deze engine in de TTS-lijst hierboven.",
+    "ttsElevenLabsVoiceHint": "Een voice_id uit je ElevenLabs-stemmenbibliotheek — inclusief stemmen die je op elevenlabs.io kloonde. Laad de lijst om op naam te kiezen.",
+    "ttsElevenLabsLoadVoices": "Stemmen laden",
+    "ttsElevenLabsVoicesEmpty": "Geen stemmen ontvangen — controleer de API-sleutel.",
+    "ttsDashScopeTitle": "Alibaba Cloud CosyVoice TTS (cloud)",
+    "ttsDashScopeDescription": "CosyVoice / Qwen-TTS op Alibaba Cloud Model Studio (DashScope), bereikbaar vanuit het Chinese vasteland. De API-sleutel staat onder Instellingen → Cloudproviders; stel hier model en stem in, en klik daarna op Use bij deze engine in de TTS-lijst hierboven.",
+    "ttsDashScopeModelHint": "cosyvoice-v2 (standaard), cosyvoice-v3-flash, qwen-audio-3.0-tts-flash… Model- en stemversies moeten overeenkomen.",
+    "ttsDashScopeVoiceHint": "Een stem voor het gekozen model — bijv. longxiaochun_v2 voor cosyvoice-v2."
   },
   "enterprise_faq": {
     "q_internal_tools": "Heb ik een licentie nodig voor interne tools?",
@@ -2531,5 +2549,39 @@
       "longform": "verhaalvertelling",
       "asr": "transcriptie"
     }
+  },
+  "cloud": {
+    "title": "API-sleutels van cloudproviders",
+    "description": "Eén API-sleutel per provider, gedeeld door al zijn cloud-engines — spraaksynthese, transcriptie en zangscheiding. Sleutels worden versleuteld op deze machine bewaard en nooit opnieuw getoond; omgevingsvariabelen gaan altijd vóór opgeslagen sleutels.",
+    "apiKey": "API-sleutel",
+    "keyFromEnv": "Ingesteld via een omgevingsvariabele — die overschrijft elke hier opgeslagen sleutel.",
+    "getKey": "Sleutel aanvragen",
+    "keyMissing": "Geen {{provider}}-sleutel ingesteld — voeg er een toe onder Instellingen → Cloudproviders.",
+    "model": "Model",
+    "voice": "Stem",
+    "serverUrl": "Server-URL",
+    "loadError": "Instellingen laden mislukt",
+    "saveError": "Opslaan mislukt",
+    "testKey": "Sleutel testen",
+    "testOk": "Sleutel werkt ({{ms}} ms)",
+    "testAuthFailed": "De provider weigerde deze sleutel (HTTP {{code}})",
+    "testNotConfigured": "Sla eerst een sleutel op",
+    "testUnreachable": "Provider onbereikbaar — controleer netwerk of proxy",
+    "testTimeout": "De provider antwoordde niet op tijd",
+    "testFailed": "Sleuteltest mislukt",
+    "elevenlabsNotes": "Spraaksynthese, Scribe-transcriptie en stemisolatie. Vereist internationale netwerktoegang.",
+    "dashscopeNotes": "Alibaba Cloud Model Studio — CosyVoice-spraaksynthese en Qwen-spraakherkenning. Bereikbaar vanuit het Chinese vasteland.",
+    "mvsepNotes": "Gespecialiseerde muziek-/zangscheidingsdienst — drijft de MVSEP-engine aan onder Instellingen → Zangscheiding."
+  },
+  "separation": {
+    "title": "Engine voor zangscheiding",
+    "description": "Welke engine zang van de achtergrond scheidt tijdens dubvoorbereiding en microfoonopschoning. Lokale Demucs draait op deze machine (standaard); cloud-engines uploaden het audiospoor naar de provider en vereisen een sleutel uit Instellingen → Cloudproviders.",
+    "engine": "Engine",
+    "engineFromEnv": "Vastgezet door OMNIVOICE_SEPARATION_BACKEND — de keuze hieronder wordt genegeerd.",
+    "localBadge": "lokaal",
+    "cloudBadge": "cloud",
+    "noBackground": "Alleen het stemspoor — dub-exports behouden met deze engine geen achtergrondmuziek.",
+    "mvsepSepType": "MVSEP-algoritme-ID",
+    "mvsepSepTypeHint": "Numerieke sep_type uit de MVSEP-API-documentatie. Standaard 40 = BS Roformer (zang + instrumentaal)."
   }
 }

@@ -282,7 +282,9 @@
     "models_dir_effective": "Utilisé actuellement",
     "models_dir_configured": "Configuré",
     "models_dir_default": "Valeur par défaut",
-    "models_dir_restart": "↻ Redémarrez VoiceStudio pour utiliser le nouvel emplacement."
+    "models_dir_restart": "↻ Redémarrez VoiceStudio pour utiliser le nouvel emplacement.",
+    "cloud_providers": "Fournisseurs cloud",
+    "separation": "Séparation vocale"
   },
   "bootstrap": {
     "title": "VoiceStudio",
@@ -435,7 +437,8 @@
     "learn_more": "En savoir plus",
     "saving": "Enregistrement…",
     "remove": "Supprimer {{term}}",
-    "not_set": "Non défini"
+    "not_set": "Non défini",
+    "saved": "Enregistré"
   },
   "launchpad": {
     "greeting": "bonjour",
@@ -1913,7 +1916,22 @@
     "voice_previews_checked": "vérifié {{when}}",
     "voice_previews_never": "pas encore vérifié",
     "voice_previews_check": "Vérifier maintenant",
-    "voice_previews_rejected": "Mise à jour de la galerie de voix refusée : {{message}}"
+    "voice_previews_rejected": "Mise à jour de la galerie de voix refusée : {{message}}",
+    "ttsOpenAICompatTitle": "TTS compatible OpenAI (serveur distant)",
+    "ttsOpenAICompatDescription": "Dirige la synthèse vocale vers n’importe quel serveur /v1/audio/speech compatible OpenAI — SiliconFlow (CosyVoice2), l’API officielle d’OpenAI ou un serveur auto-hébergé. Configurez et testez ici, puis cliquez sur Use sur ce moteur dans la liste TTS ci-dessus. Le texte envoyé via ce moteur part vers le serveur configuré.",
+    "ttsOpenAICompatBaseUrlHint": "p. ex. https://api.siliconflow.cn/v1 (SiliconFlow) ou https://api.openai.com/v1. Les changements s’appliquent à la prochaine génération — aucun redémarrage requis.",
+    "ttsOpenAICompatVoiceHint": "Le nom de voix attendu par le serveur — p. ex. alloy (OpenAI) ou FunAudioLLM/CosyVoice2-0.5B:alex (SiliconFlow).",
+    "ttsOpenAICompatTestHint": "Enregistre les champs ci-dessus puis sonde l’endpoint /models du serveur — aucun audio n’est synthétisé, rien n’est facturé.",
+    "ttsOpenAICompatTestOkNoModels": "Serveur joignable en {{ms}} ms — il ne liste pas de modèles ; la synthèse peut quand même fonctionner",
+    "ttsElevenLabsTitle": "ElevenLabs TTS (cloud)",
+    "ttsElevenLabsDescription": "Synthèse vocale via votre compte ElevenLabs. La clé API se trouve dans Réglages → Fournisseurs cloud ; choisissez ici la voix et le modèle, puis cliquez sur Use sur ce moteur dans la liste TTS ci-dessus.",
+    "ttsElevenLabsVoiceHint": "Un voice_id de votre bibliothèque ElevenLabs — y compris les voix clonées sur elevenlabs.io. Chargez la liste pour choisir par nom.",
+    "ttsElevenLabsLoadVoices": "Charger les voix",
+    "ttsElevenLabsVoicesEmpty": "Aucune voix renvoyée — vérifiez la clé API.",
+    "ttsDashScopeTitle": "Alibaba Cloud CosyVoice TTS (cloud)",
+    "ttsDashScopeDescription": "CosyVoice / Qwen-TTS sur Alibaba Cloud Model Studio (DashScope), accessible depuis la Chine continentale. La clé API se trouve dans Réglages → Fournisseurs cloud ; réglez ici le modèle et la voix, puis cliquez sur Use sur ce moteur dans la liste TTS ci-dessus.",
+    "ttsDashScopeModelHint": "cosyvoice-v2 (défaut), cosyvoice-v3-flash, qwen-audio-3.0-tts-flash… Les versions du modèle et de la voix doivent correspondre.",
+    "ttsDashScopeVoiceHint": "Une voix pour le modèle choisi — p. ex. longxiaochun_v2 pour cosyvoice-v2."
   },
   "enterprise_faq": {
     "q_internal_tools": "Ai-je besoin d’une licence pour les outils internes ?",
@@ -2531,5 +2549,39 @@
       "longform": "narration d'histoires",
       "asr": "transcription"
     }
+  },
+  "cloud": {
+    "title": "Clés des fournisseurs cloud",
+    "description": "Une clé API par fournisseur, partagée par tous ses moteurs cloud — synthèse vocale, transcription et séparation vocale. Les clés sont chiffrées sur cette machine et ne sont jamais réaffichées ; les variables d’environnement priment toujours sur les clés enregistrées.",
+    "apiKey": "Clé API",
+    "keyFromEnv": "Définie par une variable d’environnement — elle remplace toute clé enregistrée ici.",
+    "getKey": "Obtenir une clé",
+    "keyMissing": "Aucune clé {{provider}} configurée — ajoutez-en une dans Réglages → Fournisseurs cloud.",
+    "model": "Modèle",
+    "voice": "Voix",
+    "serverUrl": "URL du serveur",
+    "loadError": "Impossible de charger les réglages",
+    "saveError": "Échec de l’enregistrement",
+    "testKey": "Tester la clé",
+    "testOk": "La clé fonctionne ({{ms}} ms)",
+    "testAuthFailed": "Le fournisseur a rejeté cette clé (HTTP {{code}})",
+    "testNotConfigured": "Enregistrez d’abord une clé",
+    "testUnreachable": "Fournisseur injoignable — vérifiez le réseau ou le proxy",
+    "testTimeout": "Le fournisseur n’a pas répondu à temps",
+    "testFailed": "Échec du test de la clé",
+    "elevenlabsNotes": "Synthèse vocale, transcription Scribe et isolation de voix. Nécessite un accès réseau international.",
+    "dashscopeNotes": "Alibaba Cloud Model Studio — synthèse CosyVoice et reconnaissance Qwen. Accessible depuis la Chine continentale.",
+    "mvsepNotes": "Service spécialisé de séparation musique/voix — alimente le moteur MVSEP dans Réglages → Séparation vocale."
+  },
+  "separation": {
+    "title": "Moteur de séparation vocale",
+    "description": "Quel moteur sépare la voix du fond sonore pendant la préparation du doublage et le nettoyage micro. Demucs local tourne sur cette machine (défaut) ; les moteurs cloud envoient la piste audio au fournisseur et exigent une clé dans Réglages → Fournisseurs cloud.",
+    "engine": "Moteur",
+    "engineFromEnv": "Épinglé par OMNIVOICE_SEPARATION_BACKEND — la sélection ci-dessous est ignorée.",
+    "localBadge": "local",
+    "cloudBadge": "cloud",
+    "noBackground": "Piste vocale uniquement — les exports de doublage ne gardent aucune musique de fond avec ce moteur.",
+    "mvsepSepType": "ID d’algorithme MVSEP",
+    "mvsepSepTypeHint": "sep_type numérique de la doc API MVSEP. Défaut 40 = BS Roformer (voix + instrumental)."
   }
 }

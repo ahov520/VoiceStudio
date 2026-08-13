@@ -282,7 +282,9 @@
     "models_dir_effective": "현재 사용 중",
     "models_dir_configured": "설정됨",
     "models_dir_default": "기본값 사용",
-    "models_dir_restart": "↻ 새 위치를 사용하려면 VoiceStudio를 다시 시작하세요."
+    "models_dir_restart": "↻ 새 위치를 사용하려면 VoiceStudio를 다시 시작하세요.",
+    "cloud_providers": "클라우드 제공업체",
+    "separation": "보컬 분리"
   },
   "bootstrap": {
     "title": "VoiceStudio",
@@ -435,7 +437,8 @@
     "learn_more": "자세히 알아보기",
     "saving": "저장 중…",
     "remove": "{{term}} 삭제",
-    "not_set": "설정되지 않음"
+    "not_set": "설정되지 않음",
+    "saved": "저장됨"
   },
   "launchpad": {
     "greeting": "안녕하세요",
@@ -1913,7 +1916,22 @@
     "voice_previews_checked": "{{when}} 확인함",
     "voice_previews_never": "아직 확인하지 않음",
     "voice_previews_check": "지금 확인",
-    "voice_previews_rejected": "음성 갤러리 업데이트가 거부되었습니다: {{message}}"
+    "voice_previews_rejected": "음성 갤러리 업데이트가 거부되었습니다: {{message}}",
+    "ttsOpenAICompatTitle": "OpenAI 호환 TTS (원격 서버)",
+    "ttsOpenAICompatDescription": "음성 합성을 임의의 OpenAI 호환 /v1/audio/speech 서버로 연결합니다 — SiliconFlow(CosyVoice2), OpenAI 공식 API 또는 자체 호스팅 서버. 여기서 설정·테스트한 뒤 위 TTS 목록에서 이 엔진의 “사용”을 누르세요. 이 엔진으로 보내는 텍스트는 설정한 서버로 전송됩니다.",
+    "ttsOpenAICompatBaseUrlHint": "예: https://api.siliconflow.cn/v1 (SiliconFlow) 또는 https://api.openai.com/v1. 변경 사항은 다음 생성부터 적용됩니다 — 재시작이 필요 없습니다.",
+    "ttsOpenAICompatVoiceHint": "서버가 요구하는 음성 이름 — 예: alloy(OpenAI) 또는 FunAudioLLM/CosyVoice2-0.5B:alex(SiliconFlow).",
+    "ttsOpenAICompatTestHint": "위 항목을 저장한 뒤 서버의 /models 엔드포인트를 확인합니다 — 오디오가 합성되지 않고 비용도 발생하지 않습니다.",
+    "ttsOpenAICompatTestOkNoModels": "서버에 연결됨 ({{ms}} ms) — 모델 목록은 없지만 합성은 동작할 수 있습니다",
+    "ttsElevenLabsTitle": "ElevenLabs TTS (클라우드)",
+    "ttsElevenLabsDescription": "ElevenLabs 계정을 통한 음성 합성. API 키는 설정 → 클라우드 제공업체에 있습니다. 여기서 음성과 모델을 고르고 위 TTS 목록에서 이 엔진의 “사용”을 누르세요.",
+    "ttsElevenLabsVoiceHint": "ElevenLabs 음성 라이브러리의 voice_id — elevenlabs.io에서 복제한 음성도 포함됩니다. 목록을 불러와 이름으로 선택하세요.",
+    "ttsElevenLabsLoadVoices": "음성 불러오기",
+    "ttsElevenLabsVoicesEmpty": "반환된 음성이 없습니다 — API 키를 확인하세요.",
+    "ttsDashScopeTitle": "Alibaba Cloud CosyVoice TTS (클라우드)",
+    "ttsDashScopeDescription": "Alibaba Cloud Model Studio(DashScope)의 CosyVoice / Qwen-TTS. 중국 본토에서 바로 접속할 수 있습니다. API 키는 설정 → 클라우드 제공업체에 있습니다. 여기서 모델과 음성을 설정하고 위 TTS 목록에서 이 엔진의 “사용”을 누르세요.",
+    "ttsDashScopeModelHint": "cosyvoice-v2(기본값), cosyvoice-v3-flash, qwen-audio-3.0-tts-flash… 모델과 음성 버전이 일치해야 합니다.",
+    "ttsDashScopeVoiceHint": "선택한 모델에 맞는 음성 — 예: cosyvoice-v2에는 longxiaochun_v2."
   },
   "enterprise_faq": {
     "q_internal_tools": "내부 도구에 대한 라이선스가 필요합니까?",
@@ -2531,5 +2549,39 @@
       "longform": "스토리 내레이션",
       "asr": "전사"
     }
+  },
+  "cloud": {
+    "title": "클라우드 제공업체 API 키",
+    "description": "제공업체마다 하나의 API 키를 음성 합성·전사·보컬 분리의 모든 클라우드 엔진이 공유합니다. 키는 이 컴퓨터에 암호화되어 저장되며 다시 표시되지 않습니다. 환경 변수는 저장된 키보다 항상 우선합니다.",
+    "apiKey": "API 키",
+    "keyFromEnv": "환경 변수로 설정됨 — 여기에 저장된 키보다 우선합니다.",
+    "getKey": "키 발급받기",
+    "keyMissing": "{{provider}} 키가 설정되지 않았습니다 — 설정 → 클라우드 제공업체에서 추가하세요.",
+    "model": "모델",
+    "voice": "음성",
+    "serverUrl": "서버 URL",
+    "loadError": "설정을 불러오지 못했습니다",
+    "saveError": "저장하지 못했습니다",
+    "testKey": "키 테스트",
+    "testOk": "키가 작동합니다 ({{ms}} ms)",
+    "testAuthFailed": "제공업체가 이 키를 거부했습니다 (HTTP {{code}})",
+    "testNotConfigured": "먼저 키를 저장하세요",
+    "testUnreachable": "제공업체에 연결할 수 없습니다 — 네트워크나 프록시를 확인하세요",
+    "testTimeout": "제공업체가 제시간에 응답하지 않았습니다",
+    "testFailed": "키 테스트 실패",
+    "elevenlabsNotes": "음성 합성, Scribe 전사, 보컬 분리. 국제 네트워크 접속이 필요합니다.",
+    "dashscopeNotes": "Alibaba Cloud Model Studio — CosyVoice 음성 합성과 Qwen 음성 인식. 중국 본토에서 바로 접속할 수 있습니다.",
+    "mvsepNotes": "전문 음악/보컬 분리 서비스 — 설정 → 보컬 분리의 MVSEP 엔진에서 사용합니다."
+  },
+  "separation": {
+    "title": "보컬 분리 엔진",
+    "description": "더빙 준비와 마이크 정리에서 보컬과 배경음을 분리할 엔진을 선택합니다. 로컬 Demucs는 이 컴퓨터에서 실행됩니다(기본값). 클라우드 엔진은 오디오 트랙을 제공업체로 업로드하며 설정 → 클라우드 제공업체의 키가 필요합니다.",
+    "engine": "엔진",
+    "engineFromEnv": "OMNIVOICE_SEPARATION_BACKEND로 고정되어 아래 선택은 무시됩니다.",
+    "localBadge": "로컬",
+    "cloudBadge": "클라우드",
+    "noBackground": "보컬 트랙만 반환합니다 — 이 엔진에서는 더빙 내보내기에 배경 음악이 남지 않습니다.",
+    "mvsepSepType": "MVSEP 알고리즘 ID",
+    "mvsepSepTypeHint": "MVSEP API 문서의 숫자 sep_type. 기본값 40 = BS Roformer (보컬 + 반주)."
   }
 }

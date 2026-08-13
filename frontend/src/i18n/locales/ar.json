@@ -282,7 +282,9 @@
     "models_dir_effective": "المستخدم الآن",
     "models_dir_configured": "المُعَدّ",
     "models_dir_default": "استخدام الإعداد الافتراضي",
-    "models_dir_restart": "↻ أعد تشغيل VoiceStudio لاستخدام الموقع الجديد."
+    "models_dir_restart": "↻ أعد تشغيل VoiceStudio لاستخدام الموقع الجديد.",
+    "cloud_providers": "مزوّدو السحابة",
+    "separation": "فصل الغناء"
   },
   "bootstrap": {
     "title": "VoiceStudio",
@@ -435,7 +437,8 @@
     "learn_more": "تعلم المزيد",
     "saving": "جارٍ الحفظ…",
     "remove": "إزالة {{term}}",
-    "not_set": "غير محدد"
+    "not_set": "غير محدد",
+    "saved": "تم الحفظ"
   },
   "launchpad": {
     "greeting": "مرحبا هناك",
@@ -1913,7 +1916,22 @@
     "voice_previews_checked": "تم التحقق {{when}}",
     "voice_previews_never": "لم يتم التحقق بعد",
     "voice_previews_check": "تحقّق الآن",
-    "voice_previews_rejected": "تم رفض تحديث معرض الأصوات: {{message}}"
+    "voice_previews_rejected": "تم رفض تحديث معرض الأصوات: {{message}}",
+    "ttsOpenAICompatTitle": "TTS متوافق مع OpenAI (خادم بعيد)",
+    "ttsOpenAICompatDescription": "وجِّه توليف الكلام إلى أي خادم /v1/audio/speech متوافق مع OpenAI — مثل SiliconFlow (CosyVoice2) أو واجهة OpenAI الرسمية أو خادم ذاتي الاستضافة. اضبطه واختبره هنا، ثم اضغط Use على هذا المحرك في قائمة TTS أعلاه. النص المرسَل عبر هذا المحرك يذهب إلى الخادم الذي تضبطه.",
+    "ttsOpenAICompatBaseUrlHint": "مثل https://api.siliconflow.cn/v1 (SiliconFlow) أو https://api.openai.com/v1. تسري التغييرات مع التوليد التالي — دون إعادة تشغيل.",
+    "ttsOpenAICompatVoiceHint": "اسم الصوت الذي يتوقعه الخادم — مثل alloy (OpenAI) أو FunAudioLLM/CosyVoice2-0.5B:alex (SiliconFlow).",
+    "ttsOpenAICompatTestHint": "يحفظ الحقول أعلاه ثم يفحص نقطة النهاية /models للخادم — لا يُولَّد أي صوت ولا تُحتسب أي تكلفة.",
+    "ttsOpenAICompatTestOkNoModels": "الخادم متاح خلال {{ms}} م.ث — لا يعرض قائمة نماذج؛ وقد يعمل التوليف رغم ذلك",
+    "ttsElevenLabsTitle": "ElevenLabs TTS (سحابي)",
+    "ttsElevenLabsDescription": "توليف الكلام عبر حسابك في ElevenLabs. مفتاح API موجود في الإعدادات ← مزوّدو السحابة؛ اختر الصوت والنموذج هنا، ثم اضغط Use على هذا المحرك في قائمة TTS أعلاه.",
+    "ttsElevenLabsVoiceHint": "معرّف voice_id من مكتبة أصواتك في ElevenLabs — بما فيها الأصوات المستنسخة على elevenlabs.io. حمِّل القائمة للاختيار بالاسم.",
+    "ttsElevenLabsLoadVoices": "تحميل الأصوات",
+    "ttsElevenLabsVoicesEmpty": "لم تُعَد أي أصوات — تحقق من مفتاح API.",
+    "ttsDashScopeTitle": "Alibaba Cloud CosyVoice TTS (سحابي)",
+    "ttsDashScopeDescription": "CosyVoice / Qwen-TTS على Alibaba Cloud Model Studio (DashScope)، متاح من الصين القارية. مفتاح API موجود في الإعدادات ← مزوّدو السحابة؛ اضبط النموذج والصوت هنا، ثم اضغط Use على هذا المحرك في قائمة TTS أعلاه.",
+    "ttsDashScopeModelHint": "cosyvoice-v2 (افتراضي)، cosyvoice-v3-flash، qwen-audio-3.0-tts-flash… يجب أن تتطابق إصدارات النموذج والصوت.",
+    "ttsDashScopeVoiceHint": "صوت للنموذج المختار — مثل longxiaochun_v2 لـ cosyvoice-v2."
   },
   "enterprise_faq": {
     "q_internal_tools": "هل أحتاج إلى ترخيص للأدوات الداخلية؟",
@@ -2531,5 +2549,39 @@
       "longform": "سرد القصص",
       "asr": "التفريغ النصي"
     }
+  },
+  "cloud": {
+    "title": "مفاتيح مزوّدي السحابة",
+    "description": "مفتاح API واحد لكل مزوّد، تتشاركه كل محركاته السحابية — توليف الكلام والتفريغ النصي وفصل الغناء. تُخزَّن المفاتيح مشفَّرة على هذا الجهاز ولا تُعرض مجددًا؛ ولمتغيرات البيئة الأولوية دائمًا على المفاتيح المحفوظة.",
+    "apiKey": "مفتاح API",
+    "keyFromEnv": "مضبوط عبر متغير بيئة — وهو يتجاوز أي مفتاح محفوظ هنا.",
+    "getKey": "احصل على مفتاح",
+    "keyMissing": "لا يوجد مفتاح {{provider}} مضبوط — أضِفه في الإعدادات ← مزوّدو السحابة.",
+    "model": "النموذج",
+    "voice": "الصوت",
+    "serverUrl": "عنوان الخادم",
+    "loadError": "تعذّر تحميل الإعدادات",
+    "saveError": "فشل الحفظ",
+    "testKey": "اختبار المفتاح",
+    "testOk": "المفتاح يعمل ({{ms}} م.ث)",
+    "testAuthFailed": "رفض المزوّد هذا المفتاح (HTTP {{code}})",
+    "testNotConfigured": "احفظ مفتاحًا أولًا",
+    "testUnreachable": "تعذّر الوصول إلى المزوّد — تحقق من الشبكة أو الوكيل",
+    "testTimeout": "لم يستجب المزوّد في الوقت المحدد",
+    "testFailed": "فشل اختبار المفتاح",
+    "elevenlabsNotes": "توليف الكلام، وتفريغ Scribe النصي، وعزل الصوت. يتطلب اتصالًا بالشبكة الدولية.",
+    "dashscopeNotes": "Alibaba Cloud Model Studio — توليف CosyVoice والتعرف على الكلام Qwen. متاح من الصين القارية.",
+    "mvsepNotes": "خدمة متخصصة في فصل الموسيقى/الغناء — تشغّل محرك MVSEP في الإعدادات ← فصل الغناء."
+  },
+  "separation": {
+    "title": "محرك فصل الغناء",
+    "description": "أي محرك يفصل الصوت عن الخلفية أثناء تحضير الدبلجة وتنظيف الميكروفون. يعمل Demucs المحلي على هذا الجهاز (افتراضي)؛ أما المحركات السحابية فترفع المسار الصوتي إلى المزوّد وتتطلب مفتاحًا من الإعدادات ← مزوّدو السحابة.",
+    "engine": "المحرك",
+    "engineFromEnv": "مثبَّت عبر OMNIVOICE_SEPARATION_BACKEND — سيُتجاهل الاختيار أدناه.",
+    "localBadge": "محلي",
+    "cloudBadge": "سحابي",
+    "noBackground": "مسار الصوت فقط — لن تحتفظ صادرات الدبلجة بموسيقى الخلفية مع هذا المحرك.",
+    "mvsepSepType": "معرّف خوارزمية MVSEP",
+    "mvsepSepTypeHint": "sep_type رقمي من وثائق MVSEP API. الافتراضي 40 = BS Roformer (غناء + موسيقى)."
   }
 }

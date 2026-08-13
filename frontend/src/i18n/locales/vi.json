@@ -282,7 +282,9 @@
     "models_dir_effective": "Đang sử dụng",
     "models_dir_configured": "Đã cấu hình",
     "models_dir_default": "Dùng mặc định",
-    "models_dir_restart": "↻ Khởi động lại VoiceStudio để dùng vị trí mới."
+    "models_dir_restart": "↻ Khởi động lại VoiceStudio để dùng vị trí mới.",
+    "cloud_providers": "Nhà cung cấp đám mây",
+    "separation": "Tách giọng hát"
   },
   "bootstrap": {
     "title": "VoiceStudio",
@@ -435,7 +437,8 @@
     "learn_more": "Tìm hiểu thêm",
     "saving": "Đang lưu…",
     "remove": "Xóa {{term}}",
-    "not_set": "Chưa đặt"
+    "not_set": "Chưa đặt",
+    "saved": "Đã lưu"
   },
   "launchpad": {
     "greeting": "xin chào ở đó",
@@ -1913,7 +1916,22 @@
     "voice_previews_checked": "đã kiểm tra {{when}}",
     "voice_previews_never": "chưa kiểm tra",
     "voice_previews_check": "Kiểm tra ngay",
-    "voice_previews_rejected": "Bản cập nhật thư viện giọng bị từ chối: {{message}}"
+    "voice_previews_rejected": "Bản cập nhật thư viện giọng bị từ chối: {{message}}",
+    "ttsOpenAICompatTitle": "TTS tương thích OpenAI (máy chủ từ xa)",
+    "ttsOpenAICompatDescription": "Trỏ tổng hợp giọng nói tới bất kỳ máy chủ /v1/audio/speech tương thích OpenAI nào — SiliconFlow (CosyVoice2), API chính thức của OpenAI hoặc máy chủ tự dựng. Cấu hình và kiểm tra tại đây, rồi bấm Use trên công cụ này trong danh sách TTS phía trên. Văn bản gửi qua công cụ này sẽ đến máy chủ bạn cấu hình.",
+    "ttsOpenAICompatBaseUrlHint": "ví dụ https://api.siliconflow.cn/v1 (SiliconFlow) hoặc https://api.openai.com/v1. Thay đổi áp dụng ở lần tạo tiếp theo — không cần khởi động lại.",
+    "ttsOpenAICompatVoiceHint": "Tên giọng mà máy chủ yêu cầu — ví dụ alloy (OpenAI) hoặc FunAudioLLM/CosyVoice2-0.5B:alex (SiliconFlow).",
+    "ttsOpenAICompatTestHint": "Lưu các trường phía trên rồi thăm dò endpoint /models của máy chủ — không tổng hợp âm thanh, không phát sinh phí.",
+    "ttsOpenAICompatTestOkNoModels": "Máy chủ truy cập được trong {{ms}} ms — không liệt kê mô hình; tổng hợp vẫn có thể hoạt động",
+    "ttsElevenLabsTitle": "ElevenLabs TTS (đám mây)",
+    "ttsElevenLabsDescription": "Tổng hợp giọng nói qua tài khoản ElevenLabs của bạn. Khóa API nằm trong Cài đặt → Nhà cung cấp đám mây; chọn giọng và mô hình tại đây, rồi bấm Use trên công cụ này trong danh sách TTS phía trên.",
+    "ttsElevenLabsVoiceHint": "Một voice_id từ thư viện giọng ElevenLabs của bạn — gồm cả giọng bạn đã nhân bản trên elevenlabs.io. Tải danh sách để chọn theo tên.",
+    "ttsElevenLabsLoadVoices": "Tải danh sách giọng",
+    "ttsElevenLabsVoicesEmpty": "Không nhận được giọng nào — kiểm tra khóa API.",
+    "ttsDashScopeTitle": "Alibaba Cloud CosyVoice TTS (đám mây)",
+    "ttsDashScopeDescription": "CosyVoice / Qwen-TTS trên Alibaba Cloud Model Studio (DashScope), truy cập được từ Trung Quốc đại lục. Khóa API nằm trong Cài đặt → Nhà cung cấp đám mây; đặt mô hình và giọng tại đây, rồi bấm Use trên công cụ này trong danh sách TTS phía trên.",
+    "ttsDashScopeModelHint": "cosyvoice-v2 (mặc định), cosyvoice-v3-flash, qwen-audio-3.0-tts-flash… Phiên bản mô hình và giọng phải khớp nhau.",
+    "ttsDashScopeVoiceHint": "Giọng cho mô hình đã chọn — ví dụ longxiaochun_v2 cho cosyvoice-v2."
   },
   "enterprise_faq": {
     "q_internal_tools": "Tôi có cần giấy phép cho các công cụ nội bộ không?",
@@ -2531,5 +2549,39 @@
       "longform": "kể chuyện",
       "asr": "phiên âm"
     }
+  },
+  "cloud": {
+    "title": "Khóa API của nhà cung cấp đám mây",
+    "description": "Mỗi nhà cung cấp một khóa API, dùng chung cho mọi công cụ đám mây của họ — tổng hợp giọng nói, phiên âm và tách giọng hát. Khóa được lưu mã hóa trên máy này và không hiển thị lại; biến môi trường luôn được ưu tiên hơn khóa đã lưu.",
+    "apiKey": "Khóa API",
+    "keyFromEnv": "Được đặt qua biến môi trường — nó ghi đè mọi khóa đã lưu tại đây.",
+    "getKey": "Lấy khóa",
+    "keyMissing": "Chưa cấu hình khóa {{provider}} — hãy thêm trong Cài đặt → Nhà cung cấp đám mây.",
+    "model": "Mô hình",
+    "voice": "Giọng đọc",
+    "serverUrl": "URL máy chủ",
+    "loadError": "Không tải được cài đặt",
+    "saveError": "Lưu thất bại",
+    "testKey": "Kiểm tra khóa",
+    "testOk": "Khóa hoạt động ({{ms}} ms)",
+    "testAuthFailed": "Nhà cung cấp từ chối khóa này (HTTP {{code}})",
+    "testNotConfigured": "Hãy lưu khóa trước",
+    "testUnreachable": "Không thể kết nối nhà cung cấp — kiểm tra mạng hoặc proxy",
+    "testTimeout": "Nhà cung cấp không phản hồi kịp thời",
+    "testFailed": "Kiểm tra khóa thất bại",
+    "elevenlabsNotes": "Tổng hợp giọng nói, phiên âm Scribe và tách giọng. Cần truy cập mạng quốc tế.",
+    "dashscopeNotes": "Alibaba Cloud Model Studio — tổng hợp CosyVoice và nhận dạng giọng nói Qwen. Truy cập được từ Trung Quốc đại lục.",
+    "mvsepNotes": "Dịch vụ chuyên tách nhạc/giọng hát — cung cấp cho công cụ MVSEP trong Cài đặt → Tách giọng hát."
+  },
+  "separation": {
+    "title": "Công cụ tách giọng hát",
+    "description": "Công cụ nào sẽ tách giọng khỏi nền khi chuẩn bị lồng tiếng và làm sạch micro. Demucs cục bộ chạy trên máy này (mặc định); công cụ đám mây tải bản âm thanh lên nhà cung cấp và cần khóa từ Cài đặt → Nhà cung cấp đám mây.",
+    "engine": "Công cụ",
+    "engineFromEnv": "Bị ghim bởi OMNIVOICE_SEPARATION_BACKEND — lựa chọn bên dưới bị bỏ qua.",
+    "localBadge": "cục bộ",
+    "cloudBadge": "đám mây",
+    "noBackground": "Chỉ trả về track giọng — xuất lồng tiếng sẽ không giữ nhạc nền với công cụ này.",
+    "mvsepSepType": "ID thuật toán MVSEP",
+    "mvsepSepTypeHint": "sep_type dạng số trong tài liệu API MVSEP. Mặc định 40 = BS Roformer (giọng + nhạc nền)."
   }
 }

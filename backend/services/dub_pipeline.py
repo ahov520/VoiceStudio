@@ -34,7 +34,6 @@ import os
 import re
 import shutil
 import subprocess
-import sys
 import threading
 import time
 from collections import OrderedDict
@@ -45,7 +44,6 @@ import soundfile as sf
 from core.config import DUB_DIR
 from fastapi import HTTPException
 from services.ffmpeg_utils import find_ffmpeg, find_ffprobe, _get_semaphore, _spawn_with_retry
-from services.model_manager import get_best_device
 # Process lifecycle moved to its own leaf module so ffmpeg_utils can import
 # it at module top (no dub_pipeline ↔ ffmpeg_utils cycle). Re-exported here —
 # dub_core and tests still alias these names through this module.
@@ -1338,42 +1336,38 @@ async def ingest_pipeline(
 
             yield prep_event("demucs_start")
             try:
-                demucs_cmd = [sys.executable, "-m", "demucs.separate",
-                              "--two-stems", "vocals", "-n", "htdemucs", "-d", get_best_device(),
-                              audio_hq_path or audio_path, "-o", job_dir]
-                rc = -1
-                stderr_full = b""
-                last_pct = -1
-                # demucs writes a tqdm progress bar to stderr as
-                # "  42%|████      | …" — surface each new integer percent
-                # to the UI so the user sees the bar instead of a static
-                # spinner during the multi-minute separation step.
-                async for evt in run_proc_streaming_stderr(job_id, demucs_cmd, timeout=1800.0):
-                    if evt[0] == "stderr":
-                        m = re.search(r"(\d{1,3})%", evt[1])
-                        if m:
-                            pct = max(0, min(100, int(m.group(1))))
-                            if pct != last_pct:
-                                last_pct = pct
-                                yield prep_event("demucs_progress", percent=pct)
+                # Vocal separation is engine-driven now (local demucs by
+                # default; MVSEP / ElevenLabs isolation as opt-in cloud
+                # engines) — see services.separation_backend. The SSE event
+                # names stay `demucs_*` so the frontend's prep stage tracker
+                # is unchanged regardless of which engine actually ran.
+                # Separation on the full-quality stereo track ("audio_hq"
+                # when extraction succeeded, "audio" on its fallback): the
+                # background bed keeps its stereo image for the final mix.
+                from services import separation_backend as _separation
+
+                sep_engine = _separation.get_active_separation_backend()
+                if sep_engine.id != _separation.DEFAULT_BACKEND_ID:
+                    logger.info(
+                        "Vocal separation for %s via %s", log_safe(job_id), sep_engine.id
+                    )
+                sep_vocals = None
+                sep_bg = None
+                async for evt in sep_engine.separate(
+                    audio_hq_path or audio_path, job_dir, job_id=job_id, timeout=1800.0,
+                ):
+                    if evt[0] == "progress":
+                        yield prep_event("demucs_progress", percent=evt[1])
                     elif evt[0] == "done":
-                        rc, stderr_full = evt[1], evt[2]
-                if rc != 0:
-                    raise Exception(stderr_full.decode(errors="replace")[:500])
-                # Stems land under the INPUT's basename ("audio_hq" when the
-                # full-quality extraction succeeded, "audio" on its fallback).
-                demucs_out = os.path.join(
-                    job_dir, "htdemucs",
-                    os.path.splitext(os.path.basename(audio_hq_path or audio_path))[0],
-                )
-                if os.path.exists(os.path.join(demucs_out, "vocals.wav")):
-                    shutil.move(os.path.join(demucs_out, "vocals.wav"), vocals_path)
-                    shutil.move(os.path.join(demucs_out, "no_vocals.wav"), no_vocals_path)
-                    shutil.rmtree(os.path.join(job_dir, "htdemucs"), ignore_errors=True)
+                        sep_vocals, sep_bg = evt[1], evt[2]
+                if not (sep_vocals and os.path.exists(sep_vocals)):
+                    raise RuntimeError("separation produced no vocals stem")
+                vocals_path = sep_vocals
+                no_vocals_path = sep_bg if (sep_bg and os.path.exists(sep_bg)) else None
             except asyncio.CancelledError:
                 raise
             except Exception as e:
-                logger.warning("Demucs failed for %s, falling back to mixed audio: %s", log_safe(job_id), log_safe(e))
+                logger.warning("Vocal separation failed for %s, falling back to mixed audio: %s", log_safe(job_id), log_safe(e))
                 # plan-04: surface the degradation (job continues with mixed audio).
                 yield prep_event("warning", **failure.build_failure(e, stage="demucs", include_diagnostic=False))
                 vocals_path = audio_path

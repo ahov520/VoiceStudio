@@ -91,8 +91,11 @@ describe('EnginesTab', () => {
     render(<EnginesTab />);
     await waitFor(() => screen.getByText('VoiceStudio (test)'));
 
-    // One settings card, not three stacked per-family matrices.
-    expect(document.querySelectorAll('[data-slot="settings-section"]').length).toBe(1);
+    // One MATRIX card, not three stacked per-family matrices. (The TTS tab
+    // additionally mounts the three cloud-TTS config panels below it, so the
+    // total settings-section count is 1 matrix + 3 panels.)
+    expect(document.querySelectorAll('.engine-matrix__tabs').length).toBe(1);
+    expect(document.querySelectorAll('[data-slot="settings-section"]').length).toBe(4);
     // The tab strip offers all three families (with the active engine caption).
     expect(document.querySelectorAll('.engine-matrix__tab-family').length).toBe(3);
     expect(document.querySelector('.engine-matrix__tabs')).toHaveClass('w-full');
@@ -170,5 +173,22 @@ describe('EnginesTab', () => {
     await waitFor(() =>
       expect(screen.queryByTestId('asr-openai-compat-base-url')).not.toBeInTheDocument(),
     );
+  });
+
+  it('mounts the cloud-TTS config panels on the TTS tab only', async () => {
+    render(<EnginesTab />);
+    await waitFor(() => screen.getByText('VoiceStudio (test)'));
+    // TTS tab: OpenAI-compatible TTS + ElevenLabs + DashScope panels.
+    await screen.findByTestId('tts-openai-compat-base-url');
+    expect(screen.getByTestId('tts-elevenlabs-voice-id')).toBeInTheDocument();
+    expect(screen.getByTestId('tts-dashscope-model')).toBeInTheDocument();
+
+    // ASR tab: the TTS panels unmount.
+    clickFamilyTab('ASR');
+    await waitFor(() =>
+      expect(screen.queryByTestId('tts-openai-compat-base-url')).not.toBeInTheDocument(),
+    );
+    expect(screen.queryByTestId('tts-elevenlabs-voice-id')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('tts-dashscope-model')).not.toBeInTheDocument();
   });
 });

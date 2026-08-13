@@ -282,7 +282,9 @@
     "models_dir_effective": "現在使用中",
     "models_dir_configured": "設定済み",
     "models_dir_default": "既定値を使用",
-    "models_dir_restart": "↻ 新しい場所を使用するには VoiceStudio を再起動してください。"
+    "models_dir_restart": "↻ 新しい場所を使用するには VoiceStudio を再起動してください。",
+    "cloud_providers": "クラウドプロバイダー",
+    "separation": "ボーカル分離"
   },
   "bootstrap": {
     "title": "VoiceStudio",
@@ -435,7 +437,8 @@
     "learn_more": "さらに詳しく",
     "saving": "保存中…",
     "remove": "{{term}} を削除",
-    "not_set": "未設定"
+    "not_set": "未設定",
+    "saved": "保存しました"
   },
   "launchpad": {
     "greeting": "こんにちは。",
@@ -1913,7 +1916,22 @@
     "voice_previews_checked": "{{when}}に確認",
     "voice_previews_never": "未確認",
     "voice_previews_check": "今すぐ確認",
-    "voice_previews_rejected": "ボイスギャラリーの更新を拒否しました: {{message}}"
+    "voice_previews_rejected": "ボイスギャラリーの更新を拒否しました: {{message}}",
+    "ttsOpenAICompatTitle": "OpenAI 互換 TTS(リモートサーバー)",
+    "ttsOpenAICompatDescription": "音声合成を任意の OpenAI 互換 /v1/audio/speech サーバーに向けます——SiliconFlow(CosyVoice2)、OpenAI 公式 API、自前サーバーなど。ここで設定してテストし、上の TTS 一覧でこのエンジンの「使用」を押してください。このエンジン経由のテキストは設定したサーバーに送信されます。",
+    "ttsOpenAICompatBaseUrlHint": "例:https://api.siliconflow.cn/v1(SiliconFlow)または https://api.openai.com/v1。変更は次回の生成から反映されます——再起動は不要です。",
+    "ttsOpenAICompatVoiceHint": "サーバーが要求するボイス名——例:alloy(OpenAI)や FunAudioLLM/CosyVoice2-0.5B:alex(SiliconFlow)。",
+    "ttsOpenAICompatTestHint": "上の項目を保存してから、サーバーの /models エンドポイントを確認します——音声は合成されず、料金も発生しません。",
+    "ttsOpenAICompatTestOkNoModels": "サーバーに接続できました({{ms}} ms)——モデル一覧はありませんが、合成は動作する可能性があります",
+    "ttsElevenLabsTitle": "ElevenLabs TTS(クラウド)",
+    "ttsElevenLabsDescription": "ElevenLabs アカウント経由の音声合成。API キーは 設定 → クラウドプロバイダー にあります。ここでボイスとモデルを選び、上の TTS 一覧でこのエンジンの「使用」を押してください。",
+    "ttsElevenLabsVoiceHint": "ElevenLabs ボイスライブラリの voice_id——elevenlabs.io で複製したボイスも含みます。一覧を読み込んで名前で選べます。",
+    "ttsElevenLabsLoadVoices": "ボイスを読み込む",
+    "ttsElevenLabsVoicesEmpty": "ボイスが返されませんでした——API キーを確認してください。",
+    "ttsDashScopeTitle": "Alibaba Cloud CosyVoice TTS(クラウド)",
+    "ttsDashScopeDescription": "Alibaba Cloud Model Studio(DashScope)の CosyVoice / Qwen-TTS。中国本土から直接利用できます。API キーは 設定 → クラウドプロバイダー にあります。ここでモデルとボイスを設定し、上の TTS 一覧でこのエンジンの「使用」を押してください。",
+    "ttsDashScopeModelHint": "cosyvoice-v2(既定)、cosyvoice-v3-flash、qwen-audio-3.0-tts-flash など。モデルとボイスのバージョンは一致させてください。",
+    "ttsDashScopeVoiceHint": "選択したモデルに対応するボイス——例:cosyvoice-v2 には longxiaochun_v2。"
   },
   "enterprise_faq": {
     "q_internal_tools": "内部ツールにはライセンスが必要ですか?",
@@ -2531,5 +2549,39 @@
       "longform": "ストーリー朗読",
       "asr": "文字起こし"
     }
+  },
+  "cloud": {
+    "title": "クラウドプロバイダーの API キー",
+    "description": "プロバイダーごとに 1 つの API キーを、音声合成・文字起こし・ボーカル分離のすべてのクラウドエンジンで共用します。キーは本機に暗号化して保存され、再表示されません。環境変数は保存済みキーより常に優先されます。",
+    "apiKey": "API キー",
+    "keyFromEnv": "環境変数で設定されています——ここに保存したキーより優先されます。",
+    "getKey": "キーを取得",
+    "keyMissing": "{{provider}} のキーが未設定です——設定 → クラウドプロバイダー で追加してください。",
+    "model": "モデル",
+    "voice": "ボイス",
+    "serverUrl": "サーバー URL",
+    "loadError": "設定の読み込みに失敗しました",
+    "saveError": "保存に失敗しました",
+    "testKey": "キーをテスト",
+    "testOk": "キーは有効です({{ms}} ms)",
+    "testAuthFailed": "プロバイダーがこのキーを拒否しました(HTTP {{code}})",
+    "testNotConfigured": "先にキーを保存してください",
+    "testUnreachable": "プロバイダーに接続できません——ネットワークまたはプロキシを確認してください",
+    "testTimeout": "プロバイダーが時間内に応答しませんでした",
+    "testFailed": "キーのテストに失敗しました",
+    "elevenlabsNotes": "音声合成、Scribe 文字起こし、ボーカル分離。国際的なネットワーク接続が必要です。",
+    "dashscopeNotes": "Alibaba Cloud Model Studio——CosyVoice 音声合成と Qwen 音声認識。中国本土から直接利用できます。",
+    "mvsepNotes": "音楽/ボーカル分離の専門サービス——設定 → ボーカル分離 の MVSEP エンジンで使用します。"
+  },
+  "separation": {
+    "title": "ボーカル分離エンジン",
+    "description": "吹き替え準備やマイク音声のクリーニングで、ボーカルと背景音を分けるエンジンを選びます。ローカルの Demucs は本機で実行されます(既定)。クラウドエンジンは音声トラックをプロバイダーへアップロードし、設定 → クラウドプロバイダー のキーが必要です。",
+    "engine": "エンジン",
+    "engineFromEnv": "OMNIVOICE_SEPARATION_BACKEND で固定されています——下の選択は無視されます。",
+    "localBadge": "ローカル",
+    "cloudBadge": "クラウド",
+    "noBackground": "ボーカルトラックのみを返します——このエンジンでは吹き替え書き出しに背景音楽が残りません。",
+    "mvsepSepType": "MVSEP アルゴリズム ID",
+    "mvsepSepTypeHint": "MVSEP API ドキュメントの数値 sep_type。既定の 40 = BS Roformer(ボーカル + 伴奏)。"
   }
 }

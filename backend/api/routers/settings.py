@@ -1065,3 +1065,222 @@ def set_analytics(body: _AnalyticsBody):
 
     analytics.set_opted_in(body.enabled)
     return get_analytics()
+
+
+# ── Cloud provider keys (ElevenLabs / DashScope / MVSEP) ────────────────────
+# One key per provider, shared by every cloud engine of that provider (TTS,
+# ASR, vocal separation — services.cloud_providers). Keys persist ENCRYPTED
+# via settings_store.set_secret (same convention as /llm-providers): never
+# returned to the client, '' clears, omitted/None leaves unchanged. Loopback-
+# gated by the router dep.
+
+
+class _CloudProviderBody(BaseModel):
+    api_key: str | None = Field(None, description="API key; '' clears it, None leaves unchanged")
+
+
+@router.get("/cloud-providers")
+def list_cloud_providers():
+    """All cloud speech providers with `has_key`/`key_from_env` booleans —
+    never the key material."""
+    from services import cloud_providers
+    return {
+        "providers": [cloud_providers.describe(p) for p in cloud_providers.all_providers()]
+    }
+
+
+@router.put("/cloud-providers/{provider_id}")
+def save_cloud_provider(provider_id: str, body: _CloudProviderBody):
+    from services import cloud_providers
+    if cloud_providers.get_provider(provider_id) is None:
+        raise HTTPException(status_code=404, detail=f"unknown cloud provider {provider_id!r}")
+    if body.api_key is not None:
+        cloud_providers.save_key(provider_id, body.api_key.strip())
+    return list_cloud_providers()
+
+
+@router.post("/cloud-providers/{provider_id}/test")
+def test_cloud_provider(provider_id: str):
+    """One cheap authenticated round-trip to prove the key works (the panel
+    saves first, then tests — same contract as /llm-providers/{id}/test).
+    Always 200 with a structured verdict; the key is never logged or echoed."""
+    from services import cloud_providers
+    if cloud_providers.get_provider(provider_id) is None:
+        raise HTTPException(status_code=404, detail=f"unknown cloud provider {provider_id!r}")
+    return cloud_providers.probe(provider_id)
+
+
+# ── OpenAI-compatible remote TTS ────────────────────────────────────────────
+# The synthesis twin of /asr-openai-compat (#877): base_url/model/voice are
+# plain settings_store text rows; the key is encrypted. Covers SiliconFlow
+# (CosyVoice2 and friends), OpenAI's own TTS API, and self-hosted servers.
+
+
+class _TTSOpenAICompatBody(BaseModel):
+    base_url: str | None = None
+    model: str | None = None
+    voice: str | None = None
+    api_key: str | None = Field(None, description="'' clears it, None leaves unchanged")
+
+
+@router.get("/tts-openai-compat")
+def get_tts_openai_compat():
+    from services import tts_cloud
+
+    return {
+        "base_url": tts_cloud.resolve_openai_compat_tts_base_url(),
+        "model": tts_cloud.resolve_openai_compat_tts_model(),
+        "voice": tts_cloud.resolve_openai_compat_tts_voice(),
+        "has_key": tts_cloud.openai_compat_tts_has_key(),
+    }
+
+
+@router.put("/tts-openai-compat")
+def set_tts_openai_compat(body: _TTSOpenAICompatBody):
+    from services import settings_store, tts_cloud
+
+    if body.base_url is not None:
+        url = body.base_url.strip().rstrip("/")
+        if url and not url.startswith(("http://", "https://")):
+            raise HTTPException(status_code=400, detail="Base URL must start with http(s)://")
+        settings_store.set_text(tts_cloud._TTS_OPENAI_COMPAT_BASE_URL_KEY, url)
+    if body.model is not None:
+        settings_store.set_text(
+            tts_cloud._TTS_OPENAI_COMPAT_MODEL_KEY, body.model.strip() or "tts-1"
+        )
+    if body.voice is not None:
+        settings_store.set_text(
+            tts_cloud._TTS_OPENAI_COMPAT_VOICE_KEY, body.voice.strip() or "alloy"
+        )
+    if body.api_key is not None:
+        settings_store.set_secret(
+            tts_cloud._TTS_OPENAI_COMPAT_SECRET_NAME, body.api_key.strip()
+        )
+    return get_tts_openai_compat()
+
+
+@router.post("/tts-openai-compat/test")
+def test_tts_openai_compat():
+    """GET {base_url}/models probe of the PERSISTED config — no audio is
+    synthesized, nothing is billed. Same verdict shape as the ASR twin."""
+    from services import tts_cloud
+
+    return tts_cloud.probe_openai_compat_tts_server()
+
+
+# ── ElevenLabs TTS voice/model selection ────────────────────────────────────
+# The key itself lives in /cloud-providers (shared with Scribe ASR and the
+# voice isolator); this block only configures WHICH voice/model the TTS
+# engine uses, plus a voice-list proxy for the Settings picker.
+
+
+class _TTSElevenLabsBody(BaseModel):
+    voice_id: str | None = None
+    model_id: str | None = None
+
+
+@router.get("/tts-elevenlabs")
+def get_tts_elevenlabs():
+    from services import cloud_providers, tts_cloud
+
+    return {
+        "voice_id": tts_cloud.resolve_elevenlabs_tts_voice_id(),
+        "model_id": tts_cloud.resolve_elevenlabs_tts_model_id(),
+        "has_key": cloud_providers.has_key("elevenlabs"),
+    }
+
+
+@router.put("/tts-elevenlabs")
+def set_tts_elevenlabs(body: _TTSElevenLabsBody):
+    from services import settings_store, tts_cloud
+
+    if body.voice_id is not None:
+        settings_store.set_text(tts_cloud._TTS_ELEVENLABS_VOICE_KEY, body.voice_id.strip())
+    if body.model_id is not None:
+        settings_store.set_text(tts_cloud._TTS_ELEVENLABS_MODEL_KEY, body.model_id.strip())
+    return get_tts_elevenlabs()
+
+
+@router.get("/tts-elevenlabs/voices")
+def list_tts_elevenlabs_voices():
+    """Voices the configured ElevenLabs key can use — powers the Settings
+    voice picker. Read-only; failures return a classified verdict, never 500."""
+    from services import tts_cloud
+
+    return tts_cloud.list_elevenlabs_voices()
+
+
+# ── DashScope (Alibaba Cloud) TTS model/voice selection ─────────────────────
+
+
+class _TTSDashScopeBody(BaseModel):
+    model: str | None = None
+    voice: str | None = None
+
+
+@router.get("/tts-dashscope")
+def get_tts_dashscope():
+    from services import cloud_providers, tts_cloud
+
+    return {
+        "model": tts_cloud.resolve_dashscope_tts_model(),
+        "voice": tts_cloud.resolve_dashscope_tts_voice(),
+        "has_key": cloud_providers.has_key("dashscope"),
+    }
+
+
+@router.put("/tts-dashscope")
+def set_tts_dashscope(body: _TTSDashScopeBody):
+    from services import settings_store, tts_cloud
+
+    if body.model is not None:
+        settings_store.set_text(tts_cloud._TTS_DASHSCOPE_MODEL_KEY, body.model.strip())
+    if body.voice is not None:
+        settings_store.set_text(tts_cloud._TTS_DASHSCOPE_VOICE_KEY, body.voice.strip())
+    return get_tts_dashscope()
+
+
+# ── Vocal separation engine (Settings → Vocal separation) ───────────────────
+# Which engine splits vocals from background during dub prep and mic cleanup:
+# local Demucs (default) or a cloud engine (MVSEP / ElevenLabs isolation).
+# `OMNIVOICE_SEPARATION_BACKEND` pins the choice over the stored selection.
+
+
+class _SeparationBody(BaseModel):
+    backend: str | None = Field(None, description="separation engine id")
+    mvsep_sep_type: str | None = Field(
+        None, description="MVSEP sep_type id (digits); '' resets to the default"
+    )
+
+
+def _separation_state() -> dict:
+    from services import separation_backend
+
+    return {
+        "active": separation_backend.active_backend_id(),
+        "active_from_env": bool(os.environ.get("OMNIVOICE_SEPARATION_BACKEND")),
+        "backends": separation_backend.list_backends(),
+        "mvsep_sep_type": separation_backend.resolve_mvsep_sep_type(),
+    }
+
+
+@router.get("/separation")
+def get_separation():
+    return _separation_state()
+
+
+@router.put("/separation")
+def set_separation(body: _SeparationBody):
+    from services import separation_backend, settings_store
+
+    if body.backend is not None:
+        try:
+            separation_backend.set_active_backend(body.backend.strip())
+        except ValueError as e:
+            raise HTTPException(status_code=404, detail=str(e))
+    if body.mvsep_sep_type is not None:
+        raw = body.mvsep_sep_type.strip()
+        if raw and not raw.isdigit():
+            raise HTTPException(status_code=400, detail="mvsep_sep_type must be a numeric id")
+        settings_store.set_text(separation_backend._MVSEP_SEP_TYPE_KEY, raw)
+    return _separation_state()

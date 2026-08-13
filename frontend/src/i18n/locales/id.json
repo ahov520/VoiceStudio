@@ -282,7 +282,9 @@
     "models_dir_effective": "Sedang digunakan",
     "models_dir_configured": "Dikonfigurasi",
     "models_dir_default": "Menggunakan bawaan",
-    "models_dir_restart": "↻ Mulai ulang VoiceStudio untuk memakai lokasi baru."
+    "models_dir_restart": "↻ Mulai ulang VoiceStudio untuk memakai lokasi baru.",
+    "cloud_providers": "Penyedia cloud",
+    "separation": "Pemisahan vokal"
   },
   "bootstrap": {
     "title": "VoiceStudio",
@@ -435,7 +437,8 @@
     "learn_more": "Pelajari lebih lanjut",
     "saving": "Menyimpan…",
     "remove": "Hapus {{term}}",
-    "not_set": "Belum diatur"
+    "not_set": "Belum diatur",
+    "saved": "Tersimpan"
   },
   "launchpad": {
     "greeting": "halo",
@@ -1913,7 +1916,22 @@
     "voice_previews_checked": "diperiksa {{when}}",
     "voice_previews_never": "belum diperiksa",
     "voice_previews_check": "Periksa sekarang",
-    "voice_previews_rejected": "Pembaruan galeri suara ditolak: {{message}}"
+    "voice_previews_rejected": "Pembaruan galeri suara ditolak: {{message}}",
+    "ttsOpenAICompatTitle": "TTS kompatibel OpenAI (server jarak jauh)",
+    "ttsOpenAICompatDescription": "Arahkan sintesis suara ke server /v1/audio/speech mana pun yang kompatibel OpenAI — SiliconFlow (CosyVoice2), API resmi OpenAI, atau server sendiri. Konfigurasikan dan uji di sini, lalu klik Use pada mesin ini di daftar TTS di atas. Teks yang dikirim lewat mesin ini menuju server yang Anda konfigurasi.",
+    "ttsOpenAICompatBaseUrlHint": "mis. https://api.siliconflow.cn/v1 (SiliconFlow) atau https://api.openai.com/v1. Perubahan berlaku pada pembuatan berikutnya — tanpa mulai ulang.",
+    "ttsOpenAICompatVoiceHint": "Nama suara yang diminta server — mis. alloy (OpenAI) atau FunAudioLLM/CosyVoice2-0.5B:alex (SiliconFlow).",
+    "ttsOpenAICompatTestHint": "Menyimpan kolom di atas lalu memeriksa endpoint /models server — tidak ada audio yang disintesis, tidak ada tagihan.",
+    "ttsOpenAICompatTestOkNoModels": "Server terjangkau dalam {{ms}} ms — tidak menampilkan daftar model; sintesis mungkin tetap berfungsi",
+    "ttsElevenLabsTitle": "ElevenLabs TTS (cloud)",
+    "ttsElevenLabsDescription": "Sintesis suara lewat akun ElevenLabs Anda. Kunci API ada di Pengaturan → Penyedia cloud; pilih suara dan model di sini, lalu klik Use pada mesin ini di daftar TTS di atas.",
+    "ttsElevenLabsVoiceHint": "voice_id dari pustaka suara ElevenLabs Anda — termasuk suara yang Anda klon di elevenlabs.io. Muat daftar untuk memilih berdasarkan nama.",
+    "ttsElevenLabsLoadVoices": "Muat suara",
+    "ttsElevenLabsVoicesEmpty": "Tidak ada suara yang dikembalikan — periksa kunci API.",
+    "ttsDashScopeTitle": "Alibaba Cloud CosyVoice TTS (cloud)",
+    "ttsDashScopeDescription": "CosyVoice / Qwen-TTS di Alibaba Cloud Model Studio (DashScope), dapat diakses dari Tiongkok daratan. Kunci API ada di Pengaturan → Penyedia cloud; atur model dan suara di sini, lalu klik Use pada mesin ini di daftar TTS di atas.",
+    "ttsDashScopeModelHint": "cosyvoice-v2 (bawaan), cosyvoice-v3-flash, qwen-audio-3.0-tts-flash… Versi model dan suara harus cocok.",
+    "ttsDashScopeVoiceHint": "Suara untuk model terpilih — mis. longxiaochun_v2 untuk cosyvoice-v2."
   },
   "enterprise_faq": {
     "q_internal_tools": "Apakah saya memerlukan lisensi untuk alat internal?",
@@ -2531,5 +2549,39 @@
       "longform": "narasi cerita",
       "asr": "transkripsi"
     }
+  },
+  "cloud": {
+    "title": "Kunci penyedia cloud",
+    "description": "Satu kunci API per penyedia, dipakai bersama oleh semua mesin cloud-nya — sintesis suara, transkripsi, dan pemisahan vokal. Kunci disimpan terenkripsi di mesin ini dan tidak pernah ditampilkan lagi; variabel lingkungan selalu diutamakan daripada kunci tersimpan.",
+    "apiKey": "Kunci API",
+    "keyFromEnv": "Diset lewat variabel lingkungan — menimpa kunci apa pun yang tersimpan di sini.",
+    "getKey": "Dapatkan kunci",
+    "keyMissing": "Kunci {{provider}} belum dikonfigurasi — tambahkan di Pengaturan → Penyedia cloud.",
+    "model": "Model",
+    "voice": "Suara",
+    "serverUrl": "URL server",
+    "loadError": "Gagal memuat pengaturan",
+    "saveError": "Gagal menyimpan",
+    "testKey": "Uji kunci",
+    "testOk": "Kunci berfungsi ({{ms}} ms)",
+    "testAuthFailed": "Penyedia menolak kunci ini (HTTP {{code}})",
+    "testNotConfigured": "Simpan kunci terlebih dahulu",
+    "testUnreachable": "Tidak dapat menghubungi penyedia — periksa jaringan atau proxy",
+    "testTimeout": "Penyedia tidak menjawab tepat waktu",
+    "testFailed": "Uji kunci gagal",
+    "elevenlabsNotes": "Sintesis suara, transkripsi Scribe, dan isolasi suara. Memerlukan akses jaringan internasional.",
+    "dashscopeNotes": "Alibaba Cloud Model Studio — sintesis CosyVoice dan pengenalan suara Qwen. Dapat diakses dari Tiongkok daratan.",
+    "mvsepNotes": "Layanan khusus pemisahan musik/vokal — menggerakkan mesin MVSEP di Pengaturan → Pemisahan vokal."
+  },
+  "separation": {
+    "title": "Mesin pemisahan vokal",
+    "description": "Mesin mana yang memisahkan vokal dari latar saat persiapan sulih suara dan pembersihan mikrofon. Demucs lokal berjalan di mesin ini (bawaan); mesin cloud mengunggah trek audio ke penyedia dan memerlukan kunci dari Pengaturan → Penyedia cloud.",
+    "engine": "Mesin",
+    "engineFromEnv": "Dikunci oleh OMNIVOICE_SEPARATION_BACKEND — pilihan di bawah diabaikan.",
+    "localBadge": "lokal",
+    "cloudBadge": "cloud",
+    "noBackground": "Hanya trek suara — ekspor sulih suara tidak mempertahankan musik latar dengan mesin ini.",
+    "mvsepSepType": "ID algoritme MVSEP",
+    "mvsepSepTypeHint": "sep_type numerik dari dokumentasi API MVSEP. Bawaan 40 = BS Roformer (vokal + instrumental)."
   }
 }

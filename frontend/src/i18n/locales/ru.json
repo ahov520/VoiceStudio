@@ -282,7 +282,9 @@
     "models_dir_effective": "Используется сейчас",
     "models_dir_configured": "Настроено",
     "models_dir_default": "Используется по умолчанию",
-    "models_dir_restart": "↻ Перезапустите VoiceStudio, чтобы использовать новое расположение."
+    "models_dir_restart": "↻ Перезапустите VoiceStudio, чтобы использовать новое расположение.",
+    "cloud_providers": "Облачные провайдеры",
+    "separation": "Отделение вокала"
   },
   "bootstrap": {
     "title": "VoiceStudio",
@@ -435,7 +437,8 @@
     "learn_more": "Узнать больше",
     "saving": "Сохранение…",
     "remove": "Удалить {{term}}",
-    "not_set": "Не задано"
+    "not_set": "Не задано",
+    "saved": "Сохранено"
   },
   "launchpad": {
     "greeting": "привет",
@@ -1913,7 +1916,22 @@
     "voice_previews_checked": "проверено {{when}}",
     "voice_previews_never": "ещё не проверялось",
     "voice_previews_check": "Проверить сейчас",
-    "voice_previews_rejected": "Обновление галереи голосов отклонено: {{message}}"
+    "voice_previews_rejected": "Обновление галереи голосов отклонено: {{message}}",
+    "ttsOpenAICompatTitle": "OpenAI-совместимый TTS (удалённый сервер)",
+    "ttsOpenAICompatDescription": "Направляет синтез речи на любой OpenAI-совместимый сервер /v1/audio/speech — SiliconFlow (CosyVoice2), официальный API OpenAI или собственный сервер. Настройте и проверьте здесь, затем нажмите Use у этого движка в списке TTS выше. Текст, отправляемый через этот движок, уходит на настроенный сервер.",
+    "ttsOpenAICompatBaseUrlHint": "напр. https://api.siliconflow.cn/v1 (SiliconFlow) или https://api.openai.com/v1. Изменения действуют со следующей генерации — перезапуск не нужен.",
+    "ttsOpenAICompatVoiceHint": "Имя голоса, которое ожидает сервер — напр. alloy (OpenAI) или FunAudioLLM/CosyVoice2-0.5B:alex (SiliconFlow).",
+    "ttsOpenAICompatTestHint": "Сохраняет поля выше и опрашивает endpoint /models сервера — аудио не синтезируется, ничего не списывается.",
+    "ttsOpenAICompatTestOkNoModels": "Сервер доступен за {{ms}} мс — он не перечисляет модели; синтез всё равно может работать",
+    "ttsElevenLabsTitle": "ElevenLabs TTS (облако)",
+    "ttsElevenLabsDescription": "Синтез речи через ваш аккаунт ElevenLabs. API-ключ находится в Настройки → Облачные провайдеры; выберите здесь голос и модель, затем нажмите Use у этого движка в списке TTS выше.",
+    "ttsElevenLabsVoiceHint": "voice_id из вашей библиотеки голосов ElevenLabs — включая голоса, клонированные на elevenlabs.io. Загрузите список, чтобы выбрать по имени.",
+    "ttsElevenLabsLoadVoices": "Загрузить голоса",
+    "ttsElevenLabsVoicesEmpty": "Голоса не получены — проверьте API-ключ.",
+    "ttsDashScopeTitle": "Alibaba Cloud CosyVoice TTS (облако)",
+    "ttsDashScopeDescription": "CosyVoice / Qwen-TTS в Alibaba Cloud Model Studio (DashScope), доступно из материкового Китая. API-ключ находится в Настройки → Облачные провайдеры; задайте здесь модель и голос, затем нажмите Use у этого движка в списке TTS выше.",
+    "ttsDashScopeModelHint": "cosyvoice-v2 (по умолчанию), cosyvoice-v3-flash, qwen-audio-3.0-tts-flash… Версии модели и голоса должны совпадать.",
+    "ttsDashScopeVoiceHint": "Голос для выбранной модели — напр. longxiaochun_v2 для cosyvoice-v2."
   },
   "enterprise_faq": {
     "q_internal_tools": "Нужна ли мне лицензия на внутренние инструменты?",
@@ -2531,5 +2549,39 @@
       "longform": "озвучивание историй",
       "asr": "расшифровка"
     }
+  },
+  "cloud": {
+    "title": "Ключи облачных провайдеров",
+    "description": "Один API-ключ на провайдера, общий для всех его облачных движков — синтеза речи, транскрипции и отделения вокала. Ключи хранятся на этом компьютере в зашифрованном виде и больше не показываются; переменные окружения всегда имеют приоритет над сохранёнными ключами.",
+    "apiKey": "API-ключ",
+    "keyFromEnv": "Задан переменной окружения — она переопределяет любой сохранённый здесь ключ.",
+    "getKey": "Получить ключ",
+    "keyMissing": "Ключ {{provider}} не настроен — добавьте его в Настройки → Облачные провайдеры.",
+    "model": "Модель",
+    "voice": "Голос",
+    "serverUrl": "URL сервера",
+    "loadError": "Не удалось загрузить настройки",
+    "saveError": "Не удалось сохранить",
+    "testKey": "Проверить ключ",
+    "testOk": "Ключ работает ({{ms}} мс)",
+    "testAuthFailed": "Провайдер отклонил этот ключ (HTTP {{code}})",
+    "testNotConfigured": "Сначала сохраните ключ",
+    "testUnreachable": "Провайдер недоступен — проверьте сеть или прокси",
+    "testTimeout": "Провайдер не ответил вовремя",
+    "testFailed": "Проверка ключа не удалась",
+    "elevenlabsNotes": "Синтез речи, транскрипция Scribe и изоляция голоса. Требуется доступ к международной сети.",
+    "dashscopeNotes": "Alibaba Cloud Model Studio — синтез CosyVoice и распознавание речи Qwen. Доступно из материкового Китая.",
+    "mvsepNotes": "Специализированный сервис отделения музыки/вокала — питает движок MVSEP в Настройки → Отделение вокала."
+  },
+  "separation": {
+    "title": "Движок отделения вокала",
+    "description": "Какой движок отделяет вокал от фона при подготовке дубляжа и очистке микрофона. Локальный Demucs работает на этом компьютере (по умолчанию); облачные движки загружают аудиодорожку провайдеру и требуют ключ из Настройки → Облачные провайдеры.",
+    "engine": "Движок",
+    "engineFromEnv": "Закреплено переменной OMNIVOICE_SEPARATION_BACKEND — выбор ниже игнорируется.",
+    "localBadge": "локально",
+    "cloudBadge": "облако",
+    "noBackground": "Только голосовая дорожка — с этим движком экспорт дубляжа не сохраняет фоновую музыку.",
+    "mvsepSepType": "ID алгоритма MVSEP",
+    "mvsepSepTypeHint": "Числовой sep_type из документации API MVSEP. По умолчанию 40 = BS Roformer (вокал + инструментал)."
   }
 }

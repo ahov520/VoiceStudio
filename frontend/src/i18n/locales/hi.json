@@ -282,7 +282,9 @@
     "models_dir_effective": "अभी प्रभावी",
     "models_dir_configured": "कॉन्फ़िगर किया गया",
     "models_dir_default": "डिफ़ॉल्ट उपयोग हो रहा है",
-    "models_dir_restart": "↻ नया स्थान उपयोग करने के लिए VoiceStudio रीस्टार्ट करें।"
+    "models_dir_restart": "↻ नया स्थान उपयोग करने के लिए VoiceStudio रीस्टार्ट करें।",
+    "cloud_providers": "क्लाउड प्रदाता",
+    "separation": "वोकल विभाजन"
   },
   "bootstrap": {
     "title": "VoiceStudio",
@@ -435,7 +437,8 @@
     "learn_more": "और जानें",
     "saving": "सहेजा जा रहा है…",
     "remove": "{{term}} हटाएं",
-    "not_set": "सेट नहीं"
+    "not_set": "सेट नहीं",
+    "saved": "सहेजा गया"
   },
   "launchpad": {
     "greeting": "नमस्ते",
@@ -1913,7 +1916,22 @@
     "voice_previews_checked": "{{when}} जाँचा गया",
     "voice_previews_never": "अभी तक जाँचा नहीं गया",
     "voice_previews_check": "अभी जाँचें",
-    "voice_previews_rejected": "वॉइस गैलरी अपडेट अस्वीकृत: {{message}}"
+    "voice_previews_rejected": "वॉइस गैलरी अपडेट अस्वीकृत: {{message}}",
+    "ttsOpenAICompatTitle": "OpenAI-संगत TTS (रिमोट सर्वर)",
+    "ttsOpenAICompatDescription": "वाक् संश्लेषण को किसी भी OpenAI-संगत /v1/audio/speech सर्वर की ओर मोड़ें — SiliconFlow (CosyVoice2), OpenAI का आधिकारिक API या स्व-होस्टेड सर्वर। यहाँ कॉन्फ़िगर और परीक्षण करें, फिर ऊपर TTS सूची में इस इंजन पर Use दबाएँ। इस इंजन से भेजा गया पाठ आपके कॉन्फ़िगर किए सर्वर पर जाता है।",
+    "ttsOpenAICompatBaseUrlHint": "जैसे https://api.siliconflow.cn/v1 (SiliconFlow) या https://api.openai.com/v1। बदलाव अगली पीढ़ी से लागू — पुनरारंभ आवश्यक नहीं।",
+    "ttsOpenAICompatVoiceHint": "सर्वर द्वारा अपेक्षित आवाज़ का नाम — जैसे alloy (OpenAI) या FunAudioLLM/CosyVoice2-0.5B:alex (SiliconFlow)।",
+    "ttsOpenAICompatTestHint": "ऊपर के फ़ील्ड सहेजता है, फिर सर्वर के /models endpoint की जाँच करता है — कोई ऑडियो संश्लेषित नहीं होता, कोई शुल्क नहीं लगता।",
+    "ttsOpenAICompatTestOkNoModels": "सर्वर {{ms}} ms में पहुँच योग्य — यह मॉडल सूचीबद्ध नहीं करता; संश्लेषण फिर भी काम कर सकता है",
+    "ttsElevenLabsTitle": "ElevenLabs TTS (क्लाउड)",
+    "ttsElevenLabsDescription": "आपके ElevenLabs खाते के ज़रिये वाक् संश्लेषण। API कुंजी सेटिंग्स → क्लाउड प्रदाता में है; यहाँ आवाज़ और मॉडल चुनें, फिर ऊपर TTS सूची में इस इंजन पर Use दबाएँ।",
+    "ttsElevenLabsVoiceHint": "आपकी ElevenLabs आवाज़ लाइब्रेरी का voice_id — elevenlabs.io पर क्लोन की गई आवाज़ें भी। नाम से चुनने के लिए सूची लोड करें।",
+    "ttsElevenLabsLoadVoices": "आवाज़ें लोड करें",
+    "ttsElevenLabsVoicesEmpty": "कोई आवाज़ नहीं मिली — API कुंजी जाँचें।",
+    "ttsDashScopeTitle": "Alibaba Cloud CosyVoice TTS (क्लाउड)",
+    "ttsDashScopeDescription": "Alibaba Cloud Model Studio (DashScope) पर CosyVoice / Qwen-TTS, मुख्यभूमि चीन से सुलभ। API कुंजी सेटिंग्स → क्लाउड प्रदाता में है; यहाँ मॉडल और आवाज़ सेट करें, फिर ऊपर TTS सूची में इस इंजन पर Use दबाएँ।",
+    "ttsDashScopeModelHint": "cosyvoice-v2 (डिफ़ॉल्ट), cosyvoice-v3-flash, qwen-audio-3.0-tts-flash… मॉडल और आवाज़ के संस्करण मेल खाने चाहिए।",
+    "ttsDashScopeVoiceHint": "चुने मॉडल के लिए आवाज़ — जैसे cosyvoice-v2 के लिए longxiaochun_v2।"
   },
   "enterprise_faq": {
     "q_internal_tools": "क्या मुझे आंतरिक उपकरणों के लिए लाइसेंस की आवश्यकता है?",
@@ -2531,5 +2549,39 @@
       "longform": "कहानी वर्णन",
       "asr": "ट्रांसक्रिप्शन"
     }
+  },
+  "cloud": {
+    "title": "क्लाउड प्रदाता कुंजियाँ",
+    "description": "प्रति प्रदाता एक API कुंजी, जो उसके सभी क्लाउड इंजनों — वाक् संश्लेषण, प्रतिलेखन और वोकल विभाजन — में साझा होती है। कुंजियाँ इस मशीन पर एन्क्रिप्टेड रहती हैं और दोबारा नहीं दिखाई जातीं; पर्यावरण चर हमेशा सहेजी गई कुंजियों पर वरीयता पाते हैं।",
+    "apiKey": "API कुंजी",
+    "keyFromEnv": "पर्यावरण चर से सेट — यह यहाँ सहेजी गई किसी भी कुंजी को ओवरराइड करता है।",
+    "getKey": "कुंजी प्राप्त करें",
+    "keyMissing": "कोई {{provider}} कुंजी कॉन्फ़िगर नहीं है — सेटिंग्स → क्लाउड प्रदाता में जोड़ें।",
+    "model": "मॉडल",
+    "voice": "आवाज़",
+    "serverUrl": "सर्वर URL",
+    "loadError": "सेटिंग्स लोड नहीं हो सकीं",
+    "saveError": "सहेजना विफल",
+    "testKey": "कुंजी जाँचें",
+    "testOk": "कुंजी काम करती है ({{ms}} ms)",
+    "testAuthFailed": "प्रदाता ने यह कुंजी अस्वीकार की (HTTP {{code}})",
+    "testNotConfigured": "पहले कुंजी सहेजें",
+    "testUnreachable": "प्रदाता तक नहीं पहुँच सके — नेटवर्क या प्रॉक्सी जाँचें",
+    "testTimeout": "प्रदाता ने समय पर उत्तर नहीं दिया",
+    "testFailed": "कुंजी परीक्षण विफल",
+    "elevenlabsNotes": "वाक् संश्लेषण, Scribe प्रतिलेखन और आवाज़ पृथक्करण। अंतरराष्ट्रीय नेटवर्क पहुँच आवश्यक।",
+    "dashscopeNotes": "Alibaba Cloud Model Studio — CosyVoice वाक् संश्लेषण और Qwen वाक् पहचान। मुख्यभूमि चीन से सुलभ।",
+    "mvsepNotes": "संगीत/वोकल विभाजन की विशेष सेवा — सेटिंग्स → वोकल विभाजन में MVSEP इंजन को चलाती है।"
+  },
+  "separation": {
+    "title": "वोकल विभाजन इंजन",
+    "description": "डब तैयारी और माइक सफ़ाई के दौरान कौन-सा इंजन आवाज़ को पृष्ठभूमि से अलग करेगा। स्थानीय Demucs इसी मशीन पर चलता है (डिफ़ॉल्ट); क्लाउड इंजन ऑडियो ट्रैक प्रदाता को अपलोड करते हैं और सेटिंग्स → क्लाउड प्रदाता की कुंजी चाहिए।",
+    "engine": "इंजन",
+    "engineFromEnv": "OMNIVOICE_SEPARATION_BACKEND द्वारा नियत — नीचे का चयन अनदेखा होगा।",
+    "localBadge": "स्थानीय",
+    "cloudBadge": "क्लाउड",
+    "noBackground": "केवल आवाज़ ट्रैक — इस इंजन से डब निर्यात में पृष्ठभूमि संगीत नहीं रहेगा।",
+    "mvsepSepType": "MVSEP एल्गोरिथम ID",
+    "mvsepSepTypeHint": "MVSEP API दस्तावेज़ का संख्यात्मक sep_type। डिफ़ॉल्ट 40 = BS Roformer (वोकल + वाद्य)।"
   }
 }

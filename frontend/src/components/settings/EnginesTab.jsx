@@ -6,6 +6,9 @@ import { selectEngine } from '../../api/engines';
 import { notifyEngineSelected } from '../../utils/engineSelectToast';
 import EngineCompatibilityMatrix from '../EngineCompatibilityMatrix';
 import AsrOpenAICompatPanel from './AsrOpenAICompatPanel';
+import TtsOpenAICompatPanel from './TtsOpenAICompatPanel';
+import TtsElevenLabsPanel from './TtsElevenLabsPanel';
+import TtsDashScopePanel from './TtsDashScopePanel';
 import { SETTINGS_SECTION_SURFACE } from './primitives';
 
 /** Model Catalogue → Engines: ONE section, one matrix, a TTS / ASR / LLM tab strip.
@@ -33,6 +36,11 @@ export default function EnginesTab() {
   const [family, setFamily] = useState('tts');
   const [configVersion, setConfigVersion] = useState(0);
   const onAsrConfigSaved = useCallback(() => setConfigVersion((v) => v + 1), []);
+  // The TTS tab mounts the cloud-TTS config panels (OpenAI-compatible /
+  // ElevenLabs / DashScope) below the matrix, mirroring the ASR tab's
+  // remote-ASR panel: saving refetches the matrix so a newly configured
+  // engine's row flips unavailable → available without a manual Refresh.
+  const onTtsConfigSaved = onAsrConfigSaved;
 
   // Plan 02-04 / ENGINE-06 — engine selection is wired through the
   // matrix component's optional onSelect callback so the matrix doubles
@@ -72,6 +80,13 @@ export default function EnginesTab() {
         />
       </section>
       {family === 'asr' && <AsrOpenAICompatPanel onSaved={onAsrConfigSaved} />}
+      {family === 'tts' && (
+        <>
+          <TtsOpenAICompatPanel onSaved={onTtsConfigSaved} />
+          <TtsElevenLabsPanel onSaved={onTtsConfigSaved} />
+          <TtsDashScopePanel onSaved={onTtsConfigSaved} />
+        </>
+      )}
     </div>
   );
 }

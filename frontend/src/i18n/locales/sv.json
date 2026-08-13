@@ -282,7 +282,9 @@
     "models_dir_effective": "Används nu",
     "models_dir_configured": "Konfigurerad",
     "models_dir_default": "Använder standard",
-    "models_dir_restart": "↻ Starta om VoiceStudio för att använda den nya platsen."
+    "models_dir_restart": "↻ Starta om VoiceStudio för att använda den nya platsen.",
+    "cloud_providers": "Molnleverantörer",
+    "separation": "Sångseparation"
   },
   "bootstrap": {
     "title": "VoiceStudio",
@@ -435,7 +437,8 @@
     "learn_more": "Läs mer",
     "saving": "Sparar…",
     "remove": "Ta bort {{term}}",
-    "not_set": "Inte inställt"
+    "not_set": "Inte inställt",
+    "saved": "Sparat"
   },
   "launchpad": {
     "greeting": "hej då",
@@ -1913,7 +1916,22 @@
     "voice_previews_checked": "kontrollerat {{when}}",
     "voice_previews_never": "inte kontrollerat än",
     "voice_previews_check": "Kontrollera nu",
-    "voice_previews_rejected": "Uppdatering av röstgalleriet avvisades: {{message}}"
+    "voice_previews_rejected": "Uppdatering av röstgalleriet avvisades: {{message}}",
+    "ttsOpenAICompatTitle": "OpenAI-kompatibel TTS (fjärrserver)",
+    "ttsOpenAICompatDescription": "Riktar talsyntesen mot valfri OpenAI-kompatibel /v1/audio/speech-server — SiliconFlow (CosyVoice2), OpenAI:s egna API eller en självhostad server. Konfigurera och testa här, klicka sedan på Use på motorn i TTS-listan ovan. Text som skickas via den här motorn går till servern du konfigurerar.",
+    "ttsOpenAICompatBaseUrlHint": "t.ex. https://api.siliconflow.cn/v1 (SiliconFlow) eller https://api.openai.com/v1. Ändringar gäller vid nästa generering — ingen omstart behövs.",
+    "ttsOpenAICompatVoiceHint": "Röstnamnet servern förväntar sig — t.ex. alloy (OpenAI) eller FunAudioLLM/CosyVoice2-0.5B:alex (SiliconFlow).",
+    "ttsOpenAICompatTestHint": "Sparar fälten ovan och testar sedan serverns /models-endpoint — inget ljud syntetiseras, inget debiteras.",
+    "ttsOpenAICompatTestOkNoModels": "Servern nåbar på {{ms}} ms — den listar inga modeller; syntesen kan ändå fungera",
+    "ttsElevenLabsTitle": "ElevenLabs TTS (moln)",
+    "ttsElevenLabsDescription": "Talsyntes via ditt ElevenLabs-konto. API-nyckeln finns under Inställningar → Molnleverantörer; välj röst och modell här och klicka sedan på Use på motorn i TTS-listan ovan.",
+    "ttsElevenLabsVoiceHint": "Ett voice_id från ditt ElevenLabs-röstbibliotek — även röster du klonat på elevenlabs.io. Läs in listan för att välja efter namn.",
+    "ttsElevenLabsLoadVoices": "Läs in röster",
+    "ttsElevenLabsVoicesEmpty": "Inga röster returnerades — kontrollera API-nyckeln.",
+    "ttsDashScopeTitle": "Alibaba Cloud CosyVoice TTS (moln)",
+    "ttsDashScopeDescription": "CosyVoice / Qwen-TTS på Alibaba Cloud Model Studio (DashScope), nåbar från Fastlandskina. API-nyckeln finns under Inställningar → Molnleverantörer; ange modell och röst här och klicka sedan på Use på motorn i TTS-listan ovan.",
+    "ttsDashScopeModelHint": "cosyvoice-v2 (standard), cosyvoice-v3-flash, qwen-audio-3.0-tts-flash… Modell- och röstversioner måste matcha.",
+    "ttsDashScopeVoiceHint": "En röst för vald modell — t.ex. longxiaochun_v2 för cosyvoice-v2."
   },
   "enterprise_faq": {
     "q_internal_tools": "Behöver jag en licens för interna verktyg?",
@@ -2531,5 +2549,39 @@
       "longform": "berättarröst",
       "asr": "transkribering"
     }
+  },
+  "cloud": {
+    "title": "Molnleverantörernas API-nycklar",
+    "description": "En API-nyckel per leverantör, delad av alla dess molnmotorer — talsyntes, transkribering och sångseparation. Nycklarna lagras krypterade på den här datorn och visas aldrig igen; miljövariabler har alltid företräde framför sparade nycklar.",
+    "apiKey": "API-nyckel",
+    "keyFromEnv": "Satt via miljövariabel — den åsidosätter alla nycklar som sparats här.",
+    "getKey": "Skaffa en nyckel",
+    "keyMissing": "Ingen {{provider}}-nyckel konfigurerad — lägg till en under Inställningar → Molnleverantörer.",
+    "model": "Modell",
+    "voice": "Röst",
+    "serverUrl": "Server-URL",
+    "loadError": "Kunde inte läsa in inställningarna",
+    "saveError": "Kunde inte spara",
+    "testKey": "Testa nyckel",
+    "testOk": "Nyckeln fungerar ({{ms}} ms)",
+    "testAuthFailed": "Leverantören avvisade nyckeln (HTTP {{code}})",
+    "testNotConfigured": "Spara en nyckel först",
+    "testUnreachable": "Kunde inte nå leverantören — kontrollera nätverk eller proxy",
+    "testTimeout": "Leverantören svarade inte i tid",
+    "testFailed": "Nyckeltestet misslyckades",
+    "elevenlabsNotes": "Talsyntes, Scribe-transkribering och röstisolering. Kräver internationell nätverksåtkomst.",
+    "dashscopeNotes": "Alibaba Cloud Model Studio — CosyVoice-talsyntes och Qwen-taligenkänning. Nåbar från Fastlandskina.",
+    "mvsepNotes": "Specialiserad musik-/sångseparationstjänst — driver MVSEP-motorn under Inställningar → Sångseparation."
+  },
+  "separation": {
+    "title": "Motor för sångseparation",
+    "description": "Vilken motor som skiljer sång från bakgrund vid dubbförberedelse och mikrofonrensning. Lokala Demucs körs på den här datorn (standard); molnmotorer laddar upp ljudspåret till leverantören och kräver en nyckel från Inställningar → Molnleverantörer.",
+    "engine": "Motor",
+    "engineFromEnv": "Låst av OMNIVOICE_SEPARATION_BACKEND — valet nedan ignoreras.",
+    "localBadge": "lokal",
+    "cloudBadge": "moln",
+    "noBackground": "Endast röstspår — dubbexporter behåller ingen bakgrundsmusik med den här motorn.",
+    "mvsepSepType": "MVSEP-algoritm-ID",
+    "mvsepSepTypeHint": "Numerisk sep_type från MVSEP:s API-dokumentation. Standard 40 = BS Roformer (sång + instrumental)."
   }
 }

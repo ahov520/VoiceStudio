@@ -984,20 +984,25 @@ async def _do_clean_audio(audio, tmp_dir, clean_id):
 
     clean_path = converted_path
     try:
-        rc, _, _ = await run_ffmpeg(
-            [sys.executable, "-m", "demucs.separate", "--two-stems", "vocals", "-n", "htdemucs",
-             "-d", get_best_device(), converted_path, "-o", tmp_dir],
-            timeout=900.0,
+        # Engine-driven since the separation registry landed: local demucs by
+        # default, or the user's chosen cloud engine (Settings → Vocal
+        # separation). Any failure keeps the raw recording, as before.
+        from services.separation_backend import (
+            get_active_separation_backend,
+            separate_collect,
         )
-        if rc == 0:
-            demucs_out = os.path.join(tmp_dir, "htdemucs", "converted")
-            vocals_file = os.path.join(demucs_out, "vocals.wav")
-            if os.path.exists(vocals_file):
-                clean_path = vocals_file
+
+        engine = get_active_separation_backend()
+        vocals_file, _bg = await separate_collect(
+            engine, converted_path, tmp_dir,
+            job_id=f"clean_{clean_id}", timeout=900.0,
+        )
+        if vocals_file and os.path.exists(vocals_file):
+            clean_path = vocals_file
     except asyncio.TimeoutError:
-        logger.warning("Demucs timed out for mic audio, using raw")
+        logger.warning("Vocal separation timed out for mic audio, using raw")
     except Exception as e:
-        logger.warning(f"Demucs failed for mic audio, using raw: {e}")
+        logger.warning(f"Vocal separation failed for mic audio, using raw: {e}")
 
     clean_filename = f"mic_{clean_id}.wav"
     final_path = os.path.join(OUTPUTS_DIR, clean_filename)

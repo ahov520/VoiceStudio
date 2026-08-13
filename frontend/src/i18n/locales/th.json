@@ -282,7 +282,9 @@
     "models_dir_effective": "ใช้งานอยู่ตอนนี้",
     "models_dir_configured": "กำหนดค่าแล้ว",
     "models_dir_default": "ใช้ค่าเริ่มต้น",
-    "models_dir_restart": "↻ เริ่ม VoiceStudio ใหม่เพื่อใช้ตำแหน่งใหม่"
+    "models_dir_restart": "↻ เริ่ม VoiceStudio ใหม่เพื่อใช้ตำแหน่งใหม่",
+    "cloud_providers": "ผู้ให้บริการคลาวด์",
+    "separation": "แยกเสียงร้อง"
   },
   "bootstrap": {
     "title": "VoiceStudio",
@@ -435,7 +437,8 @@
     "learn_more": "เรียนรู้เพิ่มเติม",
     "saving": "กำลังบันทึก…",
     "remove": "ลบ {{term}}",
-    "not_set": "ยังไม่ได้ตั้งค่า"
+    "not_set": "ยังไม่ได้ตั้งค่า",
+    "saved": "บันทึกแล้ว"
   },
   "launchpad": {
     "greeting": "สวัสดี",
@@ -1913,7 +1916,22 @@
     "voice_previews_checked": "ตรวจสอบเมื่อ {{when}}",
     "voice_previews_never": "ยังไม่ได้ตรวจสอบ",
     "voice_previews_check": "ตรวจสอบตอนนี้",
-    "voice_previews_rejected": "ปฏิเสธการอัปเดตคลังเสียง: {{message}}"
+    "voice_previews_rejected": "ปฏิเสธการอัปเดตคลังเสียง: {{message}}",
+    "ttsOpenAICompatTitle": "TTS ที่เข้ากับ OpenAI (เซิร์ฟเวอร์ระยะไกล)",
+    "ttsOpenAICompatDescription": "ชี้การสังเคราะห์เสียงไปยังเซิร์ฟเวอร์ /v1/audio/speech ที่เข้ากับ OpenAI ตัวใดก็ได้ — SiliconFlow (CosyVoice2), API ทางการของ OpenAI หรือเซิร์ฟเวอร์ของคุณเอง ตั้งค่าและทดสอบที่นี่ แล้วกด Use ที่เอนจินนี้ในรายการ TTS ด้านบน ข้อความที่ส่งผ่านเอนจินนี้จะไปยังเซิร์ฟเวอร์ที่คุณตั้งค่า",
+    "ttsOpenAICompatBaseUrlHint": "เช่น https://api.siliconflow.cn/v1 (SiliconFlow) หรือ https://api.openai.com/v1 การเปลี่ยนแปลงมีผลในการสร้างครั้งถัดไป — ไม่ต้องรีสตาร์ต",
+    "ttsOpenAICompatVoiceHint": "ชื่อเสียงที่เซิร์ฟเวอร์ต้องการ — เช่น alloy (OpenAI) หรือ FunAudioLLM/CosyVoice2-0.5B:alex (SiliconFlow)",
+    "ttsOpenAICompatTestHint": "บันทึกช่องด้านบนแล้วตรวจ endpoint /models ของเซิร์ฟเวอร์ — ไม่มีการสังเคราะห์เสียงและไม่มีค่าใช้จ่าย",
+    "ttsOpenAICompatTestOkNoModels": "เข้าถึงเซิร์ฟเวอร์ได้ใน {{ms}} ms — ไม่มีรายการโมเดล แต่การสังเคราะห์อาจยังใช้งานได้",
+    "ttsElevenLabsTitle": "ElevenLabs TTS (คลาวด์)",
+    "ttsElevenLabsDescription": "สังเคราะห์เสียงผ่านบัญชี ElevenLabs ของคุณ คีย์ API อยู่ที่ การตั้งค่า → ผู้ให้บริการคลาวด์ เลือกเสียงและโมเดลที่นี่ แล้วกด Use ที่เอนจินนี้ในรายการ TTS ด้านบน",
+    "ttsElevenLabsVoiceHint": "voice_id จากคลังเสียง ElevenLabs ของคุณ — รวมถึงเสียงที่คุณโคลนบน elevenlabs.io โหลดรายการเพื่อเลือกตามชื่อ",
+    "ttsElevenLabsLoadVoices": "โหลดรายการเสียง",
+    "ttsElevenLabsVoicesEmpty": "ไม่ได้รับเสียงใด ๆ — ตรวจสอบคีย์ API",
+    "ttsDashScopeTitle": "Alibaba Cloud CosyVoice TTS (คลาวด์)",
+    "ttsDashScopeDescription": "CosyVoice / Qwen-TTS บน Alibaba Cloud Model Studio (DashScope) เข้าถึงได้จากจีนแผ่นดินใหญ่ คีย์ API อยู่ที่ การตั้งค่า → ผู้ให้บริการคลาวด์ ตั้งโมเดลและเสียงที่นี่ แล้วกด Use ที่เอนจินนี้ในรายการ TTS ด้านบน",
+    "ttsDashScopeModelHint": "cosyvoice-v2 (ค่าเริ่มต้น), cosyvoice-v3-flash, qwen-audio-3.0-tts-flash… เวอร์ชันของโมเดลกับเสียงต้องตรงกัน",
+    "ttsDashScopeVoiceHint": "เสียงสำหรับโมเดลที่เลือก — เช่น longxiaochun_v2 สำหรับ cosyvoice-v2"
   },
   "enterprise_faq": {
     "q_internal_tools": "ฉันจำเป็นต้องมีใบอนุญาตสำหรับเครื่องมือภายในหรือไม่?",
@@ -2531,5 +2549,39 @@
       "longform": "การบรรยายเรื่อง",
       "asr": "การถอดเสียง"
     }
+  },
+  "cloud": {
+    "title": "คีย์ผู้ให้บริการคลาวด์",
+    "description": "หนึ่งคีย์ API ต่อผู้ให้บริการ ใช้ร่วมกันในทุกเอนจินคลาวด์ — สังเคราะห์เสียง ถอดความ และแยกเสียงร้อง คีย์ถูกเก็บแบบเข้ารหัสบนเครื่องนี้และจะไม่แสดงอีก ตัวแปรสภาพแวดล้อมมีสิทธิ์เหนือคีย์ที่บันทึกไว้เสมอ",
+    "apiKey": "คีย์ API",
+    "keyFromEnv": "ตั้งค่าจากตัวแปรสภาพแวดล้อม — จะทับคีย์ที่บันทึกไว้ที่นี่",
+    "getKey": "ขอรับคีย์",
+    "keyMissing": "ยังไม่ได้ตั้งค่าคีย์ {{provider}} — เพิ่มได้ที่ การตั้งค่า → ผู้ให้บริการคลาวด์",
+    "model": "โมเดล",
+    "voice": "เสียง",
+    "serverUrl": "URL ของเซิร์ฟเวอร์",
+    "loadError": "โหลดการตั้งค่าไม่สำเร็จ",
+    "saveError": "บันทึกไม่สำเร็จ",
+    "testKey": "ทดสอบคีย์",
+    "testOk": "คีย์ใช้งานได้ ({{ms}} ms)",
+    "testAuthFailed": "ผู้ให้บริการปฏิเสธคีย์นี้ (HTTP {{code}})",
+    "testNotConfigured": "กรุณาบันทึกคีย์ก่อน",
+    "testUnreachable": "ติดต่อผู้ให้บริการไม่ได้ — ตรวจสอบเครือข่ายหรือพร็อกซี",
+    "testTimeout": "ผู้ให้บริการไม่ตอบสนองภายในเวลา",
+    "testFailed": "การทดสอบคีย์ล้มเหลว",
+    "elevenlabsNotes": "สังเคราะห์เสียง ถอดความด้วย Scribe และแยกเสียงพูด ต้องใช้เครือข่ายระหว่างประเทศ",
+    "dashscopeNotes": "Alibaba Cloud Model Studio — สังเคราะห์เสียง CosyVoice และรู้จำเสียง Qwen เข้าถึงได้จากจีนแผ่นดินใหญ่",
+    "mvsepNotes": "บริการแยกดนตรี/เสียงร้องโดยเฉพาะ — ขับเคลื่อนเอนจิน MVSEP ใน การตั้งค่า → แยกเสียงร้อง"
+  },
+  "separation": {
+    "title": "เอนจินแยกเสียงร้อง",
+    "description": "เลือกเอนจินที่ใช้แยกเสียงร้องออกจากพื้นหลังตอนเตรียมพากย์และล้างเสียงไมค์ Demucs ในเครื่องรันบนเครื่องนี้ (ค่าเริ่มต้น) เอนจินคลาวด์จะอัปโหลดแทร็กเสียงไปยังผู้ให้บริการและต้องมีคีย์จาก การตั้งค่า → ผู้ให้บริการคลาวด์",
+    "engine": "เอนจิน",
+    "engineFromEnv": "ถูกกำหนดด้วย OMNIVOICE_SEPARATION_BACKEND — ตัวเลือกด้านล่างจะถูกละเว้น",
+    "localBadge": "ในเครื่อง",
+    "cloudBadge": "คลาวด์",
+    "noBackground": "ได้เฉพาะแทร็กเสียงพูด — การส่งออกงานพากย์จะไม่เก็บดนตรีพื้นหลังเมื่อใช้เอนจินนี้",
+    "mvsepSepType": "รหัสอัลกอริทึม MVSEP",
+    "mvsepSepTypeHint": "sep_type แบบตัวเลขจากเอกสาร API ของ MVSEP ค่าเริ่มต้น 40 = BS Roformer (เสียงร้อง + ดนตรี)"
   }
 }
