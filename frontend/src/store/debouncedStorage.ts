@@ -9,9 +9,14 @@
  *
  * This wrapper coalesces writes: the first change arms a trailing timer, and
  * everything that lands within the window rides the same flush — so typing
- * costs at most one real write per `delayMs` instead of one per key. The
- * pending value also short-circuits `getItem`, so a rehydrate can never read
- * stale disk state past a scheduled write.
+ * costs at most one real write per `delayMs` instead of one per key.
+ *
+ * Reads always come from the inner storage. `rehydrate()` means "give me the
+ * DISK truth" — it runs at startup (nothing pending yet) or as an explicit
+ * reload of externally written state (tests, future multi-window sync), and
+ * a queued write is by definition older than either. Short-circuiting reads
+ * through the pending value would make an external write invisible until the
+ * flush landed (it broke the v6→v7 uiScale migration test exactly that way).
  *
  * Durability: the pending write is flushed synchronously on `pagehide`,
  * `beforeunload` and tab-hide (`visibilitychange` → hidden), which covers
@@ -49,10 +54,7 @@ export function createDebouncedStorage<S>(
 
   return {
     flush,
-    getItem: (name) => {
-      if (pending && pending[0] === name) return pending[1];
-      return inner.getItem(name);
-    },
+    getItem: (name) => inner.getItem(name),
     setItem: (name, value) => {
       pending = [name, value];
       // Trailing throttle rather than a resettable debounce: continuous

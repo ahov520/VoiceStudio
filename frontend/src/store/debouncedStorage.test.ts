@@ -46,14 +46,16 @@ describe('createDebouncedStorage (persist write-behind)', () => {
     expect(inner.setItem).toHaveBeenCalledWith('k', { state: 2, version: 1 });
   });
 
-  it('getItem returns the pending (newer) value instead of stale disk state', () => {
+  it('getItem always reads the inner storage — rehydrate means DISK truth', () => {
+    // An externally written payload (a test seeding localStorage, a future
+    // second window) must be readable immediately, even while a write from
+    // this window is still queued — the v6→v7 uiScale migration test relies
+    // on exactly this.
     const inner = makeInner();
-    inner.getItem.mockReturnValue({ state: 'old', version: 1 } as never);
+    inner.getItem.mockReturnValue({ state: 'external', version: 6 } as never);
     const storage = createDebouncedStorage(inner, 300);
-    storage.setItem('k', { state: 'new', version: 1 } as never);
-    expect(storage.getItem('k')).toEqual({ state: 'new', version: 1 });
-    vi.advanceTimersByTime(300);
-    expect(storage.getItem('k')).toEqual({ state: 'old', version: 1 }); // pending drained → inner
+    storage.setItem('k', { state: 'queued', version: 7 } as never);
+    expect(storage.getItem('k')).toEqual({ state: 'external', version: 6 });
   });
 
   it('flush() writes the pending value immediately (pagehide/beforeunload path)', () => {
