@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Sparkles,
   Loader,
@@ -85,6 +85,7 @@ export default function DubLeftColumn({
   dubInstruct,
   setDubInstruct,
   handleTranslateAll,
+  handleRetryFailedTranslations,
   isTranslating,
   hasAnyTranslation,
   handleCleanupSegments,
@@ -107,6 +108,12 @@ export default function DubLeftColumn({
   multiLangProgress,
   editSegments,
 }) {
+  // Rows whose last translate attempt failed — drives the "Retry failed"
+  // affordance next to Translate All (only those rows are re-sent).
+  const failedTranslationCount = useMemo(
+    () => dubSegments.filter((s) => s.translate_error).length,
+    [dubSegments],
+  );
   // Two-stage LLM translation quality — only meaningful (and only rendered)
   // when the LLM engine is the active translator. Persisted prefs.
   const autoGlossary = useAppStore((s) => s.autoGlossary);
@@ -454,6 +461,20 @@ export default function DubLeftColumn({
                 ? t('dub.retranslate')
                 : t('dub.translate_all')}
           </Button>
+          {failedTranslationCount > 0 && !isTranslating && (
+            // Only the rows whose last translate attempt failed are re-sent —
+            // a couple of rate-limited rows shouldn't force a full re-translate.
+            <Button
+              variant="subtle"
+              size="sm"
+              onClick={handleRetryFailedTranslations}
+              disabled={isTranslating}
+              title={t('dub.retry_failed_title')}
+              leading={<Languages size={10} />}
+            >
+              {t('dub.retry_failed', { count: failedTranslationCount })}
+            </Button>
+          )}
           <Button
             variant="subtle"
             size="sm"

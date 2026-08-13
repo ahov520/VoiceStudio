@@ -1043,7 +1043,9 @@
     "multi_lang_skipped": "Die Übersetzung für {{langs}} ist fehlgeschlagen. Diese Synchronfassungen wurden übersprungen, damit keine Spur in der falschen Sprache entsteht.",
     "manage_languages": "Sprachen verwalten",
     "languages_done": "Fertig",
-    "languages_pending": "Ausstehend"
+    "languages_pending": "Ausstehend",
+    "retry_failed": "Fehlgeschlagene wiederholen ({{count}})",
+    "retry_failed_title": "Nur die zuletzt fehlgeschlagenen Segmente neu übersetzen"
   },
   "glossary": {
     "title": "Glossar",
@@ -1999,7 +2001,9 @@
     "history_deleted": "Verlaufselement gelöscht",
     "restored_state": "Wiederhergestellter Zustand der vorherigen Generation",
     "upgrading_preview": "Upgrade von {{count}} Segment(en) in Vorschauqualität auf volle Qualität…",
-    "session_expired": "Diese Dub-Sitzung ist abgelaufen oder wurde bereinigt. Laden Sie Ihr Video erneut hoch, um eine neue zu starten."
+    "session_expired": "Diese Dub-Sitzung ist abgelaufen oder wurde bereinigt. Laden Sie Ihr Video erneut hoch, um eine neue zu starten.",
+    "translating_progress": "Übersetze nach {{lang}} — {{done}}/{{total}} Segmente…",
+    "translate_partial_kept": "Vor dem Fehler wurden {{done}}/{{total}} Segmente übersetzt — die fertigen bleiben erhalten, erneut versuchen setzt fort."
   },
   "tts_errors": {
     "enter_text": "Bitte geben Sie Text ein",

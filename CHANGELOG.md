@@ -10,6 +10,9 @@ the frozen-backend fallback mirror it for their toolchains.
 
 **Highlights**
 
+- Importing a whole novel into Stories no longer makes the app stutter — the line list virtualizes and saving stopped rewriting the entire book on every keystroke
+- Subtitle translation shows live segment-level progress and no longer dies silently on long LLM jobs — requests are batched, finished work survives a failure, and failed rows can be retried alone
+- Five new color themes: Tokyo Night, Dracula, Everforest, One Dark, and Kanagawa
 - Speech synthesis, transcription and vocal separation can each run on a cloud service now — OpenAI-compatible servers, ElevenLabs, Alibaba Cloud DashScope, and MVSEP — all opt-in, with the local engines staying the default
 - A faster, cleaner Dub workspace for multilingual production (#1489)
 - VoiceStudio now gives the app, desktop chrome, documentation, and package metadata one clear identity
@@ -30,12 +33,19 @@ the frozen-backend fallback mirror it for their toolchains.
 
 ### Fixed
 
+- An imported novel no longer freezes the app: the Stories line list virtualizes past 120 lines (thousands of always-mounted cards used to hit six figures of DOM nodes), and the store's localStorage persist batches its writes instead of synchronously rewriting the whole book on every keystroke — which also removes a silent data-loss risk near the storage quota. — thanks @ahov520!
+- Typing in the Audiobook script no longer costs three full-text scans per keystroke (stats, validation, cast parse run on a deferred snapshot), and importing a large PDF/EPUB no longer blocks the whole backend while it parses. — thanks @ahov520!
+- Subtitle translation no longer dies silently on long LLM jobs: segments travel in small sequential batches (one giant byte-silent POST used to hit the webview's ~5-minute cap and get re-sent whole), every finished batch is kept on a later failure, and translations now persist to the job the moment they land instead of only at generate time. — thanks @ahov520!
+- The fast LLM translation path now caps its provider concurrency and honors 429 Retry-After before spending its retry, so one rate-limit window can't fail a whole stripe of segments; Argos language-pack downloads are time-bounded instead of hanging the request on a blocked network. — thanks @ahov520!
 - The guard that keeps transcription on the degrading ASR loader now scans the whole backend, not just the routers — a service that transcribes on a request's behalf skipped `ensure_loaded()` just as thoroughly. (#1519) — thanks @ahov520!
 - The Linux app icon is no longer blank. Every AppImage since v0.4.2 shipped `.DirIcon` as an absolute symlink into the machine that built it (`/home/runner/work/…`), so the link dangled on every user's computer and file managers, app menus and desktop integration all drew nothing. The release build now verifies the icon resolves inside the bundle before publishing. (#1518)
 - The Linux desktop entry no longer ships an empty `Categories=`, which `desktop-file-validate` rejects and menu builders skip. (#1518)
 
 ### Added
 
+- Translation progress is visible from any workspace: a status pill counts translated segments live, in single-language and multi-language runs alike. — thanks @ahov520!
+- A "Retry failed" button next to Translate All re-translates only the segments whose last attempt failed, instead of re-sending (and re-billing) the whole video. — thanks @ahov520!
+- Five new color themes — Tokyo Night, Dracula, Everforest, One Dark, Kanagawa — in Settings → Appearance, all meeting WCAG AA contrast on the chrome bar. — thanks @ahov520!
 - Cloud TTS engines: any OpenAI-compatible `/v1/audio/speech` server (SiliconFlow, OpenAI, self-hosted), ElevenLabs (with a voice picker fed by your voice library), and Alibaba Cloud CosyVoice via DashScope — configured and tested under Model Catalogue → Engines, activated like any other engine. — thanks @ahov520!
 - Cloud transcription engines: ElevenLabs Scribe (word timestamps, 10-hour files) and Alibaba Cloud DashScope (sentence timestamps, long audio chunked automatically), joining the existing OpenAI-compatible remote ASR; neither ever wins auto-detect. — thanks @ahov520!
 - Vocal separation is engine-driven now: local Demucs stays the default, with MVSEP (vocals + instrumental, algorithm selectable) and ElevenLabs Voice Isolator (voice only) as cloud options under Settings → Vocal separation — same progress bar, same fall-back-to-mixed-audio safety. — thanks @ahov520!

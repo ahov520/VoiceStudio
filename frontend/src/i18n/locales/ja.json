@@ -1043,7 +1043,9 @@
     "multi_lang_skipped": "{{langs}} の翻訳に失敗したため、誤った言語のトラックが生成されないよう該当する吹き替えをスキップしました。",
     "manage_languages": "言語を管理",
     "languages_done": "完了",
-    "languages_pending": "保留中"
+    "languages_pending": "保留中",
+    "retry_failed": "失敗分を再試行（{{count}}）",
+    "retry_failed_title": "前回失敗したセグメントだけを再翻訳します"
   },
   "glossary": {
     "title": "用語集",
@@ -1999,7 +2001,9 @@
     "history_deleted": "履歴項目が削除されました",
     "restored_state": "前世代の状態を復元",
     "upgrading_preview": "{{count}} プレビュー品質のセグメントをフル品質にアップグレードしています…",
-    "session_expired": "このダビング セッションは期限切れかクリーンアップされました。新しいビデオを開始するにはビデオを再アップロードしてください。"
+    "session_expired": "このダビング セッションは期限切れかクリーンアップされました。新しいビデオを開始するにはビデオを再アップロードしてください。",
+    "translating_progress": "{{lang}}へ翻訳中 — {{done}}/{{total}} セグメント…",
+    "translate_partial_kept": "エラー前に {{done}}/{{total}} セグメントを翻訳済み — 完了分は保持されます。再試行で続きから進めます。"
   },
   "tts_errors": {
     "enter_text": "テキストを入力してください",

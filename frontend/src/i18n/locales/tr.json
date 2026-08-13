@@ -1043,7 +1043,9 @@
     "multi_lang_skipped": "{{langs}} için çeviri başarısız oldu; yanlış dilde parça oluşmaması için bu dublajlar atlandı.",
     "manage_languages": "Dilleri yönet",
     "languages_done": "Tamamlandı",
-    "languages_pending": "Bekliyor"
+    "languages_pending": "Bekliyor",
+    "retry_failed": "Başarısızları yeniden dene ({{count}})",
+    "retry_failed_title": "Yalnızca son denemesi başarısız olan segmentleri yeniden çevir"
   },
   "glossary": {
     "title": "Sözlük",
@@ -1999,7 +2001,9 @@
     "history_deleted": "Geçmiş öğesi silindi",
     "restored_state": "Önceki nesil durumu geri yüklendi",
     "upgrading_preview": "{{count}} önizleme kalitesinde segment(ler) tam kaliteye yükseltiliyor…",
-    "session_expired": "Bu dub oturumunun süresi doldu veya temizlendi. Yeni bir video başlatmak için videonuzu yeniden yükleyin."
+    "session_expired": "Bu dub oturumunun süresi doldu veya temizlendi. Yeni bir video başlatmak için videonuzu yeniden yükleyin.",
+    "translating_progress": "{{lang}} diline çevriliyor — {{done}}/{{total}} segment…",
+    "translate_partial_kept": "Hatadan önce {{done}}/{{total}} segment çevrildi — bitenler korunur, devam etmek için yeniden deneyin."
   },
   "tts_errors": {
     "enter_text": "Lütfen metni girin",

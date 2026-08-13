@@ -1043,7 +1043,9 @@
     "multi_lang_skipped": "Không thể dịch {{langs}}; các bản lồng tiếng đó đã được bỏ qua để tránh tạo bản nhạc sai ngôn ngữ.",
     "manage_languages": "Quản lý ngôn ngữ",
     "languages_done": "Hoàn tất",
-    "languages_pending": "Đang chờ"
+    "languages_pending": "Đang chờ",
+    "retry_failed": "Thử lại phần lỗi ({{count}})",
+    "retry_failed_title": "Chỉ dịch lại những phân đoạn mà lần thử trước thất bại"
   },
   "glossary": {
     "title": "Thuật ngữ",
@@ -1999,7 +2001,9 @@
     "history_deleted": "Mục lịch sử đã bị xóa",
     "restored_state": "Đã khôi phục trạng thái thế hệ trước",
     "upgrading_preview": "Đang nâng cấp {{count}} phân đoạn chất lượng xem trước lên chất lượng đầy đủ…",
-    "session_expired": "Phiên lồng tiếng này đã hết hạn hoặc đã bị xóa - hãy tải lại video của bạn lên để bắt đầu một video mới."
+    "session_expired": "Phiên lồng tiếng này đã hết hạn hoặc đã bị xóa - hãy tải lại video của bạn lên để bắt đầu một video mới.",
+    "translating_progress": "Đang dịch sang {{lang}} — {{done}}/{{total}} phân đoạn…",
+    "translate_partial_kept": "Đã dịch {{done}}/{{total}} phân đoạn trước khi gặp lỗi — phần đã xong được giữ lại, thử lại để tiếp tục."
   },
   "tts_errors": {
     "enter_text": "Vui lòng nhập văn bản",

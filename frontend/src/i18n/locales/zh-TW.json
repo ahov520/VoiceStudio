@@ -1043,7 +1043,9 @@
     "multi_lang_skipped": "{{langs}} 翻譯失敗；已略過這些配音，以免產生語言錯誤的音軌。",
     "manage_languages": "管理語言",
     "languages_done": "已完成",
-    "languages_pending": "待處理"
+    "languages_pending": "待處理",
+    "retry_failed": "重試失敗段（{{count}}）",
+    "retry_failed_title": "只重新翻譯上次失敗的段落"
   },
   "glossary": {
     "title": "詞彙表",
@@ -1999,7 +2001,9 @@
     "history_deleted": "歷史記錄項目已刪除",
     "restored_state": "恢復了上一代狀態",
     "upgrading_preview": "正在將 {{count}} 預覽品質片段升級為完整品質…",
-    "session_expired": "此配音會話已過期或已清理 - 重新上傳您的影片以開始新的影片。"
+    "session_expired": "此配音會話已過期或已清理 - 重新上傳您的影片以開始新的影片。",
+    "translating_progress": "正在翻譯為{{lang}}——第 {{done}}/{{total}} 段…",
+    "translate_partial_kept": "出錯前已翻譯 {{done}}/{{total}} 段——已完成的部分已保留,重試可繼續。"
   },
   "tts_errors": {
     "enter_text": "請輸入文字",

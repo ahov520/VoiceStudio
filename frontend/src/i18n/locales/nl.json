@@ -1043,7 +1043,9 @@
     "multi_lang_skipped": "De vertaling voor {{langs}} is mislukt. Deze nasynchronisaties zijn overgeslagen om een track in de verkeerde taal te voorkomen.",
     "manage_languages": "Talen beheren",
     "languages_done": "Gereed",
-    "languages_pending": "In behandeling"
+    "languages_pending": "In behandeling",
+    "retry_failed": "Mislukte opnieuw ({{count}})",
+    "retry_failed_title": "Alleen de segmenten waarvan de laatste poging mislukte opnieuw vertalen"
   },
   "glossary": {
     "title": "Woordenlijst",
@@ -1999,7 +2001,9 @@
     "history_deleted": "Geschiedenisitem verwijderd",
     "restored_state": "Herstelde staat van de vorige generatie",
     "upgrading_preview": "{{count}} segment(en) van voorbeeldkwaliteit upgraden naar volledige kwaliteit…",
-    "session_expired": "Deze kopieersessie is verlopen of opgeschoond. Upload je video opnieuw om een nieuwe te starten."
+    "session_expired": "Deze kopieersessie is verlopen of opgeschoond. Upload je video opnieuw om een nieuwe te starten.",
+    "translating_progress": "Vertalen naar {{lang}} — {{done}}/{{total}} segmenten…",
+    "translate_partial_kept": "Vóór de fout zijn {{done}}/{{total}} segmenten vertaald — de voltooide blijven bewaard, opnieuw proberen gaat verder."
   },
   "tts_errors": {
     "enter_text": "Voer tekst in",

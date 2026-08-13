@@ -1043,7 +1043,9 @@
     "multi_lang_skipped": "Terjemahan untuk {{langs}} gagal; sulih suara tersebut dilewati agar tidak menghasilkan trek dalam bahasa yang salah.",
     "manage_languages": "Kelola bahasa",
     "languages_done": "Selesai",
-    "languages_pending": "Tertunda"
+    "languages_pending": "Tertunda",
+    "retry_failed": "Coba lagi yang gagal ({{count}})",
+    "retry_failed_title": "Terjemahkan ulang hanya segmen yang percobaan terakhirnya gagal"
   },
   "glossary": {
     "title": "Glosarium",
@@ -1999,7 +2001,9 @@
     "history_deleted": "Item riwayat dihapus",
     "restored_state": "Memulihkan keadaan generasi sebelumnya",
     "upgrading_preview": "Meningkatkan {{count}} segmen kualitas pratinjau ke kualitas penuh…",
-    "session_expired": "Sesi sulih suara ini telah habis masa berlakunya atau telah dibersihkan — unggah ulang video Anda untuk memulai yang baru."
+    "session_expired": "Sesi sulih suara ini telah habis masa berlakunya atau telah dibersihkan — unggah ulang video Anda untuk memulai yang baru.",
+    "translating_progress": "Menerjemahkan ke {{lang}} — {{done}}/{{total}} segmen…",
+    "translate_partial_kept": "{{done}}/{{total}} segmen diterjemahkan sebelum galat — yang selesai tetap tersimpan, coba lagi untuk melanjutkan."
   },
   "tts_errors": {
     "enter_text": "Silakan masukkan teks",

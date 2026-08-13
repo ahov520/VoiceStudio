@@ -1043,7 +1043,9 @@
     "multi_lang_skipped": "{{langs}} 번역에 실패하여 잘못된 언어의 트랙이 생성되지 않도록 해당 더빙을 건너뛰었습니다.",
     "manage_languages": "언어 관리",
     "languages_done": "완료",
-    "languages_pending": "대기 중"
+    "languages_pending": "대기 중",
+    "retry_failed": "실패분 재시도 ({{count}})",
+    "retry_failed_title": "지난번에 실패한 세그먼트만 다시 번역합니다"
   },
   "glossary": {
     "title": "용어집",
@@ -1999,7 +2001,9 @@
     "history_deleted": "기록 항목이 삭제되었습니다.",
     "restored_state": "이전 세대 상태를 복원했습니다.",
     "upgrading_preview": "{{count}} 미리보기 품질 세그먼트를 전체 품질로 업그레이드하는 중…",
-    "session_expired": "이 더빙 세션이 만료되었거나 정리되었습니다. 새 동영상을 시작하려면 동영상을 다시 업로드하세요."
+    "session_expired": "이 더빙 세션이 만료되었거나 정리되었습니다. 새 동영상을 시작하려면 동영상을 다시 업로드하세요.",
+    "translating_progress": "{{lang}}(으)로 번역 중 — {{done}}/{{total}} 세그먼트…",
+    "translate_partial_kept": "오류 전까지 {{done}}/{{total}} 세그먼트를 번역했습니다 — 완료분은 유지되며, 재시도하면 이어서 진행됩니다."
   },
   "tts_errors": {
     "enter_text": "텍스트를 입력해주세요",

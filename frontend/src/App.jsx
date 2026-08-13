@@ -570,6 +570,7 @@ function App() {
     handleDubGenerate,
     handleCleanupSegments,
     handleTranslateAll,
+    handleRetryFailedTranslations,
     handleDubImportSrt,
   } = useDubWorkflow({
     loadProjects,
@@ -1612,6 +1613,7 @@ function App() {
                     onDirectSegment={openDirection}
                     incrementalPlan={incrementalPlan}
                     handleTranslateAll={handleTranslateAll}
+                    handleRetryFailedTranslations={handleRetryFailedTranslations}
                     handleCleanupSegments={handleCleanupSegments}
                     handleDubImportSrt={handleDubImportSrt}
                     triggerDownload={triggerDownload}

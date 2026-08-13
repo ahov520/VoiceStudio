@@ -447,7 +447,7 @@ def resolve_dashscope_tts_voice() -> str:
 
 class DashScopeTTSBackend(TTSBackend):
     """CosyVoice / Qwen-TTS speech synthesis on Alibaba Cloud Model Studio
-    (百炼), via the official ``dashscope`` SDK's non-streaming blocking call.
+    (Bailian), via the official ``dashscope`` SDK's non-streaming blocking call.
 
     Reachable from mainland China without a proxy. Model and voice versions
     must match (cosyvoice-v2 → *_v2 voices, cosyvoice-v3-* → v3 voices…) —

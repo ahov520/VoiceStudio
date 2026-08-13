@@ -1,4 +1,6 @@
 import os
+import random
+import threading
 import time
 import asyncio
 import logging
@@ -9,11 +11,45 @@ from fastapi.responses import JSONResponse
 from schemas.requests import TranslateRequest
 from services.model_manager import _cpu_pool, _gpu_pool
 from services.hf_revisions import revision_for
-from services.translator import cinematic_available, cinematic_refine_many, _cinematic_budget
+from services.translator import (
+    _RETRY_AFTER_CAP_S,
+    _cinematic_budget,
+    _retry_after_seconds,
+    cinematic_available,
+    cinematic_refine_many,
+)
 from api.routers.dub_core import _get_job, _save_job
 
 router = APIRouter()
 logger = logging.getLogger("omnivoice.api")
+
+#: Bound for argostranslate's language-pack index/download sockets. The
+#: library opens them with NO timeout, so a blocked network (the first-use
+#: path behind a firewall) used to hang the translate request until the
+#: client gave up.
+_ARGOS_DOWNLOAD_TIMEOUT_S = 120
+
+# Concurrency gate for the FAST LLM path. The cinematic refine already
+# respects OMNIVOICE_LLM_CONCURRENCY (services.translator, default 6); the
+# fast per-segment path used to fan out to the whole CPU pool with no cap,
+# so one free-tier rate-limit window failed a whole stripe of segments at
+# once (#1481 fixed the cinematic side only).
+_llm_fast_gate_lock = threading.Lock()
+_llm_fast_gate: "threading.Semaphore | None" = None
+_llm_fast_gate_size = 0
+
+
+def _get_llm_fast_gate() -> threading.Semaphore:
+    global _llm_fast_gate, _llm_fast_gate_size
+    try:
+        size = max(1, int(os.environ.get("OMNIVOICE_LLM_CONCURRENCY", "6") or 6))
+    except ValueError:
+        size = 6
+    with _llm_fast_gate_lock:
+        if _llm_fast_gate is None or size != _llm_fast_gate_size:
+            _llm_fast_gate = threading.Semaphore(size)
+            _llm_fast_gate_size = size
+        return _llm_fast_gate
 
 _NLLB_REPO_ID = "facebook/nllb-200-distilled-600M"
 
@@ -482,6 +518,11 @@ async def dub_translate(req: TranslateRequest):
                     base = base + "\n\n" + context_extra
                 return base
 
+            # Fast-path concurrency gate — see _get_llm_fast_gate. Without it
+            # every segment task hits the provider at once (CPU-pool width),
+            # and one rate-limit window fails a whole stripe of segments.
+            llm_gate = _get_llm_fast_gate()
+
             def _translate_llm(seg):
                 if not seg.text or not seg.text.strip():
                     return {"id": seg.id, "text": seg.text}
@@ -501,15 +542,16 @@ async def dub_translate(req: TranslateRequest):
                             f"{LANG_NAMES.get(tgt_code, tgt_code)} translation."
                         )
                     try:
-                        res = client.chat.completions.create(
-                            model=model_name,
-                            temperature=0.2,  # less drift than default 1.0
-                            timeout=llm_timeout,  # bound per call (OMNIVOICE_LLM_TIMEOUT, 45s default)
-                            messages=[
-                                {"role": "system", "content": sys_for_attempt},
-                                {"role": "user", "content": seg.text},
-                            ],
-                        )
+                        with llm_gate:
+                            res = client.chat.completions.create(
+                                model=model_name,
+                                temperature=0.2,  # less drift than default 1.0
+                                timeout=llm_timeout,  # bound per call (OMNIVOICE_LLM_TIMEOUT, 45s default)
+                                messages=[
+                                    {"role": "system", "content": sys_for_attempt},
+                                    {"role": "user", "content": seg.text},
+                                ],
+                            )
                         out_text = (res.choices[0].message.content or "").strip()
                         if not out_text:
                             last_err = "empty LLM response"
@@ -536,15 +578,16 @@ async def dub_translate(req: TranslateRequest):
                         if reflect_on:
                             polished = None
                             try:
-                                polished = tq.reflect_translation_sync(
-                                    client, model_name, llm_timeout,
-                                    source_text=seg.text,
-                                    direct_text=out_text,
-                                    source_lang=src_lang,
-                                    target_lang=tgt_code,
-                                    target_name=LANG_NAMES.get(tgt_code, tgt_code),
-                                    extra_clause=context_extra,
-                                )
+                                with llm_gate:
+                                    polished = tq.reflect_translation_sync(
+                                        client, model_name, llm_timeout,
+                                        source_text=seg.text,
+                                        direct_text=out_text,
+                                        source_lang=src_lang,
+                                        target_lang=tgt_code,
+                                        target_name=LANG_NAMES.get(tgt_code, tgt_code),
+                                        extra_clause=context_extra,
+                                    )
                             except Exception as e:  # noqa: BLE001
                                 logger.warning("reflect pass skipped for %s: %s",
                                                seg.id, e)
@@ -558,6 +601,13 @@ async def dub_translate(req: TranslateRequest):
                             "translate %s: LLM attempt %d failed: %s",
                             seg.id, attempt + 1, e,
                         )
+                        # 429 with a Retry-After hint: honor it (capped, with
+                        # jitter — same policy as the cinematic _chat, #1481)
+                        # before spending the one retry, instead of instantly
+                        # burning it inside the same rate-limit window.
+                        wait = _retry_after_seconds(e)
+                        if wait is not None and attempt == 0:
+                            time.sleep(min(wait, _RETRY_AFTER_CAP_S) + random.uniform(0, 0.5))
                 # Both attempts failed — keep source text + flag error so the
                 # frontend can surface "fallback to literal" warning. Scrub the
                 # provider error: some OpenAI-compatible providers echo the key
@@ -617,14 +667,35 @@ async def dub_translate(req: TranslateRequest):
                         installed_pkg = next(filter(lambda x: x.from_code == from_code and x.to_code == to_code, available_packages), None)
 
                         if installed_pkg is None:
-                            argostranslate.package.update_package_index()
-                            all_packages = argostranslate.package.get_available_packages()
-                            package_to_install = next(filter(lambda x: x.from_code == from_code and x.to_code == to_code, all_packages), None)
-                            if package_to_install:
-                                argostranslate.package.install_from_path(package_to_install.download())
-                                available_packages = argostranslate.package.get_installed_packages()
-                            else:
-                                raise Exception(f"No Argos package available for {from_code} -> {to_code}")
+                            # argostranslate fetches its index + language pack
+                            # with bare urllib calls (no timeout) — on a
+                            # blocked/slow network the first-use download used
+                            # to hang this request indefinitely. Bound every
+                            # socket opened in this window; restore the
+                            # process default afterwards.
+                            import socket
+                            prev_timeout = socket.getdefaulttimeout()
+                            socket.setdefaulttimeout(_ARGOS_DOWNLOAD_TIMEOUT_S)
+                            try:
+                                argostranslate.package.update_package_index()
+                                all_packages = argostranslate.package.get_available_packages()
+                                package_to_install = next(filter(lambda x: x.from_code == from_code and x.to_code == to_code, all_packages), None)
+                                if package_to_install:
+                                    argostranslate.package.install_from_path(package_to_install.download())
+                                    available_packages = argostranslate.package.get_installed_packages()
+                                else:
+                                    raise Exception(f"No Argos package available for {from_code} -> {to_code}")
+                            except OSError as e:
+                                # Timeout/DNS/refused — name the fix instead of
+                                # surfacing a bare socket error per segment.
+                                raise Exception(
+                                    f"Downloading the Argos language pack "
+                                    f"{from_code} -> {to_code} failed ({e}). "
+                                    "Check the network (or a proxy), or switch "
+                                    "the Engine dropdown to another provider."
+                                ) from e
+                            finally:
+                                socket.setdefaulttimeout(prev_timeout)
 
                         translated_text = argostranslate.translate.translate(seg.text, from_code, to_code)
                         results.append({"id": seg.id, "text": translated_text})
@@ -926,6 +997,40 @@ async def _apply_fit_pass(rows, req, slots_by_id, source_by_id, quality, loop, d
             row["rate_error"] = f["error"]
 
 
+def _persist_translated_texts(req, resp: dict) -> dict:
+    """Write successful translations into ``job["segments_i18n"][lang]`` NOW.
+
+    That map used to be written only at GENERATE time (dub_generate), so a
+    finished translate that was never generated evaporated on the first
+    browser refresh / backend restart — with LLM translation that can be many
+    minutes of paid work. Additive per segment key (same shape the export
+    paths read); failed rows are skipped so a retry can still fill them.
+    Best-effort by design: persistence must never fail a translate response.
+    """
+    job_id = getattr(req, "job_id", None)
+    if not job_id:
+        return resp
+    try:
+        job = _get_job(job_id)
+        if not job:
+            return resp
+        lang = (resp.get("target_lang") or req.target_lang or "und").strip() or "und"
+        entry = job.setdefault("segments_i18n", {}).setdefault(lang, {})
+        wrote = False
+        for row in resp.get("translated") or []:
+            if row.get("error"):
+                continue
+            text = (row.get("text") or "").strip()
+            if text:
+                entry[str(row["id"])] = text
+                wrote = True
+        if wrote:
+            _save_job(job_id, job)
+    except Exception:  # noqa: BLE001 — persistence is best-effort
+        logger.debug("translate persist skipped", exc_info=True)
+    return resp
+
+
 async def _maybe_cinematic(translated, req, src_lang, loop, *, already_llm=False):
     """Post-process a literal translation into Cinematic/Autofit output.
 
@@ -960,7 +1065,7 @@ async def _maybe_cinematic(translated, req, src_lang, loop, *, already_llm=False
     # (plus the pre-synthesis duration-plan badges — no LLM needed for those).
     if quality not in ("cinematic", "autofit"):
         await _finalize_duration_plan(translated, req, loop)
-        return base
+        return _persist_translated_texts(req, base)
 
     source_by_id: dict[str, str] = {str(s.id): s.text for s in req.segments}
     slots_by_id = {
@@ -992,9 +1097,10 @@ async def _maybe_cinematic(translated, req, src_lang, loop, *, already_llm=False
         await _apply_fit_pass(merged, req, slots_by_id, source_by_id, quality, loop, deadline)
         # Plan AFTER the fit pass — verdicts must describe the final text.
         await _finalize_duration_plan(merged, req, loop)
-        return {"translated": merged, "target_lang": req.target_lang,
-                "source_lang": src_lang, "quality_used": quality,
-                **_dialect_flags(req, applied=bool(dialect_hint))}
+        return _persist_translated_texts(req, {
+            "translated": merged, "target_lang": req.target_lang,
+            "source_lang": src_lang, "quality_used": quality,
+            **_dialect_flags(req, applied=bool(dialect_hint))})
 
     # Non-LLM provider → the reflect/adapt refine needs a separately-configured
     # LLM (Settings → LLM Providers). Without one, degrade to Fast with a flag.
@@ -1002,7 +1108,7 @@ async def _maybe_cinematic(translated, req, src_lang, loop, *, already_llm=False
         logger.warning("%s requested but no LLM configured — returning Fast result.", quality)
         base["cinematic_skipped"] = "no-llm-configured"
         await _finalize_duration_plan(translated, req, loop)
-        return base
+        return _persist_translated_texts(req, base)
 
     directions: dict[str, str] = {
         str(s.id): s.direction
@@ -1021,7 +1127,7 @@ async def _maybe_cinematic(translated, req, src_lang, loop, *, already_llm=False
 
     if not pairs:
         await _finalize_duration_plan(translated, req, loop)
-        return base
+        return _persist_translated_texts(req, base)
 
     refined = await cinematic_refine_many(
         pairs,
@@ -1069,10 +1175,10 @@ async def _maybe_cinematic(translated, req, src_lang, loop, *, already_llm=False
     # Plan AFTER the fit pass — verdicts must describe the final text.
     await _finalize_duration_plan(merged, req, loop)
 
-    return {
+    return _persist_translated_texts(req, {
         "translated": merged,
         "target_lang": req.target_lang,
         "source_lang": src_lang,
         "quality_used": quality,
         **_dialect_flags(req, applied=bool(dialect_hint)),
-    }
+    })

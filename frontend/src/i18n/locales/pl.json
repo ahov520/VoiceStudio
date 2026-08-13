@@ -1043,7 +1043,9 @@
     "multi_lang_skipped": "Tłumaczenie dla {{langs}} nie powiodło się. Te dubbingi pominięto, aby nie utworzyć ścieżki w niewłaściwym języku.",
     "manage_languages": "Zarządzaj językami",
     "languages_done": "Gotowe",
-    "languages_pending": "Oczekujące"
+    "languages_pending": "Oczekujące",
+    "retry_failed": "Ponów nieudane ({{count}})",
+    "retry_failed_title": "Przetłumacz ponownie tylko segmenty, których ostatnia próba się nie powiodła"
   },
   "glossary": {
     "title": "Glosariusz",
@@ -1999,7 +2001,9 @@
     "history_deleted": "Element historii usunięty",
     "restored_state": "Przywrócono stan poprzedniej generacji",
     "upgrading_preview": "Uaktualniam segmenty w jakości podglądu {{count}} do pełnej jakości…",
-    "session_expired": "Ta sesja dubowania wygasła lub została wyczyszczona — prześlij film ponownie, aby rozpocząć nową."
+    "session_expired": "Ta sesja dubowania wygasła lub została wyczyszczona — prześlij film ponownie, aby rozpocząć nową.",
+    "translating_progress": "Tłumaczenie na {{lang}} — {{done}}/{{total}} segmentów…",
+    "translate_partial_kept": "Przed błędem przetłumaczono {{done}}/{{total}} segmentów — ukończone zostają zachowane, ponów próbę, aby kontynuować."
   },
   "tts_errors": {
     "enter_text": "Proszę wpisać tekst",

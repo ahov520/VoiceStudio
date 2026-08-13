@@ -55,6 +55,7 @@ export default function DubTab(props) {
     handleSegmentPreview,
     onDirectSegment,
     handleTranslateAll,
+    handleRetryFailedTranslations,
     handleCleanupSegments,
     incrementalPlan,
     triggerDownload,
@@ -751,6 +752,7 @@ export default function DubTab(props) {
               dubInstruct={dubInstruct}
               setDubInstruct={setDubInstruct}
               handleTranslateAll={onTranslateClick}
+              handleRetryFailedTranslations={handleRetryFailedTranslations}
               isTranslating={isTranslating}
               hasAnyTranslation={hasAnyTranslation}
               handleCleanupSegments={handleCleanupSegments}

@@ -1002,7 +1002,9 @@
     "multi_lang_skipped": "{{langs}} 翻译失败——已跳过这些配音，以免生成语言错误的音轨。",
     "manage_languages": "管理语言",
     "languages_done": "已完成",
-    "languages_pending": "待处理"
+    "languages_pending": "待处理",
+    "retry_failed": "重试失败段（{{count}}）",
+    "retry_failed_title": "只重新翻译上次失败的段落"
   },
   "glossary": {
     "title": "术语表",
@@ -2006,7 +2008,9 @@
     "history_deleted": "历史记录项已删除",
     "restored_state": "恢复了上一代状态",
     "upgrading_preview": "正在将 {{count}} 个预览质量片段升级为完整质量…",
-    "session_expired": "此配音会话已过期或已清理——请重新上传视频以开始新的会话。"
+    "session_expired": "此配音会话已过期或已清理——请重新上传视频以开始新的会话。",
+    "translating_progress": "正在翻译为{{lang}}——第 {{done}}/{{total}} 段…",
+    "translate_partial_kept": "出错前已翻译 {{done}}/{{total}} 段——已完成的部分已保留,重试可继续。"
   },
   "tts_errors": {
     "enter_text": "请输入文字",

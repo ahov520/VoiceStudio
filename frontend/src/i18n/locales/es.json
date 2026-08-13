@@ -1043,7 +1043,9 @@
     "multi_lang_skipped": "Falló la traducción de {{langs}}; esos doblajes se omitieron para evitar pistas en el idioma incorrecto.",
     "manage_languages": "Gestionar idiomas",
     "languages_done": "Listo",
-    "languages_pending": "Pendiente"
+    "languages_pending": "Pendiente",
+    "retry_failed": "Reintentar fallidos ({{count}})",
+    "retry_failed_title": "Volver a traducir solo los segmentos cuyo último intento falló"
   },
   "glossary": {
     "title": "Glosario",
@@ -1999,7 +2001,9 @@
     "history_deleted": "Elemento del historial eliminado",
     "restored_state": "Estado de generación anterior restaurado",
     "upgrading_preview": "Actualizando {{count}} segmentos de calidad de vista previa a calidad completa...",
-    "session_expired": "Esta sesión de doblaje expiró o se limpió: vuelve a subir tu video para comenzar uno nuevo."
+    "session_expired": "Esta sesión de doblaje expiró o se limpió: vuelve a subir tu video para comenzar uno nuevo.",
+    "translating_progress": "Traduciendo a {{lang}} — {{done}}/{{total}} segmentos…",
+    "translate_partial_kept": "Se tradujeron {{done}}/{{total}} segmentos antes del error; los terminados se conservan, reintenta para continuar."
   },
   "tts_errors": {
     "enter_text": "Por favor ingresa texto",

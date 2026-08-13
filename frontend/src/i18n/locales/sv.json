@@ -1043,7 +1043,9 @@
     "multi_lang_skipped": "Översättningen misslyckades för {{langs}}. Dessa dubbningar hoppades över för att undvika ett spår på fel språk.",
     "manage_languages": "Hantera språk",
     "languages_done": "Klart",
-    "languages_pending": "Väntar"
+    "languages_pending": "Väntar",
+    "retry_failed": "Försök igen misslyckade ({{count}})",
+    "retry_failed_title": "Översätt bara om de segment vars senaste försök misslyckades"
   },
   "glossary": {
     "title": "Ordlista",
@@ -1999,7 +2001,9 @@
     "history_deleted": "Historikobjektet har tagits bort",
     "restored_state": "Återställd föregående generations tillstånd",
     "upgrading_preview": "Uppgraderar {{count}} segment(er) med förhandsvisningskvalitet till full kvalitet...",
-    "session_expired": "Den här dubbsessionen löpte ut eller rensades upp – ladda upp din video igen för att starta en ny."
+    "session_expired": "Den här dubbsessionen löpte ut eller rensades upp – ladda upp din video igen för att starta en ny.",
+    "translating_progress": "Översätter till {{lang}} — {{done}}/{{total}} segment…",
+    "translate_partial_kept": "{{done}}/{{total}} segment översattes före felet — de klara behålls, försök igen för att fortsätta."
   },
   "tts_errors": {
     "enter_text": "Vänligen ange text",

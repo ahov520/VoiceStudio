@@ -6,7 +6,7 @@ major providers that do NOT speak the OpenAI transcription protocol:
 
 * ``elevenlabs-asr`` — ElevenLabs Scribe (``POST /v1/speech-to-text``): word
   timestamps, 90+ languages, files up to 10 h / 3 GB in one call.
-* ``dashscope-asr`` — Alibaba Cloud Model Studio (百炼) sync recognition
+* ``dashscope-asr`` — Alibaba Cloud Model Studio (Bailian) sync recognition
   (Qwen-Audio-3.0-ASR-Flash / Fun-ASR-Flash / Qwen3-ASR-Flash). Reachable
   from mainland China without a proxy. The sync endpoint caps one call at
   5 minutes / 10 MB, so this adapter transparently splits longer audio into
@@ -53,8 +53,10 @@ _ISO3_TO_1 = {
     "nor": "no", "hun": "hu", "ron": "ro", "heb": "he", "msa": "ms",
 }
 
-#: Sentence-ending punctuation that closes a segment (CJK + Latin).
-_SENTENCE_TERMINATORS = (".", "!", "?", "。", "！", "？", "…")
+#: Sentence-ending punctuation that closes a segment (Latin + CJK ideographic
+#: full stop / fullwidth !? / ellipsis, as unicode escapes — repo convention
+#: keeps raw CJK out of source files).
+_SENTENCE_TERMINATORS = (".", "!", "?", "\u3002", "\uff01", "\uff1f", "\u2026")
 
 #: A silence this long between words starts a new segment.
 _SEGMENT_GAP_S = 0.8

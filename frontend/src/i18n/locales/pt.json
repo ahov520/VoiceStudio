@@ -1043,7 +1043,9 @@
     "multi_lang_skipped": "A tradução de {{langs}} falhou; essas dublagens foram ignoradas para evitar uma faixa no idioma errado.",
     "manage_languages": "Gerenciar idiomas",
     "languages_done": "Concluído",
-    "languages_pending": "Pendente"
+    "languages_pending": "Pendente",
+    "retry_failed": "Repetir falhas ({{count}})",
+    "retry_failed_title": "Retraduzir apenas os segmentos cuja última tentativa falhou"
   },
   "glossary": {
     "title": "Glossário",
@@ -1999,7 +2001,9 @@
     "history_deleted": "Item do histórico excluído",
     "restored_state": "Estado restaurado da geração anterior",
     "upgrading_preview": "Atualizando segmento(s) de qualidade de visualização {{count}} para qualidade total…",
-    "session_expired": "Esta sessão de dublagem expirou ou foi limpa. Reenvie seu vídeo para iniciar uma nova."
+    "session_expired": "Esta sessão de dublagem expirou ou foi limpa. Reenvie seu vídeo para iniciar uma nova.",
+    "translating_progress": "Traduzindo para {{lang}} — {{done}}/{{total}} segmentos…",
+    "translate_partial_kept": "Foram traduzidos {{done}}/{{total}} segmentos antes do erro — os concluídos ficam guardados; tente de novo para continuar."
   },
   "tts_errors": {
     "enter_text": "Por favor insira o texto",

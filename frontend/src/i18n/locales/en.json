@@ -1321,7 +1321,9 @@
     "languages_selected_other": "{{count}} languages selected",
     "manage_languages": "Manage languages",
     "languages_done": "Done",
-    "languages_pending": "Pending"
+    "languages_pending": "Pending",
+    "retry_failed": "Retry failed ({{count}})",
+    "retry_failed_title": "Re-translate only the segments whose last attempt failed"
   },
   "glossary": {
     "title": "Glossary",
@@ -2673,7 +2675,9 @@
     "delete_history_confirm": "Delete this history item?",
     "history_deleted": "History item deleted",
     "restored_state": "Restored previous generation state",
-    "upgrading_preview": "Upgrading {{count}} preview-quality segment(s) to full quality…"
+    "upgrading_preview": "Upgrading {{count}} preview-quality segment(s) to full quality…",
+    "translating_progress": "Translating to {{lang}} — {{done}}/{{total}} segments…",
+    "translate_partial_kept": "Translated {{done}}/{{total}} segments before the error — the finished ones are kept, retry to continue."
   },
   "tts_errors": {
     "enter_text": "Please enter text",

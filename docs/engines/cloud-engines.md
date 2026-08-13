@@ -35,7 +35,7 @@ through the normal mastering + AudioSeal watermark chain.
   transcoded on the way in. Env overrides: `TTS_ELEVENLABS_VOICE_ID`,
   `TTS_ELEVENLABS_MODEL_ID`.
 - **`dashscope-tts`** — CosyVoice / Qwen-TTS on Alibaba Cloud Model Studio
-  (百炼), reachable from mainland China without a proxy. Requires the
+  (Bailian), reachable from mainland China without a proxy. Requires the
   `dashscope` package (`uv pip install dashscope`). Model and voice versions
   must match: `cosyvoice-v2` → `longxiaochun_v2`-style voices,
   `cosyvoice-v3-*` → v3 voices. Env overrides: `TTS_DASHSCOPE_MODEL`,
