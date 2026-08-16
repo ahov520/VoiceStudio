@@ -12,8 +12,11 @@ CosyVoice is installed *per-engine* from the in-app **Model Catalogue → Engine
 2. Click **Install** next to "CosyVoice".
 3. The app fetches the engine source, creates a dedicated venv, syncs deps,
    and downloads model weights (~2 GB).
-4. Once installed, the engine appears in the **Voice Cloning** and
-   **Voice Design** engine picker dropdowns.
+4. Once installed, the engine appears in the **Voice Cloning** engine picker.
+
+CosyVoice 3 requires a reference recording for local synthesis. The adapter
+adds the model's required prompt boundary internally, so enter the reference
+transcript as normal text; do not add `<|endofprompt|>` yourself.
 
 The dedicated venv keeps CosyVoice's transformer pins from clashing with
 IndexTTS / ChatterboxTTS / SonicTranslate (see

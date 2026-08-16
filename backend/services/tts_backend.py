@@ -1565,6 +1565,15 @@ class CosyVoiceBackend(TTSBackend):
         "es": "<|es|>", "fr": "<|fr|>", "it": "<|it|>",
         "ru": "<|ru|>",
     }
+    LANG_ALIASES = {
+        "chinese": "zh", "english": "en", "japanese": "ja",
+        "korean": "ko", "cantonese": "yue", "german": "de",
+        "spanish": "es", "french": "fr", "italian": "it",
+        "russian": "ru",
+    }
+
+    _CV3_EOP = "<|endofprompt|>"
+    _CV3_ASSISTANT_PREFIX = "You are a helpful assistant."
 
     def __init__(self):
         self._model = None
@@ -1615,6 +1624,58 @@ class CosyVoiceBackend(TTSBackend):
         logger.info("Loading CosyVoice from %s", model_dir)
         self._model = AutoModel(model_dir=model_dir)
 
+    @classmethod
+    def _is_cosyvoice3(cls, model) -> bool:
+        """Return whether *model* uses CosyVoice 3's prompt grammar.
+
+        CosyVoice 2 accepts plain reference/instruction text.  CosyVoice 3
+        uses the Qwen prompt format and requires ``<|endofprompt|>`` in the
+        prompt prefix, so applying that format unconditionally breaks v1/v2.
+        """
+        if model is None:
+            return False
+        if model.__class__.__name__ == "CosyVoice3":
+            return True
+        model_dir = getattr(model, "model_dir", None)
+        return bool(model_dir and os.path.isfile(os.path.join(model_dir, "cosyvoice3.yaml")))
+
+    @classmethod
+    def _cv3_prompt(cls, value: str) -> str:
+        """Format an instruction prompt using CosyVoice 3's official grammar."""
+        value = (value or "").strip()
+        if cls._CV3_EOP in value:
+            return value
+        if value.startswith(cls._CV3_ASSISTANT_PREFIX):
+            return f"{value}{cls._CV3_EOP}"
+        return f"{cls._CV3_ASSISTANT_PREFIX} {value}{cls._CV3_EOP}"
+
+    @classmethod
+    def _cv3_reference_prompt(cls, value: str) -> str:
+        """Place a clone transcript after the CosyVoice 3 prompt boundary."""
+        value = (value or "").strip()
+        if cls._CV3_EOP in value:
+            return value
+        return f"{cls._CV3_ASSISTANT_PREFIX}{cls._CV3_EOP}{value}"
+
+    @classmethod
+    def _cv3_text(cls, value: str) -> str:
+        """Add the required CosyVoice 3 prompt prefix to cross-lingual text."""
+        value = (value or "").strip()
+        if cls._CV3_EOP in value:
+            return value
+        return f"{cls._CV3_ASSISTANT_PREFIX}{cls._CV3_EOP}{value}"
+
+    @classmethod
+    def _language_tag(cls, language) -> str:
+        """Resolve ISO codes and the display names used by the UI."""
+        if not language:
+            return ""
+        full_lang = str(language).strip().lower()
+        lang_key = cls.LANG_ALIASES.get(full_lang)
+        if lang_key is None:
+            lang_key = full_lang if len(full_lang) <= 3 else full_lang[:2]
+        return cls.LANG_TAGS.get(lang_key, "")
+
     def generate(self, text: str, **kw) -> torch.Tensor:
         import numpy as np
         self._ensure_loaded()
@@ -1623,6 +1684,7 @@ class CosyVoiceBackend(TTSBackend):
         ref_text = kw.get("ref_text")
         instruct = kw.get("instruct")
         language = kw.get("language")
+        is_cosyvoice3 = self._is_cosyvoice3(self._model)
 
         # Pick the right inference method based on what the caller provides:
         # 1. instruct + ref_audio → inference_instruct2 (emotion/dialect/speed)
@@ -1631,30 +1693,40 @@ class CosyVoiceBackend(TTSBackend):
         # 4. nothing → inference_sft (built-in speakers, v1/SFT model only)
         pieces = []
         if instruct and ref_audio:
-            # Instruct mode: "用四川话说<|endofprompt|>"
-            if not instruct.endswith("<|endofprompt|>"):
-                instruct = f"{instruct}<|endofprompt|>"
+            if is_cosyvoice3:
+                instruct = self._cv3_prompt(instruct)
             results = self._model.inference_instruct2(
                 text, instruct, ref_audio, stream=False,
             )
         elif ref_audio and ref_text:
+            if is_cosyvoice3:
+                ref_text = self._cv3_reference_prompt(ref_text)
             results = self._model.inference_zero_shot(
                 text, ref_text, ref_audio, stream=False,
             )
         elif ref_audio:
             # Cross-lingual: prefix text with language tag if available.
-            lang_tag = ""
-            if language:
-                full_lang = language.lower()
-                lang_key = full_lang[:2] if len(full_lang) > 2 else full_lang
-                lang_tag = self.LANG_TAGS.get(full_lang) or self.LANG_TAGS.get(lang_key, "")
-            results = self._model.inference_cross_lingual(
-                f"{lang_tag}{text}", ref_audio, stream=False,
-            )
+            lang_tag = self._language_tag(language)
+            if is_cosyvoice3:
+                # CosyVoice 3 expects the prompt boundary before the actual
+                # text.  The v1/v2 language tags remain unchanged below.
+                results = self._model.inference_cross_lingual(
+                    self._cv3_text(text), ref_audio, stream=False,
+                )
+            else:
+                results = self._model.inference_cross_lingual(
+                    f"{lang_tag}{text}", ref_audio, stream=False,
+                )
         else:
             # No ref audio — try SFT with first available speaker.
             spks = self._model.list_available_spks()
-            spk = spks[0] if spks else "中文女"
+            if not spks:
+                raise RuntimeError(
+                    "CosyVoice has no built-in SFT speakers available "
+                    "(spk2info.pt is not shipped in official v2/v3 repos). "
+                    "Use voice cloning (reference audio) instead."
+                )
+            spk = spks[0]
             results = self._model.inference_sft(text, spk, stream=False)
 
         for chunk in results:
