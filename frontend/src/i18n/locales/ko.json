@@ -334,7 +334,9 @@
     "device_load_failed": "장치 설정을 불러오지 못했습니다",
     "perf_save_failed": "설정을 저장하지 못했습니다",
     "cloud_providers": "클라우드 제공업체",
-    "separation": "보컬 분리"
+    "separation": "보컬 분리",
+    "llmskills_drama_director_name": "드라마 연출",
+    "llmskills_drama_director_desc": "자연어 연출 메모를 드라마 작업 공간의 배역 배정과 줄별 연출로 변환합니다. 끄면 빠른 키워드 휴리스틱을 사용합니다."
   },
   "bootstrap": {
     "title": "VoiceStudio",
@@ -2742,5 +2744,18 @@
     "emotion_crying": "울음",
     "emotion_sarcastic": "비꼼",
     "emotion_tense": "긴장"
+  },
+  "zhcheck": {
+    "open_btn": "발음 검사",
+    "title": "중국어 발음 검사",
+    "polyphone_hint": "엔진이 잘못 읽을 수 있는 단어 — 올바른 독음을 선택해 발음 사전에 저장하면 이후 모든 합성에 적용됩니다.",
+    "reading_for": "{{word}}의 독음",
+    "save": "저장",
+    "covered": "사전 등록됨",
+    "error": "실패",
+    "no_polyphones": "다음자가 감지되지 않았습니다.",
+    "numbers_section": "숫자 읽기",
+    "apply": "적용",
+    "applied": "적용됨"
   }
 }

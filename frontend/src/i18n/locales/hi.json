@@ -334,7 +334,9 @@
     "device_load_failed": "डिवाइस सेटिंग लोड नहीं हो सकी",
     "perf_save_failed": "सेटिंग सहेजी नहीं जा सकी",
     "cloud_providers": "क्लाउड प्रदाता",
-    "separation": "वोकल विभाजन"
+    "separation": "वोकल विभाजन",
+    "llmskills_drama_director_name": "नाटक निर्देशन",
+    "llmskills_drama_director_desc": "स्वाभाविक भाषा के अभिनय निर्देश को नाटक कार्यक्षेत्र में कलाकार चयन और पंक्ति-वार निर्देश में बदलता है। बंद: तेज़ कीवर्ड ह्यूरिस्टिक उपयोग होती है।"
   },
   "bootstrap": {
     "title": "VoiceStudio",
@@ -2742,5 +2744,18 @@
     "emotion_crying": "रोना",
     "emotion_sarcastic": "व्यंग्य",
     "emotion_tense": "तनाव"
+  },
+  "zhcheck": {
+    "open_btn": "उच्चारण जाँच",
+    "title": "चीनी उच्चारण जाँच",
+    "polyphone_hint": "जिन शब्दों को इंजन गलत पढ़ सकता है — सही उच्चारण चुनें और उसे उच्चारण शब्दकोश में सहेजें; यह हर संश्लेषण पर लागू होगा।",
+    "reading_for": "{{word}} का उच्चारण",
+    "save": "सहेजें",
+    "covered": "शब्दकोश में",
+    "error": "विफल",
+    "no_polyphones": "कोई बहु-उच्चारण शब्द नहीं मिला।",
+    "numbers_section": "संख्या उच्चारण",
+    "apply": "लागू करें",
+    "applied": "लागू हुआ"
   }
 }

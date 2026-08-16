@@ -334,7 +334,9 @@
     "device_load_failed": "Geräteeinstellung konnte nicht geladen werden",
     "perf_save_failed": "Einstellung konnte nicht gespeichert werden",
     "cloud_providers": "Cloud-Anbieter",
-    "separation": "Gesangstrennung"
+    "separation": "Gesangstrennung",
+    "llmskills_drama_director_name": "Drama-Regie",
+    "llmskills_drama_director_desc": "Wandelt eine Regieanweisung in natürlicher Sprache in Besetzung und Anweisungen pro Zeile im Drama-Arbeitsbereich um. Aus: es wird die schnelle Stichwort-Heuristik verwendet."
   },
   "bootstrap": {
     "title": "VoiceStudio",
@@ -2742,5 +2744,18 @@
     "emotion_crying": "Weinen",
     "emotion_sarcastic": "Sarkastisch",
     "emotion_tense": "Angespannt"
+  },
+  "zhcheck": {
+    "open_btn": "Ausspracheprüfung",
+    "title": "Chinesische Ausspracheprüfung",
+    "polyphone_hint": "Wörter, die die Engine falsch lesen könnte — wähle die richtige Lesart und speichere sie im Aussprachewörterbuch. Sie gilt dann für jede Synthese.",
+    "reading_for": "Lesart für {{word}}",
+    "save": "Speichern",
+    "covered": "im Wörterbuch",
+    "error": "Fehlgeschlagen",
+    "no_polyphones": "Keine mehrdeutigen Zeichen gefunden.",
+    "numbers_section": "Zahlensprech",
+    "apply": "Anwenden",
+    "applied": "Angewendet"
   }
 }

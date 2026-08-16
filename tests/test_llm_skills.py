@@ -63,7 +63,8 @@ def _activate_groq(store):
 def test_all_skills_cover_every_consumption_point(skills):
     assert [s.id for s in skills.all_skills()] == [
         "dub_translation", "cinematic_translation", "slot_fitting",
-        "glossary_extract", "direction_parse", "dictation_refinement",
+        "glossary_extract", "direction_parse", "drama_director",
+        "dictation_refinement",
     ]
     for s in skills.all_skills():
         assert s.name_key == f"settings.llmskills_{s.id}_name"

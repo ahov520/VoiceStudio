@@ -910,7 +910,9 @@
     "cloud_providers": "Cloud providers",
     "separation": "Vocal separation",
     "theme_light": "Light",
-    "theme_auto": "Auto"
+    "theme_auto": "Auto",
+    "llmskills_drama_director_name": "Drama direction",
+    "llmskills_drama_director_desc": "Turns a natural-language delivery note into cast and per-line direction for the drama workspace. Off: the fast keyword heuristic is used instead."
   },
   "about": {
     "app": "App",

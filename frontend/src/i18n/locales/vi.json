@@ -334,7 +334,9 @@
     "device_load_failed": "Không tải được cài đặt thiết bị",
     "perf_save_failed": "Không lưu được cài đặt",
     "cloud_providers": "Nhà cung cấp đám mây",
-    "separation": "Tách giọng hát"
+    "separation": "Tách giọng hát",
+    "llmskills_drama_director_name": "Đạo diễn kịch",
+    "llmskills_drama_director_desc": "Biến ghi chú diễn xuất bằng ngôn ngữ tự nhiên thành phân vai và chỉ dẫn từng dòng trong không gian kịch. Tắt: dùng heuristic từ khóa nhanh."
   },
   "bootstrap": {
     "title": "VoiceStudio",
@@ -2742,5 +2744,18 @@
     "emotion_crying": "Khóc",
     "emotion_sarcastic": "Châm biếm",
     "emotion_tense": "Căng thẳng"
+  },
+  "zhcheck": {
+    "open_btn": "Kiểm tra phát âm",
+    "title": "Kiểm tra phát âm tiếng Trung",
+    "polyphone_hint": "Từ mà công cụ có thể đọc sai — chọn cách đọc đúng và lưu vào từ điển phát âm; nó sẽ áp dụng cho mọi lần tổng hợp.",
+    "reading_for": "Cách đọc của {{word}}",
+    "save": "Lưu",
+    "covered": "đã có trong từ điển",
+    "error": "Thất bại",
+    "no_polyphones": "Không phát hiện từ đa âm.",
+    "numbers_section": "Cách đọc số",
+    "apply": "Áp dụng",
+    "applied": "Đã áp dụng"
   }
 }

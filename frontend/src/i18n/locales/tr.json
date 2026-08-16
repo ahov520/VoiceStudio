@@ -334,7 +334,9 @@
     "device_load_failed": "Aygıt ayarı yüklenemedi",
     "perf_save_failed": "Ayar kaydedilemedi",
     "cloud_providers": "Bulut sağlayıcıları",
-    "separation": "Vokal ayırma"
+    "separation": "Vokal ayırma",
+    "llmskills_drama_director_name": "Drama yönetmeni",
+    "llmskills_drama_director_desc": "Doğal dilli bir oyunculuk notunu drama alanındaki kadro ve satır bazlı yönetime dönüştürür. Kapalı: hızlı anahtar kelime sezgisi kullanılır."
   },
   "bootstrap": {
     "title": "VoiceStudio",
@@ -2742,5 +2744,18 @@
     "emotion_crying": "Ağlama",
     "emotion_sarcastic": "Alaycı",
     "emotion_tense": "Gergin"
+  },
+  "zhcheck": {
+    "open_btn": "Telaffuz kontrolü",
+    "title": "Çince telaffuz kontrolü",
+    "polyphone_hint": "Motorun yanlış okuyabileceği kelimeler — doğru okunuşu seçin ve telaffuz sözlüğüne kaydedin; her sentezde uygulanır.",
+    "reading_for": "{{word}} okunuşu",
+    "save": "Kaydet",
+    "covered": "sözlükte",
+    "error": "Başarısız",
+    "no_polyphones": "Çok okunuşlu kelime bulunamadı.",
+    "numbers_section": "Sayı okunuşu",
+    "apply": "Uygula",
+    "applied": "Uygulandı"
   }
 }
