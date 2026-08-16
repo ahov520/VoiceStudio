@@ -75,10 +75,21 @@ def _read_frame() -> dict | None:
     return json.loads(payload.decode("utf-8"))
 
 
+#: Private channel for the length-prefixed frame stream — a dedicated fd
+#: installed by ``main()`` (#1428, see there). None until then; this module
+#: only ever writes frames after main() has set it up.
+_FRAME_OUT = None
+
+
+def _set_frame_output(f) -> None:
+    global _FRAME_OUT
+    _FRAME_OUT = f
+
+
 def _write_frame(obj: dict) -> None:
     data = json.dumps(obj, ensure_ascii=False).encode("utf-8")
-    sys.stdout.buffer.write(struct.pack(">I", len(data)) + data)
-    sys.stdout.buffer.flush()
+    _FRAME_OUT.write(struct.pack(">I", len(data)) + data)
+    _FRAME_OUT.flush()
 
 
 def _pcm_from_wav_bytes(wav: bytes) -> bytes:
@@ -197,6 +208,14 @@ def _synthesize(frame: dict) -> dict:
 
 
 def main() -> int:
+    # #1428 stdout isolation — same contract as every other engine sidecar:
+    # duplicate fd 1 FIRST so this module keeps a clean private channel for
+    # frames, then redirect fd 1 onto stderr so any library that prints
+    # (transformers warnings, tqdm, torch) lands in the parent's log drain
+    # instead of corrupting the protocol stream.
+    _frame_fd = os.dup(1)
+    os.dup2(2, 1)
+    _set_frame_output(os.fdopen(_frame_fd, "wb"))
     _write_frame({"op": "ready", "engine": "qwen3-tts", "sample_rate": SAMPLE_RATE})
     while True:
         try:
