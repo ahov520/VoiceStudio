@@ -16,8 +16,8 @@ import { SettingsSection, SettingRow, InfoHint, SettingsToggle } from './primiti
 // ArrowDown and expects Midnight next — inserting mid-list breaks that order.
 // `light`/`auto` (zh-UX pass 1) ride at the end; their labels go through t()
 // because unlike the proper-noun skins they're common words every locale
-// should localize ("浅色" / "跟随系统"), while `auto` also carries a second
-// dot color rendered as a half-dark/half-light split swatch.
+// should localize (zh-CN renders them via the locale bundle), while `auto`
+// also carries a second dot color rendered as a half-dark/half-light swatch.
 const THEMES = [
   { id: 'gruvbox', label: 'Gruvbox', dot: '#d3869b' },
   { id: 'midnight', label: 'Midnight', dot: '#8b5cf6' },

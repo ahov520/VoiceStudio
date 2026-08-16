@@ -99,8 +99,8 @@
   --font-ui:      var(--font-sans);
 
   /* zh-UX pass 1: scale bumped ~13% (base 0.72→0.8125rem = 13px). The old
-     sizes were tuned for Inter at developer-tool density; Chinese users read
-     汉字 comfortably only a step larger, and mainstream-creator positioning
+     sizes were tuned for Inter at developer-tool density; CJK glyphs read
+     comfortably only a step larger, and mainstream-creator positioning
      wants a friendlier default. The whole scale moves together so relative
      hierarchy is unchanged. Users who want the old density can drop UI scale
      (Settings → Appearance) one notch. */
@@ -789,7 +789,8 @@
    dark-only (10 dark skins, no light), which reads as "developer tool" to
    mainstream-creator users. Palette is Gruvbox Light's contrast-safe dark
    accents on a warm paper base, so it stays in the project's design family
-   while giving 大众用户 the bright, airy look they expect by default.
+   while giving mainstream creators the bright, airy look they expect
+   by default.
    `auto` (fresh-install default) resolves to this block on light-mode OSes.
    The legacy vars (--text-primary, --bg, --glass-*, …) are overridden too —
    unlike the dark themes (which leave them on the gruvbox defaults), light
@@ -946,15 +947,17 @@ body {
    (i18n/index.ts), so `html[lang^="zh"]` matches exactly when the UI is
    Chinese. CJK glyphs read best with a little more leading than Inter's
    1.5 (their em squares sit higher) and with strict line breaking so
-   punctuation and ideographs wrap per 中文排版惯例. Scoped to body level
-   so per-component leading overrides still win where they're deliberate. */
+   punctuation and ideographs wrap per CJK typography conventions. Scoped
+   to body level so per-component leading overrides still win where
+   they're deliberate. */
 html[lang^="zh"] body {
   line-height: 1.65;
   line-break: strict;
   word-break: normal;
 }
 /* Latin-only flourishes (kerning/letter-spacing tuned for Inter) fight CJK
-   runs — neutralize the tracking on Chinese UI so 汉字 aren't pulled apart. */
+   runs — neutralize the tracking on Chinese UI so ideographs aren't
+   pulled apart. */
 html[lang^="zh"] h1, html[lang^="zh"] h2, html[lang^="zh"] h3, html[lang^="zh"] h4 {
   letter-spacing: 0;
 }
