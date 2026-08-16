@@ -334,7 +334,9 @@
     "device_load_failed": "Gagal memuat pengaturan perangkat",
     "perf_save_failed": "Gagal menyimpan pengaturan",
     "cloud_providers": "Penyedia cloud",
-    "separation": "Pemisahan vokal"
+    "separation": "Pemisahan vokal",
+    "llmskills_drama_director_name": "Arah dramatisasi",
+    "llmskills_drama_director_desc": "Mengubah catatan akting berbahasa alami menjadi pemeran dan arah per baris di ruang kerja drama. Nonaktif: heuristik kata kunci cepat yang digunakan."
   },
   "bootstrap": {
     "title": "VoiceStudio",
@@ -2742,5 +2744,18 @@
     "emotion_crying": "Menangis",
     "emotion_sarcastic": "Sarkastis",
     "emotion_tense": "Tegang"
+  },
+  "zhcheck": {
+    "open_btn": "Cek pelafalan",
+    "title": "Cek pelafalan bahasa Mandarin",
+    "polyphone_hint": "Kata yang mungkin salah dibaca mesin — pilih bacaan yang benar dan simpan ke kamus pelafalan; akan berlaku pada setiap sintesis.",
+    "reading_for": "Bacaan untuk {{word}}",
+    "save": "Simpan",
+    "covered": "ada di kamus",
+    "error": "Gagal",
+    "no_polyphones": "Tidak ada kata polifon terdeteksi.",
+    "numbers_section": "Pembacaan angka",
+    "apply": "Terapkan",
+    "applied": "Diterapkan"
   }
 }

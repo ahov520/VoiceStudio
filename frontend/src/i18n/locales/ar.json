@@ -334,7 +334,9 @@
     "device_load_failed": "تعذّر تحميل إعداد الجهاز",
     "perf_save_failed": "تعذّر حفظ الإعداد",
     "cloud_providers": "مزوّدو السحابة",
-    "separation": "فصل الغناء"
+    "separation": "فصل الغناء",
+    "llmskills_drama_director_name": "إخراج الدراما",
+    "llmskills_drama_director_desc": "يحوّل ملاحظة الأداء بلغة طبيعية إلى توزيع أدوار وتوجيه لكل سطر في مساحة الدراما. عند الإيقاف: يُستخدم التحليل السريع بالكلمات المفتاحية."
   },
   "bootstrap": {
     "title": "VoiceStudio",
@@ -2742,5 +2744,18 @@
     "emotion_crying": "بكاء",
     "emotion_sarcastic": "ساخر",
     "emotion_tense": "متوتر"
+  },
+  "zhcheck": {
+    "open_btn": "فحص النطق",
+    "title": "فحص النطق الصيني",
+    "polyphone_hint": "كلمات قد ينطقها المحرك خطأً — اختر القراءة الصحيحة واحفظها في قاموس النطق، وسيُطبَّق على كل عملية توليد.",
+    "reading_for": "قراءة {{word}}",
+    "save": "حفظ",
+    "covered": "في القاموس",
+    "error": "فشل",
+    "no_polyphones": "لم يتم العثور على كلمات متعددة النطق.",
+    "numbers_section": "قراءة الأرقام",
+    "apply": "تطبيق",
+    "applied": "تم التطبيق"
   }
 }

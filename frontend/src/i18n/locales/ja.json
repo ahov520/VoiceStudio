@@ -334,7 +334,9 @@
     "device_load_failed": "デバイス設定を読み込めませんでした",
     "perf_save_failed": "設定を保存できませんでした",
     "cloud_providers": "クラウドプロバイダー",
-    "separation": "ボーカル分離"
+    "separation": "ボーカル分離",
+    "llmskills_drama_director_name": "ドラマ演出",
+    "llmskills_drama_director_desc": "自然言語の演出メモを、ドラマワークスペースのキャスティングと行ごとの演出に変換します。オフ時は高速キーワードヒューリスティックを使用します。"
   },
   "bootstrap": {
     "title": "VoiceStudio",
@@ -2742,5 +2744,18 @@
     "emotion_crying": "泣き",
     "emotion_sarcastic": "皮肉",
     "emotion_tense": "緊張"
+  },
+  "zhcheck": {
+    "open_btn": "読み方チェック",
+    "title": "中国語読み方チェック",
+    "polyphone_hint": "エンジンが読み間違える可能性のある語 — 正しい読みを選んで発音辞書に保存すると、以後の合成すべてに適用されます。",
+    "reading_for": "「{{word}}」の読み方",
+    "save": "保存",
+    "covered": "辞書に登録済み",
+    "error": "失敗",
+    "no_polyphones": "多音字は見つかりませんでした。",
+    "numbers_section": "数の読み方",
+    "apply": "適用",
+    "applied": "適用済み"
   }
 }

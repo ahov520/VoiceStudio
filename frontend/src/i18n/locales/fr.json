@@ -334,7 +334,9 @@
     "device_load_failed": "Impossible de charger le réglage du périphérique",
     "perf_save_failed": "Impossible d'enregistrer le réglage",
     "cloud_providers": "Fournisseurs cloud",
-    "separation": "Séparation vocale"
+    "separation": "Séparation vocale",
+    "llmskills_drama_director_name": "Direction dramatique",
+    "llmskills_drama_director_desc": "Transforme une note d'interprétation en langage naturel en distribution et direction ligne par ligne de l'espace théâtre. Désactivé : l'heuristique rapide par mots-clés est utilisée."
   },
   "bootstrap": {
     "title": "VoiceStudio",
@@ -2742,5 +2744,18 @@
     "emotion_crying": "Pleurs",
     "emotion_sarcastic": "Sarcastique",
     "emotion_tense": "Tendu"
+  },
+  "zhcheck": {
+    "open_btn": "Vérification de la prononciation",
+    "title": "Vérification de la prononciation chinoise",
+    "polyphone_hint": "Mots que le moteur peut mal lire — choisissez la bonne lecture et enregistrez-la dans le dictionnaire de prononciation ; elle s'appliquera à chaque synthèse.",
+    "reading_for": "Lecture de {{word}}",
+    "save": "Enregistrer",
+    "covered": "dans le dictionnaire",
+    "error": "Échec",
+    "no_polyphones": "Aucun mot à lectures multiples détecté.",
+    "numbers_section": "Lecture des nombres",
+    "apply": "Appliquer",
+    "applied": "Appliqué"
   }
 }

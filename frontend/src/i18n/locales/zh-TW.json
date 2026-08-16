@@ -334,7 +334,9 @@
     "device_load_failed": "無法載入裝置設定",
     "perf_save_failed": "無法儲存設定",
     "cloud_providers": "雲端服務商",
-    "separation": "人聲分離"
+    "separation": "人聲分離",
+    "llmskills_drama_director_name": "有聲劇演繹",
+    "llmskills_drama_director_desc": "把自然語言的演繹要求轉換為有聲劇工作區的角色分配與逐句指令。關閉後：改用快速關鍵詞啟發式。"
   },
   "bootstrap": {
     "title": "VoiceStudio",
@@ -2742,5 +2744,18 @@
     "emotion_crying": "哭泣",
     "emotion_sarcastic": "諷刺",
     "emotion_tense": "緊張"
+  },
+  "zhcheck": {
+    "open_btn": "讀音預檢",
+    "title": "中文讀音預檢",
+    "polyphone_hint": "引擎可能讀錯的詞——選擇正確讀音並儲存到發音詞典，合成時自動生效。",
+    "reading_for": "「{{word}}」的讀音",
+    "save": "儲存",
+    "covered": "詞典已覆蓋",
+    "error": "失敗",
+    "no_polyphones": "未發現破音字。",
+    "numbers_section": "數字讀法",
+    "apply": "套用",
+    "applied": "已套用"
   }
 }

@@ -334,7 +334,9 @@
     "device_load_failed": "Apparaatinstelling kon niet worden geladen",
     "perf_save_failed": "Instelling kon niet worden opgeslagen",
     "cloud_providers": "Cloudproviders",
-    "separation": "Zangscheiding"
+    "separation": "Zangscheiding",
+    "llmskills_drama_director_name": "Dramaregie",
+    "llmskills_drama_director_desc": "Zet een regieaanwijzing in natuurlijke taal om naar casting en regie per regel in de drama-werkruimte. Uit: dan wordt de snelle trefwoordheuristiek gebruikt."
   },
   "bootstrap": {
     "title": "VoiceStudio",
@@ -2742,5 +2744,18 @@
     "emotion_crying": "Huilen",
     "emotion_sarcastic": "Sarcastisch",
     "emotion_tense": "Gespannen"
+  },
+  "zhcheck": {
+    "open_btn": "Uitspraakcontrole",
+    "title": "Chinese uitspraakcontrole",
+    "polyphone_hint": "Woorden die de engine verkeerd kan voorlezen — kies de juiste lezing en sla die op in het uitspraakwoordenboek; die geldt dan voor elke synthese.",
+    "reading_for": "Lezing van {{word}}",
+    "save": "Opslaan",
+    "covered": "in woordenboek",
+    "error": "Mislukt",
+    "no_polyphones": "Geen woorden met meerdere lezingen gevonden.",
+    "numbers_section": "Getaluitspraak",
+    "apply": "Toepassen",
+    "applied": "Toegepast"
   }
 }

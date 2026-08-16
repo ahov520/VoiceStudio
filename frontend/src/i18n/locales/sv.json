@@ -334,7 +334,9 @@
     "device_load_failed": "Kunde inte läsa in enhetsinställningen",
     "perf_save_failed": "Kunde inte spara inställningen",
     "cloud_providers": "Molnleverantörer",
-    "separation": "Sångseparation"
+    "separation": "Sångseparation",
+    "llmskills_drama_director_name": "Dramaregi",
+    "llmskills_drama_director_desc": "Omvandlar en spelanvisning i naturligt språk till rollbesättning och regi per rad i dramautrymmet. Av: den snabba nyckelordsheuristiken används."
   },
   "bootstrap": {
     "title": "VoiceStudio",
@@ -2742,5 +2744,18 @@
     "emotion_crying": "Gråtande",
     "emotion_sarcastic": "Sarkastisk",
     "emotion_tense": "Spänd"
+  },
+  "zhcheck": {
+    "open_btn": "Uttalskontroll",
+    "title": "Kinesisk uttalskontroll",
+    "polyphone_hint": "Ord som motorn kan läsa fel — välj rätt uttal och spara det i uttalsordboken; det gäller sedan varje syntes.",
+    "reading_for": "Uttal för {{word}}",
+    "save": "Spara",
+    "covered": "i ordboken",
+    "error": "Misslyckades",
+    "no_polyphones": "Inga flertydiga tecken hittades.",
+    "numbers_section": "Tal av tal",
+    "apply": "Använd",
+    "applied": "Använt"
   }
 }

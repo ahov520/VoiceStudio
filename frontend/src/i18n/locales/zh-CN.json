@@ -799,7 +799,9 @@
     "storage_clear_temp_confirm": "删除 VoiceStudio 的临时工作文件?配音或批量任务运行中请勿操作。",
     "storage_clear_temp_failed": "无法清除临时文件",
     "storage_temp_cleared": "临时文件已清除——释放了 {{freed}}",
-    "data_dir_at": "应用数据存放于"
+    "data_dir_at": "应用数据存放于",
+    "llmskills_drama_director_name": "有声剧演绎",
+    "llmskills_drama_director_desc": "把自然语言的演绎要求转换为有声剧工作台的角色分配与逐句指令。关闭后：改用快速关键词启发式。"
   },
   "about": {
     "app": "应用",

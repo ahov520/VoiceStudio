@@ -334,7 +334,9 @@
     "device_load_failed": "Nie udało się wczytać ustawienia urządzenia",
     "perf_save_failed": "Nie udało się zapisać ustawienia",
     "cloud_providers": "Dostawcy chmurowi",
-    "separation": "Separacja wokalu"
+    "separation": "Separacja wokalu",
+    "llmskills_drama_director_name": "Reżyseria dramatu",
+    "llmskills_drama_director_desc": "Zamienia wskazówkę aktorską w naturalnym języku na obsadę i reżyserię poszczególnych wersów w przestrzeni dramatu. Wyłączone: używana jest szybka heurystyka słów kluczowych."
   },
   "bootstrap": {
     "title": "VoiceStudio",
@@ -2742,5 +2744,18 @@
     "emotion_crying": "Płacz",
     "emotion_sarcastic": "Sarkastyczny",
     "emotion_tense": "Napięty"
+  },
+  "zhcheck": {
+    "open_btn": "Kontrola wymowy",
+    "title": "Kontrola wymowy chińskiej",
+    "polyphone_hint": "Słowa, które silnik może źle przeczytać — wybierz właściwe brzmienie i zapisz je w słowniku wymowy; będzie stosowane przy każdej syntezie.",
+    "reading_for": "Wymowa dla {{word}}",
+    "save": "Zapisz",
+    "covered": "w słowniku",
+    "error": "Niepowodzenie",
+    "no_polyphones": "Nie wykryto wieloznacznych znaków.",
+    "numbers_section": "Czytanie liczb",
+    "apply": "Zastosuj",
+    "applied": "Zastosowano"
   }
 }

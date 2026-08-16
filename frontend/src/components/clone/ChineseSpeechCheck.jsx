@@ -5,7 +5,7 @@
  * Chinese): polyphone words the engine may misread, each pickable to the
  * correct reading and saved as a pronunciation-dictionary entry (whole-word
  * homophone respell — services/pronunciation applies it on every synthesis),
- * plus one-click rewrites for number readings ("10w" → "10万", 11-digit runs
+ * plus one-click rewrites for number readings (w/k unit suffixes, 11-digit runs
  * grouped 3-4-4). Dictionary round-trip reuses the Settings → Pronunciation
  * API (GET/POST/PUT /pronunciation) — no new backend surface.
  */
