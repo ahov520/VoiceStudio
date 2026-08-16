@@ -90,7 +90,7 @@ def is_installed() -> bool:
 
 
 def _venv_can_import(python_path: Path) -> ProbeResult:
-    return venv_can_import(python_path, _PROBE_SNIPPET)
+    return venv_can_import(python_path, _PROBE_SNIPPET, engine="qwen3_tts", logger=logger)
 
 
 def _locate_uv() -> Optional[str]:
