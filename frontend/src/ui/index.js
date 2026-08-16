@@ -26,3 +26,4 @@ export { default as Tooltip } from './Tooltip.jsx';
 export { default as Progress } from './Progress.jsx';
 export { default as Menu } from './Menu.jsx';
 export { default as Table } from './Table.jsx';
+export { default as EmptyState } from './EmptyState.jsx';

@@ -12,13 +12,15 @@ import {
   Copy,
   ExternalLink,
   ArrowRightLeft,
+  UserPlus,
 } from 'lucide-react';
-import { Button, Segmented, Progress } from '../../ui';
+import { Button, Segmented, Progress, Tooltip } from '../../ui';
 import { useAppStore } from '../../store';
 import WaveformTimeline from '../WaveformTimeline';
 import MultiLangPicker from '../MultiLangPicker';
 import { API } from '../../api/client';
 import { dubListTracks } from '../../api/dub';
+import { promoteAutoClone } from '../../api/profiles';
 import { LANG_CODES } from '../../utils/languages';
 import ALL_LANGUAGES from '../../languages.json';
 import { POPULAR_LANGS, PRESETS } from '../../utils/constants';
@@ -157,6 +159,24 @@ export default function DubLeftColumn({
     const ok = await copyText(installCmd);
     if (ok) toast.success(t('dub.install_cmd_copied'));
     else toast.error(t('dub.copy_failed'));
+  };
+
+  // "Save as voice profile" for an auto-extracted speaker clone — the clone
+  // WAV is job-scoped and dies with the dub history entry, so promoting it
+  // is what makes the extracted voice reusable elsewhere. The new profile
+  // reaches `profiles` via the realtime `profiles` event (useAppData).
+  const [savingCloneSpeaker, setSavingCloneSpeaker] = useState(null);
+  const saveCloneAsProfile = async (spk) => {
+    if (!dubJobId || savingCloneSpeaker) return;
+    setSavingCloneSpeaker(spk);
+    try {
+      const res = await promoteAutoClone(dubJobId, spk, spk);
+      toast.success(t('dub.clone_saved', { name: res?.name || spk }));
+    } catch (e) {
+      toast.error(t('dub.clone_save_failed', { message: e.message }));
+    } finally {
+      setSavingCloneSpeaker(null);
+    }
   };
 
   // Per-track metadata (duration + timing strategy) for the pill tooltips.
@@ -417,6 +437,20 @@ export default function DubLeftColumn({
                       </optgroup>
                     )}
                   </select>
+                  {clone && dubJobId && (
+                    <Tooltip content={t('dub.save_clone_as_profile')} placement="top">
+                      <Button
+                        variant="icon"
+                        iconSize="sm"
+                        aria-label={t('dub.save_clone_as_profile')}
+                        loading={savingCloneSpeaker === spk}
+                        disabled={!!savingCloneSpeaker}
+                        onClick={() => saveCloneAsProfile(spk)}
+                      >
+                        <UserPlus size={10} />
+                      </Button>
+                    </Tooltip>
+                  )}
                 </div>
               );
             })}

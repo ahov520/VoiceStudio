@@ -26,6 +26,27 @@ class ProfileUpdate(BaseModel):
     personality: Optional[str] = None
 
 
+class AutoClonePromote(BaseModel):
+    job_id: str
+    speaker_id: str
+    name: Optional[str] = None
+
+
+def _insert_profile_row(profile_id, name, audio_filename, ref_text, instruct,
+                        language, seed, personality, kind, vd_states):
+    """INSERT + created-event, shared by POST /profiles and
+    /profiles/from-auto-clone so both paths persist the same row shape."""
+    with db_conn() as conn:
+        conn.execute(
+            "INSERT INTO voice_profiles (id, name, ref_audio_path, ref_text, instruct, "
+            "language, seed, personality, kind, vd_states, created_at) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            (profile_id, name, audio_filename, ref_text, instruct, language,
+             seed, personality, kind, vd_states, time.time())
+        )
+    event_bus.emit("profiles", {"action": "created", "id": profile_id})
+
+
 @router.get("/personalities")
 def list_personalities():
     """Return built-in voice personality presets."""
@@ -153,21 +174,102 @@ async def create_profile(
         used_seed = seed if seed is not None else _DESIGN_SEED
 
     try:
-        with db_conn() as conn:
-            conn.execute(
-                "INSERT INTO voice_profiles (id, name, ref_audio_path, ref_text, instruct, "
-                "language, seed, personality, kind, vd_states, created_at) "
-                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                (profile_id, name, audio_filename, ref_text, instruct, language,
-                 used_seed, personality, kind, vd_states, time.time())
-            )
+        _insert_profile_row(profile_id, name, audio_filename, ref_text, instruct,
+                            language, used_seed, personality, kind, vd_states)
     except Exception:
         # Clean up orphaned audio file if DB insert fails
         if os.path.exists(audio_path):
             os.remove(audio_path)
         raise
-    event_bus.emit("profiles", {"action": "created", "id": profile_id})
     return {"id": profile_id, "name": name, "kind": kind}
+
+
+@router.post("/profiles/from-auto-clone")
+def promote_auto_clone(req: AutoClonePromote):
+    """Promote a dub job's auto-extracted speaker clone to a voice profile.
+
+    Auto-clones are job-scoped: the reference WAV lives under the job's
+    directory and dies with it (dub history delete, cache eviction). This
+    copies the reference into VOICES_DIR and persists a normal kind='clone'
+    profile row — the same shape POST /profiles produces — so the extracted
+    voice outlives the job and becomes assignable everywhere a profile is.
+
+    The speaker's pooled per-speaker clone is preferred; speakers whose only
+    source is per-segment refs (untrusted diarization, see speaker_clone.py's
+    build_cast_sources) fall back to their longest segment reference.
+    """
+    from services import dub_pipeline
+    from services.speaker_clone import auto_profile_id
+
+    job = dub_pipeline.get_job(req.job_id)
+    if not job:
+        raise HTTPException(
+            status_code=404,
+            detail="That dub job doesn't exist anymore. Re-open it from dub history and try again.",
+        )
+
+    def _matches(speaker: str) -> bool:
+        # Accept both the raw label ("Speaker 1") and the UI-facing auto id
+        # ("auto:speaker_1") — the dub editor's selects carry the latter.
+        return speaker == req.speaker_id or auto_profile_id(speaker) == req.speaker_id
+
+    clone = None
+    for spk, info in (job.get("speaker_clones") or {}).items():
+        if _matches(spk):
+            clone = info
+            break
+    if clone is None:
+        seg_clones = job.get("segment_clones") or {}
+        for seg in job.get("segments") or []:
+            if not _matches(seg.get("speaker_id") or "Speaker 1"):
+                continue
+            info = seg_clones.get(str(seg.get("id", "")))
+            if info and info.get("ref_audio"):
+                if clone is None or float(info.get("duration") or 0.0) > float(
+                    clone.get("duration") or 0.0
+                ):
+                    clone = info
+    if not clone or not clone.get("ref_audio"):
+        raise HTTPException(
+            status_code=404,
+            detail="No auto-extracted clone exists for that speaker in this job.",
+        )
+
+    # The ref path comes from a persisted job blob — it must still point into
+    # THIS job's directory before we trust it (same containment rule the rest
+    # of the dub routes apply).
+    job_dir = dub_pipeline.safe_job_dir(req.job_id)
+    src = os.path.realpath(clone["ref_audio"])
+    if job_dir is None or not src.startswith(os.path.realpath(job_dir) + os.sep):
+        raise HTTPException(
+            status_code=400,
+            detail="The clone's audio path failed the job-directory containment check.",
+        )
+    if not os.path.isfile(src):
+        raise HTTPException(
+            status_code=404,
+            detail="The clone's audio file is gone from disk — the job's files may have been cleaned up.",
+        )
+
+    profile_id = str(uuid.uuid4())[:8]
+    audio_filename = f"{profile_id}.wav"
+    audio_path = _voices_path(audio_filename)
+    if audio_path is None:  # filename derives from a uuid — belt and braces
+        raise HTTPException(status_code=400, detail="Invalid profile id")
+    name = (req.name or "").strip() or req.speaker_id
+    language = (job.get("source_lang") or "").strip() or "Auto"
+
+    try:
+        shutil.copy2(src, audio_path)
+        _insert_profile_row(
+            profile_id, name, audio_filename, clone.get("ref_text") or "",
+            "", language, None, "", "clone", None,
+        )
+    except Exception:
+        if os.path.exists(audio_path):
+            os.remove(audio_path)
+        raise
+    return {"id": profile_id, "name": name, "kind": "clone"}
 
 @router.get("/profiles/{profile_id}")
 def get_profile(profile_id: str):

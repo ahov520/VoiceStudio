@@ -14,6 +14,7 @@ import {
   Globe,
   Fingerprint,
   Film,
+  ListVideo,
   FolderOpen,
   Settings2,
   Library,
@@ -28,6 +29,9 @@ export const NAV_ITEMS = [
   { id: 'launchpad', Icon: Globe, tKey: 'launchpad', accent: '#f3a5b6' },
   { id: 'studio', Icon: Fingerprint, tKey: 'voice', accent: '#d3869b' },
   { id: 'dub', Icon: Film, tKey: 'dub', accent: '#fe8019' },
+  // Batch-dub queue sits directly after Dub — it runs the same pipeline
+  // hands-off on N files at once.
+  { id: 'queue', Icon: ListVideo, tKey: 'batch_queue', accent: '#fb4934' },
   { id: 'stories', Icon: BookOpen, tKey: 'stories', accent: '#fabd2f' },
   { id: 'audiobook', Icon: BookMarked, tKey: 'audiobook', accent: '#8ec07c' },
   { id: 'gallery', Icon: Library, tKey: 'gallery', accent: '#b8bb26' },

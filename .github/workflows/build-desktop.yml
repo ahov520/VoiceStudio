@@ -1,0 +1,252 @@
+# Build Desktop App �?artifact-only compilation, no release, no signing.
+#
+# Why this exists alongside release.yml: the release pipeline publishes
+# installers + updater manifests to GH Releases and needs signing secrets.
+# This workflow just COMPILES the desktop app and uploads the installer(s)
+# as workflow artifacts �?no secrets required, safe to run on any fork.
+#
+# Triggers:
+#   - push to main �?builds Windows x64 MSI automatically (the owner's
+#     platform; keeps the auto path cheap). Change `auto_platforms` below
+#     if you want more legs on push.
+#   - workflow_dispatch �?pick windows / macos / linux / all.
+#
+# Build steps mirror release.yml's matrix job (same uv/ffmpeg bundling so
+# the installer works on first launch). Updater bundles are omitted, so no
+# TAURI_SIGNING_PRIVATE_KEY is needed.
+
+name: Build Desktop App
+
+on:
+  workflow_dispatch:
+    inputs:
+      platform:
+        description: "Which platform(s) to build"
+        type: choice
+        default: "all"
+        options:
+          - all
+          - windows
+          - macos
+          - linux
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-desktop-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Run all JavaScript actions on Node 24 (GH deprecates Node 20 in Sep 2026).
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  # Picks the matrix legs: push-to-main builds Windows only; manual dispatch
+  # builds whatever was asked. Output is consumed by the build job's matrix.
+  prepare:
+    name: Prepare build matrix
+    runs-on: ubuntu-22.04
+    outputs:
+      matrix: ${{ steps.set.outputs.matrix }}
+    steps:
+      - id: set
+        shell: bash
+        run: |
+          ALL='[
+            {"os":"macos-14","arch":"aarch64-apple-darwin","label":"macOS Apple Silicon","rust_target":"aarch64-apple-darwin","bundles":"app,dmg","artifacts":"frontend/src-tauri/target/aarch64-apple-darwin/release/bundle/dmg/*.dmg"},
+            {"os":"macos-15-intel","arch":"x86_64-apple-darwin","label":"macOS Intel (UI-only, remote backend)","rust_target":"x86_64-apple-darwin","bundles":"app,dmg","artifacts":"frontend/src-tauri/target/x86_64-apple-darwin/release/bundle/dmg/*.dmg"},
+            {"os":"windows-2022","arch":"x86_64-pc-windows-msvc","label":"Windows x64","rust_target":"x86_64-pc-windows-msvc","bundles":"msi","artifacts":"frontend/src-tauri/target/x86_64-pc-windows-msvc/release/bundle/msi/*.msi"},
+            {"os":"ubuntu-24.04","arch":"x86_64-unknown-linux-gnu","label":"Linux x64","rust_target":"x86_64-unknown-linux-gnu","bundles":"appimage","artifacts":"frontend/src-tauri/target/x86_64-unknown-linux-gnu/release/bundle/appimage/*.AppImage"}
+          ]'
+          WIN='[{"os":"windows-2022","arch":"x86_64-pc-windows-msvc","label":"Windows x64","rust_target":"x86_64-pc-windows-msvc","bundles":"msi","artifacts":"frontend/src-tauri/target/x86_64-pc-windows-msvc/release/bundle/msi/*.msi"}]'
+          case "${{ github.event_name }}" in
+            push)
+              echo "Push to main �?auto-building Windows x64 only."
+              echo "matrix=$WIN" >> "$GITHUB_OUTPUT"
+              ;;
+            workflow_dispatch)
+              case "${{ inputs.platform }}" in
+                all)      echo "matrix=$ALL" >> "$GITHUB_OUTPUT" ;;
+                windows)  echo "matrix=$WIN" >> "$GITHUB_OUTPUT" ;;
+                macos)    echo "matrix=$ALL" | jq -c 'map(select(.os | startswith("macos")))' > /tmp/m.txt
+                          echo "matrix=$(cat /tmp/m.txt)" >> "$GITHUB_OUTPUT" ;;
+                linux)    echo "matrix=$ALL" | jq -c 'map(select(.os == "ubuntu-24.04"))' > /tmp/l.txt
+                          echo "matrix=$(cat /tmp/l.txt)" >> "$GITHUB_OUTPUT" ;;
+                *)        echo "::error::Unknown platform: ${{ inputs.platform }}"; exit 1 ;;
+              esac
+              ;;
+            *) echo "::error::Unexpected event: ${{ github.event_name }}"; exit 1 ;;
+          esac
+
+  build:
+    name: ${{ matrix.label }}
+    needs: prepare
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJSON(needs.prepare.outputs.matrix) }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # ── Language runtimes ─────────────────────────────────────────────
+      - name: Setup Rust (stable)
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.rust_target }}
+
+      - name: Rust cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: frontend/src-tauri -> target
+          key: ${{ matrix.rust_target }}
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+
+      # ── Platform deps (Tauri host requirements) ───────────────────────
+      - name: macOS system deps
+        if: runner.os == 'macOS'
+        run: |
+          brew install ffmpeg || true
+
+      - name: Linux system deps
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            build-essential curl wget file libxdo-dev libssl-dev \
+            libayatana-appindicator3-dev librsvg2-dev \
+            libasound2-dev ffmpeg
+
+      # ── Frontend build ────────────────────────────────────────────────
+      - name: Cache bun deps
+        uses: actions/cache@v4
+        with:
+          path: ~/.bun/install/cache
+          key: ${{ runner.os }}-bun-${{ hashFiles('frontend/bun.lock', 'bun.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-bun-
+
+      - name: Install frontend deps
+        working-directory: frontend
+        run: bun install
+
+      # ── Bundle uv sidecar (matches release.yml; keep UV_VERSION in sync
+      #    with the UV_VERSION constant in frontend/src-tauri/src/lib.rs) ─
+      - name: Bundle uv (${{ matrix.rust_target }})
+        shell: bash
+        env:
+          UV_VERSION: "0.11.7"
+          TRIPLE: ${{ matrix.rust_target }}
+        run: |
+          set -euo pipefail
+          mkdir -p frontend/src-tauri/binaries
+          case "$TRIPLE" in
+            aarch64-apple-darwin|x86_64-apple-darwin|x86_64-unknown-linux-gnu)
+              ARCHIVE="tar.gz"
+              ;;
+            x86_64-pc-windows-msvc)
+              ARCHIVE="zip"
+              ;;
+            *)
+              echo "Unsupported target for uv bundling: $TRIPLE"
+              exit 1
+              ;;
+          esac
+          URL="https://github.com/astral-sh/uv/releases/download/${UV_VERSION}/uv-${TRIPLE}.${ARCHIVE}"
+          echo "Fetching $URL"
+          WORK=$(mktemp -d)
+          if [ "$ARCHIVE" = "zip" ]; then
+            curl -fsSL "$URL" -o "$WORK/uv.zip"
+            unzip -j -o "$WORK/uv.zip" -d "$WORK"
+            mv "$WORK/uv.exe" "frontend/src-tauri/binaries/uv-${TRIPLE}.exe"
+          else
+            curl -fsSL "$URL" | tar -xz -C "$WORK"
+            mv "$WORK/uv-${TRIPLE}/uv" "frontend/src-tauri/binaries/uv-${TRIPLE}"
+            chmod +x "frontend/src-tauri/binaries/uv-${TRIPLE}"
+          fi
+          ls -la "frontend/src-tauri/binaries/"
+
+      # ── Bundle ffmpeg + ffprobe sidecars (matches release.yml; pin
+      #    FFMPEG_BTBN_VERSION with tools.rs:FFMPEG_BTBN_VERSION) ────────
+      - name: Bundle ffmpeg + ffprobe (${{ matrix.rust_target }})
+        shell: bash
+        env:
+          TRIPLE: ${{ matrix.rust_target }}
+          FFMPEG_BTBN_VERSION: "latest"
+        run: |
+          set -euo pipefail
+          BINDIR="frontend/src-tauri/binaries"
+          mkdir -p "$BINDIR"
+          WORK=$(mktemp -d)
+
+          case "$TRIPLE" in
+            aarch64-apple-darwin|x86_64-apple-darwin)
+              for TOOL in ffmpeg ffprobe; do
+                if [ "$TOOL" = "ffmpeg" ]; then
+                  URL="https://evermeet.cx/ffmpeg/getrelease/zip"
+                else
+                  URL="https://evermeet.cx/ffmpeg/getrelease/${TOOL}/zip"
+                fi
+                echo "Fetching $TOOL from evermeet.cx"
+                curl -fsSL "$URL" -o "$WORK/${TOOL}.zip"
+                unzip -o -j "$WORK/${TOOL}.zip" -d "$WORK"
+                mv "$WORK/${TOOL}" "$BINDIR/${TOOL}-${TRIPLE}"
+                chmod +x "$BINDIR/${TOOL}-${TRIPLE}"
+              done
+              ;;
+            x86_64-unknown-linux-gnu)
+              URL="https://github.com/BtbN/FFmpeg-Builds/releases/download/${FFMPEG_BTBN_VERSION}/ffmpeg-master-${FFMPEG_BTBN_VERSION}-linux64-gpl.tar.xz"
+              echo "Fetching ffmpeg from BtbN (linux64) �?version=${FFMPEG_BTBN_VERSION}"
+              curl -fsSL "$URL" -o "$WORK/ffmpeg.tar.xz"
+              tar -xJf "$WORK/ffmpeg.tar.xz" -C "$WORK"
+              EXTRACTED=$(find "$WORK" -type d -name "bin" | head -1)
+              mv "$EXTRACTED/ffmpeg"  "$BINDIR/ffmpeg-${TRIPLE}"
+              mv "$EXTRACTED/ffprobe" "$BINDIR/ffprobe-${TRIPLE}"
+              chmod +x "$BINDIR/ffmpeg-${TRIPLE}" "$BINDIR/ffprobe-${TRIPLE}"
+              ;;
+            x86_64-pc-windows-msvc)
+              URL="https://github.com/BtbN/FFmpeg-Builds/releases/download/${FFMPEG_BTBN_VERSION}/ffmpeg-master-${FFMPEG_BTBN_VERSION}-win64-gpl.zip"
+              echo "Fetching ffmpeg from BtbN (win64) �?version=${FFMPEG_BTBN_VERSION}"
+              curl -fsSL "$URL" -o "$WORK/ffmpeg.zip"
+              unzip -o "$WORK/ffmpeg.zip" -d "$WORK"
+              EXTRACTED=$(find "$WORK" -type f -name "ffmpeg.exe" | head -1)
+              EXTRACTED_DIR=$(dirname "$EXTRACTED")
+              mv "$EXTRACTED_DIR/ffmpeg.exe"  "$BINDIR/ffmpeg-${TRIPLE}.exe"
+              mv "$EXTRACTED_DIR/ffprobe.exe" "$BINDIR/ffprobe-${TRIPLE}.exe"
+              ;;
+            *)
+              echo "No ffmpeg bundling for target: $TRIPLE (will download at first run)"
+              ;;
+          esac
+          ls -la "$BINDIR/"
+
+      # ── Tauri build (no signing, no updater bundles, no release) ──────
+      - name: Build (Tauri)
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Analytics destination, injected at build time like release.yml.
+          # Absent => the build has no destination and nothing can be sent.
+          VITE_POSTHOG_KEY: ${{ secrets.POSTHOG_PROJECT_TOKEN }}
+          # GH runners disable FUSE, so linuxdeploy's AppImage can't mount
+          # itself at bundle time; extract-and-run works without FUSE.
+          APPIMAGE_EXTRACT_AND_RUN: 1
+        with:
+          projectPath: frontend
+          args: --target ${{ matrix.rust_target }} --bundles ${{ matrix.bundles }}
+
+      # ── Upload installers as workflow artifacts ───────────────────────
+      - name: Upload installers
+        uses: actions/upload-artifact@v4
+        with:
+          name: voicestudio-${{ matrix.rust_target }}
+          path: ${{ matrix.artifacts }}
+          if-no-files-found: error
+          retention-days: 14

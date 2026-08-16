@@ -1451,6 +1451,11 @@ function App() {
       )}
 
       <div className="main-content">
+        {/* Keyed on `mode`: switching workspaces remounts the page subtree
+            (the ternary below already unmounts the old page), and the fresh
+            wrapper replays the subtle .page-transition fade from index.css.
+            Reduced-motion users get no animation. */}
+        <div key={mode} className="page-transition">
         {/* ═══ LAUNCHPAD TAB ═══ */}
         {mode === 'settings' ? (
           <ErrorBoundary name="settings">
@@ -1477,7 +1482,9 @@ function App() {
         ) : mode === 'queue' ? (
           <ErrorBoundary name="batch-queue">
             <Suspense fallback={<LazyFallback />}>
-              <BatchQueue onBack={() => setMode('launchpad')} />
+              {/* Top-level destination now (nav rail / title tabs), so no Back
+                  button — same as gallery, catalogue and the other workspaces. */}
+              <BatchQueue />
             </Suspense>
           </ErrorBoundary>
         ) : mode === 'tools' ? (
@@ -1779,6 +1786,7 @@ function App() {
             </div>
           </div>
         )}
+        </div>
       </div>
 
       {/* ── SIDEBAR ── */}

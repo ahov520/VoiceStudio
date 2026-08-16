@@ -1,4 +1,4 @@
-/**
+﻿/**
  * TranscriptionsPage — history of dictation transcriptions.
  *
  * Stores transcriptions in localStorage and displays them in a searchable,
@@ -10,7 +10,7 @@
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Mic, Copy, Trash2, Search, Clock, Languages, FileText, Download } from 'lucide-react';
-import { Button } from '../ui';
+import { Button, EmptyState } from '../ui';
 import EngineQuickSwitch from '../components/EngineQuickSwitch';
 import { toast } from 'react-hot-toast';
 import { toMillis } from '../utils/relativeTime';
@@ -205,22 +205,26 @@ export default function TranscriptionsPage() {
         {/* List */}
         <div className="txn-list flex flex-col gap-[4px] overflow-y-auto pr-[4px]" role="list">
           {filtered.length === 0 ? (
-            <div className="txn-empty flex h-full flex-col items-center justify-center gap-[8px] px-[20px] py-[40px] text-center text-fg-muted">
-              <Mic size={32} className="txn-empty__icon opacity-30" />
-              <p className="txn-empty__title m-0 text-[var(--text-sm)] font-medium text-fg">
-                {normalizedSearch
+            <EmptyState
+              className="h-full"
+              icon={Mic}
+              title={
+                normalizedSearch
                   ? t('transcriptions.empty_search_title')
-                  : t('transcriptions.empty_title')}
-              </p>
-              <p className="txn-empty__desc m-0 max-w-[280px] text-[var(--text-xs)] leading-[1.6] text-fg-muted">
-                {normalizedSearch ? t('transcriptions.empty_search_desc') : emptyDescription}
-              </p>
-              {!normalizedSearch && (
-                <Button size="sm" variant="primary" onClick={startCapture}>
-                  <Mic size={13} /> {t('transcriptions.capture')}
-                </Button>
-              )}
-            </div>
+                  : t('transcriptions.empty_title')
+              }
+              description={normalizedSearch ? t('transcriptions.empty_search_desc') : emptyDescription}
+              action={
+                !normalizedSearch
+                  ? {
+                      label: t('transcriptions.capture'),
+                      variant: 'primary',
+                      onClick: startCapture,
+                      leading: <Mic size={13} />,
+                    }
+                  : undefined
+              }
+            />
           ) : (
             filtered.map((t) => (
               <div

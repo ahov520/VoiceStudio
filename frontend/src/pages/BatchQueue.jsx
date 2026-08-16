@@ -12,8 +12,9 @@ import {
   XCircle,
   Film,
   Globe,
+  ListVideo,
 } from 'lucide-react';
-import { Panel, Button, Badge, Tabs } from '../ui';
+import { Panel, Button, Badge, Tabs, EmptyState } from '../ui';
 import {
   listBatchJobs,
   getBatchJob,
@@ -221,19 +222,29 @@ export default function BatchQueue({ onBack }) {
       <Tabs items={TABS} value={tab} onChange={setTab} className="batch-queue__tabs shrink-0" />
 
       {jobs.length === 0 && !loading && (
-        <Panel variant="flat" padding="lg" className="batch-queue__empty text-center text-fg-muted">
-          <div>
-            <p>
-              {tab === 'active' && t('batch.no_active')}
-              {tab === 'done' && t('batch.no_completed')}
-              {tab === 'failed' && t('batch.no_failed')}
-            </p>
-            <p className="batch-queue__empty-sub text-[var(--text-sm)] text-fg-subtle">
-              {tab === 'active' && t('batch.drop_hint')}
-              {tab === 'done' && 'Nothing has completed recently.'}
-              {tab === 'failed' && 'No failed jobs — enjoy the silence.'}
-            </p>
-          </div>
+        <Panel variant="flat" padding="lg" className="batch-queue__empty">
+          <EmptyState
+            icon={tab === 'active' ? ListVideo : tab === 'done' ? CheckCircle : AlertCircle}
+            title={
+              tab === 'active'
+                ? t('batch.no_active')
+                : tab === 'done'
+                  ? t('batch.no_completed')
+                  : t('batch.no_failed')
+            }
+            description={
+              tab === 'active'
+                ? t('batch.drop_hint')
+                : tab === 'done'
+                  ? 'Nothing has completed recently.'
+                  : 'No failed jobs — enjoy the silence.'
+            }
+            action={
+              tab === 'active'
+                ? { label: t('batch.add_to_queue'), onClick: () => setAddOpen(true) }
+                : undefined
+            }
+          />
         </Panel>
       )}
 

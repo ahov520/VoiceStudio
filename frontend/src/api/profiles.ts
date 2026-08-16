@@ -46,6 +46,15 @@ export async function unlockProfile(id: string): Promise<unknown> {
   return apiPost(`/profiles/${id}/unlock`);
 }
 
+/** Promote a dub job's auto-extracted speaker clone to a saved voice profile. */
+export async function promoteAutoClone(
+  jobId: string,
+  speakerId: string,
+  name?: string,
+): Promise<{ id: string; name: string; kind: string }> {
+  return apiPost('/profiles/from-auto-clone', { job_id: jobId, speaker_id: speakerId, name });
+}
+
 // ── Portable persona bundles (.ovsvoice, #29) ──────────────────────────────
 
 /** Build + download a .ovsvoice persona bundle. Returns the ZIP blob. */

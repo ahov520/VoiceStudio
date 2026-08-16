@@ -182,6 +182,23 @@ Props: `value` · `onChange(n)` (receives a number, not an event) · `min` · `m
 
 Props: `tone` ( `neutral` | `brand` | `success` | `warn` | `danger` | `info` | `violet` ) · `size` ( `xs` | `sm` ) · `dot`.
 
+### `EmptyState`
+
+```jsx
+<EmptyState icon={ListVideo} title="No jobs yet" description="Add a video to start a batch." />
+<EmptyState
+  size="sm"
+  title="No results"
+  action={{ label: 'Add to queue', onClick: openAdd }}
+/>
+```
+
+Icon slot + title + optional description + optional CTA. The wrapper is
+non-interactive; focus/keyboard/disabled states live on the CTA `Button`.
+Entrance is a token-timed fade that collapses under `prefers-reduced-motion`.
+
+Props: `icon` · `title` · `description` · `action` ( `{label, onClick, leading?, loading?, disabled?}` ) · `size` ( `sm` | `md` ).
+
 ## Tokens
 
 Every design decision is a token in [`tokens.css`](./tokens.css). Colour, spacing, radius, type scale, motion, z-index. Use them.
@@ -225,7 +242,7 @@ Import the barrel (`import '../ui'`) once in `main.jsx` and the tokens load for 
 
 ## Roadmap
 
-Shipped: Button, Panel, Field/Input/Textarea/Select, Dialog, Slider, Badge.
+Shipped: Button, Panel, Field/Input/Textarea/Select, Dialog, Slider, Badge, Tabs, Segmented, Tooltip, Progress, Menu, Table, EmptyState.
 
 Next (after first migration waves prove these):
 
