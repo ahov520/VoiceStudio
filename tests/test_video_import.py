@@ -70,10 +70,11 @@ def test_resolve_returns_sanitized_summary(monkeypatch):
     assert out["uploader"] == "Some Uploader"
     assert out["duration"] == 125  # float -> int seconds
     assert out["extractor_key"] == "BiliBili"
-    # Placeholder stream (vcodec none + acodec none) filtered out; video row
-    # sorts before the audio-only row.
+    # Placeholder stream (vcodec none + acodec none) is filtered out. The
+    # video-only DASH row is returned with an audio fallback selector so the
+    # frontend's single-value picker cannot download a silent video.
     ids = [f["id"] for f in out["formats"]]
-    assert ids == ["100", "80"], ids
+    assert ids == ["100+bestaudio/best", "80"], ids
     row = out["formats"][0]
     assert row["height"] == 1080 and row["vcodec"] == "avc1.640032"
 
@@ -95,7 +96,7 @@ def test_resolve_dedupes_and_caps_formats(monkeypatch):
     assert len(out["formats"]) == dub_pipeline._RESOLVE_MAX_FORMATS
     ids = [f["id"] for f in out["formats"]]
     assert len(ids) == len(set(ids)), "duplicate format ids must be deduped"
-    assert "100" in ids
+    assert "100+bestaudio/best" in ids
 
 
 def test_resolve_failure_raises_stable_runtime_error(monkeypatch):
@@ -122,10 +123,10 @@ def test_download_uses_format_id_override(tmp_path, monkeypatch):
         dub_pipeline.yt_download_sync(
             "https://www.bilibili.com/video/BV1xx411c7mD",
             str(tmp_path),
-            format_id="100+80",
+            format_id="100+bestaudio/best",
         )
 
-    assert _FakeYDL.captured.get("format") == "100+80", (
+    assert _FakeYDL.captured.get("format") == "100+bestaudio/best", (
         "a user-picked format_id must replace the default chain"
     )
 
@@ -142,3 +143,135 @@ def test_download_keeps_default_chain_without_format_id(tmp_path, monkeypatch):
 
     fmt = _FakeYDL.captured.get("format")
     assert isinstance(fmt, str) and "avc1" in fmt, "default compatibility chain must remain"
+
+
+def test_bilibili_ref_preserves_bvid_case_and_anthology_page():
+    ref = dub_pipeline._bilibili_ref(
+        "https://www.bilibili.com/video/BV13x41117TL?p=7"
+    )
+
+    assert ref == {"bvid": "BV13x41117TL", "page": 7}
+    assert dub_pipeline._bilibili_qn_from_selector("30064+bestaudio/best") == 64
+    assert dub_pipeline._bilibili_ref("https://example.com/video/BV13x41117TL") is None
+
+
+def test_bilibili_api_fallback_resolves_selected_anthology_page(monkeypatch):
+    calls = []
+
+    def fake_api(path, query, cookie_file=None):
+        calls.append((path, query))
+        if path == "x/web-interface/view":
+            return {
+                "bvid": "BV13x41117TL",
+                "title": "Example anthology",
+                "duration": 99,
+                "pic": "https://example.com/thumb.jpg",
+                "owner": {"name": "Uploader"},
+                "pages": [
+                    {"page": 1, "cid": 101, "part": "First"},
+                    {"page": 2, "cid": 202, "part": "Second"},
+                ],
+            }
+        assert path == "x/player/playurl"
+        assert query["cid"] == 202
+        return {
+            "accept_quality": [80, 64],
+            "support_formats": [
+                {"quality": 80, "new_description": "1080P"},
+                {"quality": 64, "new_description": "720P"},
+            ],
+        }
+
+    monkeypatch.setattr(dub_pipeline, "_bilibili_api_json", fake_api)
+    info, ref, page = dub_pipeline._bilibili_info_from_api(
+        "https://www.bilibili.com/video/BV13x41117TL?p=2"
+    )
+
+    assert ref == {"bvid": "BV13x41117TL", "page": 2}
+    assert page["cid"] == 202
+    assert info["title"].endswith("p02 Second")
+    assert [row["id"] for row in info["formats"]] == ["80", "64"]
+    assert calls[1][1]["bvid"] == "BV13x41117TL"
+
+
+def test_resolve_uses_bilibili_api_after_webpage_412(monkeypatch):
+    import yt_dlp
+
+    class _FailingYDL(_FakeYDL):
+        def extract_info(self, url, download=False, process=False):
+            raise RuntimeError("HTTP Error 412: Precondition Failed")
+
+    monkeypatch.setattr(yt_dlp, "YoutubeDL", _FailingYDL)
+    monkeypatch.setattr(
+        dub_pipeline,
+        "_bilibili_info_from_api",
+        lambda url, cookie_file=None: ({
+            "title": "API fallback",
+            "uploader": "Uploader",
+            "duration": 1,
+            "thumbnail": "",
+            "extractor_key": "BiliBili",
+            "webpage_url": url,
+            "formats": [{"id": "64"}],
+        }, {"bvid": "BV13x41117TL", "page": 1}, {"cid": 1}),
+    )
+
+    out = dub_pipeline.resolve_video_info(
+        "https://www.bilibili.com/video/BV13x41117TL"
+    )
+
+    assert out["title"] == "API fallback"
+    assert out["formats"][0]["id"] == "64"
+
+
+def test_download_uses_bilibili_api_after_webpage_412(tmp_path, monkeypatch):
+    import yt_dlp
+
+    class _FallbackYDL:
+        last_opts = None
+
+        def __init__(self, opts):
+            type(self).last_opts = dict(opts)
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *args):
+            return False
+
+        def extract_info(self, url, download=True, process=True):
+            raise RuntimeError("HTTP Error 412: Precondition Failed")
+
+        def download(self, urls):
+            with open(self.last_opts["outtmpl"], "wb") as output:
+                output.write(b"test mp4")
+
+    monkeypatch.setattr(yt_dlp, "YoutubeDL", _FallbackYDL)
+    monkeypatch.setattr(dub_pipeline, "find_ffmpeg", lambda: None)
+    monkeypatch.setattr(dub_pipeline, "_ensure_browser_playable_mp4", lambda path: path)
+    monkeypatch.setattr(
+        dub_pipeline,
+        "_bilibili_info_from_api",
+        lambda url, cookie_file=None: ({
+            "title": "API fallback",
+            "formats": [{"id": "64"}],
+        }, {"bvid": "BV13x41117TL", "page": 1}, {"cid": 1}),
+    )
+    monkeypatch.setattr(
+        dub_pipeline,
+        "_bilibili_play_info",
+        lambda ref, cid, qn=80, cookie_file=None: {
+            "durl": [{"url": "https://video.example/media.mp4"}],
+        },
+    )
+
+    path, title, subtitles = dub_pipeline.yt_download_sync(
+        "https://www.bilibili.com/video/BV13x41117TL",
+        str(tmp_path),
+        format_id="64",
+    )
+
+    assert path.endswith("original.mp4")
+    assert os.path.isfile(path)
+    assert title == "API fallback"
+    assert subtitles == []

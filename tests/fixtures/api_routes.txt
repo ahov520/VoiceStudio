@@ -7,6 +7,7 @@ DELETE /batch/jobs/{job_id}
 DELETE /drama/projects/{project_id}
 DELETE /dub/history
 DELETE /dub/history/{history_id}
+DELETE /drama/projects/{project_id}
 DELETE /engines/sidecar/{engine_id}/install
 DELETE /engines/translation/{engine_id}
 DELETE /gallery/voices/{voice_id}
@@ -64,6 +65,8 @@ GET /community/sources
 GET /community/submit-url
 GET /dictation/models
 GET /dictation/prefs
+GET /drama/projects
+GET /drama/projects/{project_id}
 GET /docs
 GET /drama/projects
 GET /drama/projects/{project_id}

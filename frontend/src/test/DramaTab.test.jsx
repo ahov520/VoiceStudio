@@ -38,7 +38,7 @@ const PARSE_RESULT = {
     { speaker: '林晚', text: '你走吧。', emotion: 'sad', intensity: 0.8, stage: '' },
     { speaker: '老陈', text: '别这样。', emotion: 'calm', intensity: 0.4, stage: '' },
   ],
-  script_text: '# Drama\n[voice:林晚][slow]你走吧。[/slow] [pause 400]',
+  script_text: '# Drama\n[voice:林晚][slow]你走吧。[/slow] [pause 607]',
   voice_map: {},
 };
 
@@ -73,6 +73,7 @@ describe('DramaTab', () => {
     expect(sadSelect.value).toBe('sad');
     // Compiled audiobook script shown.
     expect(screen.getByDisplayValue(/\[voice:林晚\]/)).toBeInTheDocument();
+    expect(screen.getByDisplayValue(/\[pause 607\]/)).toBeInTheDocument();
   });
 
   it('saves the project through the API', async () => {

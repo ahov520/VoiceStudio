@@ -79,6 +79,7 @@ _SKILLS: tuple[LLMSkill, ...] = (
     _skill("slot_fitting"),
     _skill("glossary_extract"),
     _skill("direction_parse"),
+    _skill("drama_director"),
     _skill("dictation_refinement"),
 )
 

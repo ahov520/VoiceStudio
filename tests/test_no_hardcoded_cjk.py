@@ -56,6 +56,7 @@ _ALLOWED_FILES = {
     "backend/services/segmentation.py",
     "backend/services/sentence_chunker.py",       # streaming-TTS terminator tables (Patter port, Wave 1.4)
     "backend/services/subtitle_segmenter.py",
+    "backend/services/drama_director.py",          # CJK speaker/emotion parsing hints
     "backend/core/http_headers.py",               # docstring quotes the CJK filename that 500'd the header (#1262)
     "frontend/src/components/DubSegmentRow.jsx",
     "frontend/src/components/StoriesEditor.jsx",

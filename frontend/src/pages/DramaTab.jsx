@@ -11,22 +11,22 @@ import {
   deleteDramaProject,
 } from '../api/drama';
 
-//: Emotion set mirrors backend/services/drama_director.py EMOTIONS.
-const EMOTIONS = [
-  'neutral',
-  'calm',
-  'happy',
-  'sad',
-  'angry',
-  'fearful',
-  'surprised',
-  'whispered',
-  'shouting',
-  'crying',
-  'sarcastic',
-  'tense',
-];
-
+// Keep the delivery contract aligned with backend/services/drama_director.py.
+const EMOTION_DELIVERY = {
+  neutral: { marker: null, pauseMs: 180 },
+  calm: { marker: 'slow', pauseMs: 320 },
+  happy: { marker: 'fast', pauseMs: 200 },
+  sad: { marker: 'slow', pauseMs: 460 },
+  angry: { marker: 'fast', pauseMs: 220 },
+  fearful: { marker: 'slow', pauseMs: 380 },
+  surprised: { marker: 'emphasis', pauseMs: 320 },
+  whispered: { marker: 'slow', pauseMs: 260 },
+  shouting: { marker: 'fast', pauseMs: 160 },
+  crying: { marker: 'slow', pauseMs: 520 },
+  sarcastic: { marker: 'emphasis', pauseMs: 260 },
+  tense: { marker: 'emphasis', pauseMs: 320 },
+};
+const EMOTIONS = Object.keys(EMOTION_DELIVERY);
 export default function DramaTab({ profiles = [] }) {
   const { t } = useTranslation();
   const [script, setScript] = useState('');
@@ -35,7 +35,6 @@ export default function DramaTab({ profiles = [] }) {
   const [cast, setCast] = useState([]);
   const [lines, setLines] = useState([]);
   const [scriptText, setScriptText] = useState('');
-  const [, setVoiceMap] = useState({});
   const [projectName, setProjectName] = useState('');
   const [projects, setProjects] = useState([]);
   const [saving, setSaving] = useState(false);
@@ -62,7 +61,6 @@ export default function DramaTab({ profiles = [] }) {
       setCast(res.cast);
       setLines(res.lines);
       setScriptText(res.script_text);
-      setVoiceMap(res.voice_map);
       setProjectName(
         (prev) =>
           prev || (res.cast[0] ? t('drama.default_project_name', { name: res.cast[0].name }) : ''),
@@ -87,35 +85,23 @@ export default function DramaTab({ profiles = [] }) {
     if (!cast.length && !lines.length) return;
     const out = [`# ${projectName || 'Drama'}`];
     let current = null;
-    const vm = {};
-    for (const c of cast) {
-      if (c.voice?.profile_id) vm[c.name] = c.voice.profile_id;
-    }
     for (const ln of lines) {
       if (ln.speaker !== current) {
         out.push(`[voice:${ln.speaker}]`);
         current = ln.speaker;
       }
-      const emotion = EMOTIONS.includes(ln.emotion) ? ln.emotion : 'neutral';
-      const marker =
-        emotion === 'happy' || emotion === 'angry' || emotion === 'shouting'
-          ? 'fast'
-          : emotion === 'calm' ||
-              emotion === 'sad' ||
-              emotion === 'fearful' ||
-              emotion === 'whispered' ||
-              emotion === 'crying'
-            ? 'slow'
-            : emotion === 'surprised' || emotion === 'sarcastic' || emotion === 'tense'
-              ? 'emphasis'
-              : null;
+      const delivery = EMOTION_DELIVERY[ln.emotion] || EMOTION_DELIVERY.neutral;
+      const intensity = Number.isFinite(ln.intensity)
+        ? Math.max(0, Math.min(1, ln.intensity))
+        : 0.5;
       const text = ln.text || '';
-      const rendered = marker ? `[${marker}]${text}[/${marker}]` : text;
-      const pause = 180 + Math.round((ln.intensity || 0) * 200);
+      const rendered = delivery.marker
+        ? `[${delivery.marker}]${text}[/${delivery.marker}]`
+        : text;
+      const pause = Math.round(delivery.pauseMs * (1 + 0.4 * intensity));
       out.push(`${rendered} [pause ${pause}]`);
     }
     setScriptText(out.join('\n'));
-    setVoiceMap(vm);
   }, [cast, lines, projectName]);
 
   const onSave = useCallback(async () => {
