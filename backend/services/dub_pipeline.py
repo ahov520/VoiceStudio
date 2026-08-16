@@ -806,6 +806,22 @@ def _is_transient_download_error(exc: BaseException) -> bool:
 # through these (in order) before giving up (#625).
 _YT_PLAYER_CLIENTS = ["tv", "android", "web_safari"]
 
+#: Compatibility-first format chain (h264+aac, see the long comment at its
+#: use site in yt_download_sync). Kept as a named constant so the 403
+#: player-client escalation can append it as a fallback after a user-picked
+#: format_id — an alternate client serves a DIFFERENT format table and the
+#: exact id may not exist there (e.g. muxed format 18 is absent from the tv
+#: client, which would otherwise abort with "Requested format is not
+#: available" instead of retrying).
+_DUB_FORMAT_CHAIN = (
+    "bv*[vcodec^=avc1][ext=mp4]+ba[acodec^=mp4a][ext=m4a]/"
+    "bv*[vcodec^=avc1]+ba[acodec^=mp4a]/"
+    "b[vcodec^=avc1][acodec^=mp4a]/"
+    "bv*[vcodec^=avc1]+ba/"
+    "b[vcodec^=avc1]/"
+    "bv*+ba/b"
+)
+
 
 def _is_forbidden_download_error(exc: BaseException) -> bool:
     """True for a failure the CURRENT player client can't get past, but another
@@ -1214,14 +1230,7 @@ def yt_download_sync(
         # the post-download codec probe below will transcode it.
         # A user-picked `format_id` (Bilibili/Douyin quality select) wins
         # over this chain entirely.
-        "format": format_id or (
-            "bv*[vcodec^=avc1][ext=mp4]+ba[acodec^=mp4a][ext=m4a]/"
-            "bv*[vcodec^=avc1]+ba[acodec^=mp4a]/"
-            "b[vcodec^=avc1][acodec^=mp4a]/"
-            "bv*[vcodec^=avc1]+ba/"
-            "b[vcodec^=avc1]/"
-            "bv*+ba/b"
-        ),
+        "format": format_id or _DUB_FORMAT_CHAIN,
         "merge_output_format": "mp4",
         "noplaylist": True,
         "quiet": True,
@@ -1297,7 +1306,14 @@ def yt_download_sync(
             if _is_forbidden_download_error(exc) and client_idx < len(_YT_PLAYER_CLIENTS):
                 client = _YT_PLAYER_CLIENTS[client_idx]
                 client_idx += 1
-                ydl_opts = {**ydl_opts, "extractor_args": {"youtube": {"player_client": [client]}}}
+                # The alternate client serves a different format table: keep
+                # preferring the user's pick but let the compatibility chain
+                # take over when that exact id isn't served there (a pinned
+                # bare id would abort with "Requested format is not
+                # available" and turn the retry into the final failure).
+                if format_id and ydl_opts.get("format") == format_id:
+                    ydl_opts["format"] = f"{format_id}/{_DUB_FORMAT_CHAIN}"
+                ydl_opts["extractor_args"] = {"youtube": {"player_client": [client]}}
                 logger.warning(
                     "Download 403 for %s — retrying with player_client=%s (#625)", log_safe(url), log_safe(client),
                 )
