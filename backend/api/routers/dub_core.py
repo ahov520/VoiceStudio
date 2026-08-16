@@ -133,7 +133,7 @@ _get_job           = dub_pipeline.get_job
 _save_job          = dub_pipeline.save_job
 
 # ── Subtitle-first transcription ───────────────────────────────────────────
-# The video's OWN subtitle track (yt-dlp VTT - e.g. Bilibili AI 字幕, YouTube
+# The video's OWN subtitle track (yt-dlp VTT - e.g. Bilibili AI captions, YouTube
 # captions) is often far more accurate than local ASR and costs zero GPU
 # time. /dub/transcribe-stream?use_subtitle=<lang> seeds segments from the
 # downloaded VTT files and skips recognition entirely. Falls back to normal
@@ -777,7 +777,7 @@ async def dub_transcribe_stream(
         job = _get_job(job_id)
 
         # ── Subtitle-first path: seed segments from the video's own
-        # subtitle track and skip ASR entirely (Bilibili AI 字幕 / YouTube
+        # subtitle track and skip ASR entirely (Bilibili AI captions / YouTube
         # captions via the yt-dlp VTT pass). No model load, no GPU time.
         # Falls back to local recognition with a warning when no VTT match.
         if job and use_subtitle:

@@ -2748,6 +2748,8 @@
     "emotion_shouting": "大喊",
     "emotion_crying": "哭泣",
     "emotion_sarcastic": "讽刺",
-    "emotion_tense": "紧张"
+    "emotion_tense": "紧张",
+    "sample_script": "林晚: 你走吧，我不想再见到你。\n她转身背对门口，声音有些发抖。\n老陈: 别这样。我们明明说好的。\n林晚: 说好什么？说好你永远不骗我？\n老陈: （苦笑）有些事情，我没得选。",
+    "default_project_name": "{name}的剧本"
   }
 }

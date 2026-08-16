@@ -17,12 +17,6 @@ const EMOTIONS = [
   'surprised', 'whispered', 'shouting', 'crying', 'sarcastic', 'tense',
 ];
 
-const SAMPLE_SCRIPT = `林晚: 你走吧，我不想再见到你。
-她转身背对门口，声音有些发抖。
-老陈: 别这样。我们明明说好的。
-林晚: 说好什么？说好你永远不骗我？
-老陈: （苦笑）有些事情，我没得选。`;
-
 export default function DramaTab({ profiles = [] }) {
   const { t } = useTranslation();
   const [script, setScript] = useState('');
@@ -59,13 +53,13 @@ export default function DramaTab({ profiles = [] }) {
       setLines(res.lines);
       setScriptText(res.script_text);
       setVoiceMap(res.voice_map);
-      setProjectName((prev) => prev || (res.cast[0] ? `${res.cast[0].name}的剧本` : ''));
+      setProjectName((prev) => prev || (res.cast[0] ? t('drama.default_project_name', { name: res.cast[0].name }) : ''));
     } catch (err) {
       setParseError(err?.message || String(err));
     } finally {
       setParsing(false);
     }
-  }, [script, profiles]);
+  }, [script, profiles, t]);
 
   const patchLine = useCallback((index, patch) => {
     setLines((prev) => prev.map((l, i) => (i === index ? { ...l, ...patch } : l)));
@@ -166,7 +160,7 @@ export default function DramaTab({ profiles = [] }) {
           <span className="font-semibold text-[0.85rem] text-fg">{t('drama.title')}</span>
           <span className="text-fg-muted text-[0.7rem]">{t('drama.subtitle')}</span>
         </div>
-        <Button variant="subtle" size="sm" onClick={() => setScript(SAMPLE_SCRIPT)}>
+        <Button variant="subtle" size="sm" onClick={() => setScript(t('drama.sample_script'))}>
           {t('drama.sample')}
         </Button>
       </div>
@@ -203,7 +197,7 @@ export default function DramaTab({ profiles = [] }) {
         {/* ── Right: cast + lines + output ── */}
         <div className="flex flex-1 min-w-0 flex-col gap-[8px]">
           {cast.length === 0 && lines.length === 0 ? (
-            <div className="flex-1 flex items-center justify-center text-[0.75rem] text-fg-muted border border-dashed border-[rgba(255,255,255,0.1)] rounded-[8px]">
+            <div className="flex-1 flex items-center justify-center text-[0.75rem] text-fg-muted border border-dashed border-border rounded-[8px]">
               {t('drama.empty_hint')}
             </div>
           ) : (

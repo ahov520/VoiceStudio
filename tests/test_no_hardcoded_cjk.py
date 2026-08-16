@@ -60,6 +60,10 @@ _ALLOWED_FILES = {
     "frontend/src/components/DubSegmentRow.jsx",
     "frontend/src/components/StoriesEditor.jsx",
     "frontend/src/utils/voiceInstruct.js",
+    # Drama-director emotion keyword table: English + Chinese synonyms are the
+    # matching vocabulary for tagging emotion cues in Chinese scripts (drama
+    # feature) — rewording to English-only would silently stop matching.
+    "backend/services/drama_director.py",
     "omnivoice/utils/text.py",
     # Model / engine vocabulary & identifiers (the model/engine requires these)
     "backend/services/tts_backend.py",            # CosyVoice speaker IDs

@@ -153,6 +153,13 @@ dependencies = [
     # is_available() returned "openai package missing"); the UI's `pip install
     # openai` hint landed in the wrong interpreter on a managed venv.
     "openai>=1.40",
+    # Alibaba Cloud Model Studio (Bailian/DashScope) SDK for the
+    # dashscope-tts / dashscope-asr cloud engines (tts_cloud.py /
+    # asr_cloud.py import it lazily; bring-your-own API key, opt-in at
+    # runtime). Pure-Python wheel, no native deps. Declared here so the
+    # engine tests (tests/test_tts_cloud_engines.py,
+    # tests/test_asr_cloud_engines.py) can exercise the real import.
+    "dashscope>=1.20",
     # sherpa-onnx live-dictation ASR engine (CPU, cross-platform). The thin
     # `sherpa-onnx` wheel declares `sherpa-onnx-core` only in its *wheel*
     # metadata (not the sdist), so uv's resolver does NOT pull it transitively
