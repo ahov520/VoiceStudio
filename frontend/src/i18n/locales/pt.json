@@ -1115,7 +1115,22 @@
     "resolving": "A resolver...",
     "quality": "Qualidade",
     "quality_auto": "Auto (recomendado)",
-    "import_resolved": "Importar este vídeo"
+    "import_resolved": "Importar este vídeo",
+    "timing_label": "Timing:",
+    "timing_title": "Estratégia de timing: como a dublagem concilia o TTS em ritmo natural com a linha do tempo original.",
+    "timing_concise": "Conciso",
+    "timing_concise_title": "O tradutor encurta o texto para caber no ritmo natural. Excedentes aparecem no selo da linha para você encurtar o segmento.",
+    "timing_stretch_video": "Esticar vídeo",
+    "timing_stretch_video_title": "O áudio toca em ritmo natural; cada segmento do vídeo é esticado (setpts ffmpeg por segmento) para caber. A duração total aumenta. Exige uma passada de recodificação.",
+    "timing_strict_slot": "Slot estrito",
+    "timing_strict_slot_title": "Legado: comprime o áudio para caber no timing original. Pode soar apressado ou esganiçado em idiomas de alta densidade.",
+    "subtitle_found_title": "Este vídeo tem sua própria faixa de legendas",
+    "subtitle_found_hint": "Use diretamente — sem reconhecimento de fala local (mais rápido e idêntico ao vídeo).",
+    "use_video_subtitles": "Usar legendas do vídeo ({{lang}})",
+    "use_local_asr": "Reconhecer localmente em vez disso",
+    "import_own_srt": "Tenho meu próprio arquivo de legendas (.srt) — pular reconhecimento",
+    "translate_log_title": "Registro de tradução ({{count}})",
+    "translate_log_clear": "Limpar"
   },
   "glossary": {
     "title": "Glossário",
@@ -2080,7 +2095,13 @@
     "upgrading_preview": "Atualizando segmento(s) de qualidade de visualização {{count}} para qualidade total…",
     "session_expired": "Esta sessão de dublagem expirou ou foi limpa. Reenvie seu vídeo para iniciar uma nova.",
     "translating_progress": "Traduzindo para {{lang}} — {{done}}/{{total}} segmentos…",
-    "translate_partial_kept": "Foram traduzidos {{done}}/{{total}} segmentos antes do erro — os concluídos ficam guardados; tente de novo para continuar."
+    "translate_partial_kept": "Foram traduzidos {{done}}/{{total}} segmentos antes do erro — os concluídos ficam guardados; tente de novo para continuar.",
+    "translate_log_start": "Traduzindo {{total}} segmento(s) para {{lang}}…",
+    "translate_log_batch": "Lote concluído: {{done}}/{{total}} (falhas {{failed}}, degradados {{degraded}})",
+    "translate_log_batch_error": "Falha na solicitação do lote: {{error}}",
+    "translate_log_done": "Concluído: {{total}} segmentos, {{failed}} falhas (qualidade: {{quality}})",
+    "translate_log_failed": "Parado antes: {{done}}/{{total}} traduzidos. Use \"Repetir falhas\" para o resto.",
+    "subtitle_seed_failed": "Falha ao importar legendas: {{message}}"
   },
   "tts_errors": {
     "enter_text": "Por favor insira o texto",

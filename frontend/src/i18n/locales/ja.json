@@ -1115,7 +1115,22 @@
     "resolving": "解析中...",
     "quality": "画質",
     "quality_auto": "自動（推奨）",
-    "import_resolved": "この動画をインポート"
+    "import_resolved": "この動画をインポート",
+    "timing_label": "タイミング:",
+    "timing_title": "タイミング戦略 —— 自然な速度のTTSを元のタイムラインに合わせる方法。",
+    "timing_concise": "簡潔",
+    "timing_concise_title": "翻訳時にテキストを短くし、自然な速度で収めます。収まらない場合は行バッジで表示され、手動で短くできます。",
+    "timing_stretch_video": "動画を伸張",
+    "timing_stretch_video_title": "音声は自然な速度で再生され、動画の各セグメントを伸張（ffmpeg setpts）して合わせます。総再生時間が伸び、再エンコードが必要です。",
+    "timing_strict_slot": "厳密スロット",
+    "timing_strict_slot_title": "従来モード: 元のタイミングに合わせて音声を圧縮。高密度の対象言語では早口やキーキー音になりがち。",
+    "subtitle_found_title": "この動画には字幕トラックがあります",
+    "subtitle_found_hint": "そのまま使えます — ローカル音声認識は不要です（より速く、動画と正確に一致）。",
+    "use_video_subtitles": "動画の字幕を使う ({{lang}})",
+    "use_local_asr": "代わりにローカル認識",
+    "import_own_srt": "自分の字幕ファイル (.srt) を使う — 認識をスキップ",
+    "translate_log_title": "翻訳ログ ({{count}})",
+    "translate_log_clear": "クリア"
   },
   "glossary": {
     "title": "用語集",
@@ -2080,7 +2095,13 @@
     "upgrading_preview": "{{count}} プレビュー品質のセグメントをフル品質にアップグレードしています…",
     "session_expired": "このダビング セッションは期限切れかクリーンアップされました。新しいビデオを開始するにはビデオを再アップロードしてください。",
     "translating_progress": "{{lang}}へ翻訳中 — {{done}}/{{total}} セグメント…",
-    "translate_partial_kept": "エラー前に {{done}}/{{total}} セグメントを翻訳済み — 完了分は保持されます。再試行で続きから進めます。"
+    "translate_partial_kept": "エラー前に {{done}}/{{total}} セグメントを翻訳済み — 完了分は保持されます。再試行で続きから進めます。",
+    "translate_log_start": "{{total}} セグメントを {{lang}} に翻訳中…",
+    "translate_log_batch": "バッチ完了: {{done}}/{{total}}（失敗 {{failed}}、低下 {{degraded}}）",
+    "translate_log_batch_error": "バッチ要求失敗: {{error}}",
+    "translate_log_done": "完了: {{total}} セグメント、失敗 {{failed}}（品質: {{quality}}）",
+    "translate_log_failed": "途中停止: {{done}}/{{total}} 翻訳済み。残りは「失敗を再試行」で続行できます。",
+    "subtitle_seed_failed": "字幕の取り込み失敗: {{message}}"
   },
   "tts_errors": {
     "enter_text": "テキストを入力してください",

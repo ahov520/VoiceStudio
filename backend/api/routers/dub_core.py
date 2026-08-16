@@ -132,6 +132,49 @@ _kill_job_procs    = dub_pipeline.kill_job_procs
 _get_job           = dub_pipeline.get_job
 _save_job          = dub_pipeline.save_job
 
+# ── Subtitle-first transcription ───────────────────────────────────────────
+# The video's OWN subtitle track (yt-dlp VTT - e.g. Bilibili AI 字幕, YouTube
+# captions) is often far more accurate than local ASR and costs zero GPU
+# time. /dub/transcribe-stream?use_subtitle=<lang> seeds segments from the
+# downloaded VTT files and skips recognition entirely. Falls back to normal
+# ASR (with a warning) when no matching VTT exists.
+
+
+def _segments_from_job_subtitles(job_id: str, lang_hint: str) -> list[dict]:
+    """Parse the job's downloaded VTT subtitle files into dub segments.
+
+    Matches the file whose language tag equals/prefixes ``lang_hint``
+    (``original.zh.vtt`` for hint ``zh``), else returns the first VTT found.
+    Returns [] when the job dir has no usable subtitles.
+    """
+    job_dir = _safe_job_dir(job_id)
+    if not job_dir or not os.path.isdir(job_dir):
+        return []
+    import glob
+    vtts = sorted(glob.glob(os.path.join(job_dir, "*.vtt")))
+    if not vtts:
+        return []
+    hint = (lang_hint or "").lower()
+    chosen = None
+    if hint:
+        for path in vtts:
+            base = os.path.splitext(os.path.basename(path))[0]
+            tag = base.rsplit(".", 1)[-1].lower() if "." in base else ""
+            if tag == hint or tag.startswith(hint) or hint.startswith(tag):
+                chosen = path
+                break
+    if chosen is None:
+        chosen = vtts[0]
+    segs = dub_pipeline.parse_vtt_segments(chosen)
+    if not segs:
+        return []
+    try:
+        segs = assign_speakers_heuristic(segs, 1)
+    except Exception:  # noqa: BLE001 - heuristic must never block subtitle use
+        for s in segs:
+            s["speaker"] = "Speaker 1"
+    return segs
+
 # Pasted subtitle text is a transcript, not a media file: a feature-length
 # film's .srt is ~150 KB. 2 MB of characters is ~13x the worst realistic case
 # and still cheap to regex — past that we refuse rather than let a stray
@@ -642,6 +685,7 @@ async def dub_transcribe_stream(
     job_id: str,
     num_speakers: Optional[int] = None,
     per_segment_refs: bool = True,
+    use_subtitle: Optional[str] = None,
 ):
     """Stream per-chunk segments via SSE, then emit diarized final pass.
 
@@ -731,6 +775,34 @@ async def dub_transcribe_stream(
         touch_activity("transcribe", "dub")
 
         job = _get_job(job_id)
+
+        # ── Subtitle-first path: seed segments from the video's own
+        # subtitle track and skip ASR entirely (Bilibili AI 字幕 / YouTube
+        # captions via the yt-dlp VTT pass). No model load, no GPU time.
+        # Falls back to local recognition with a warning when no VTT match.
+        if job and use_subtitle:
+            sub_segs = _segments_from_job_subtitles(job_id, use_subtitle)
+            if sub_segs:
+                job["segments"] = sub_segs
+                job["source_lang"] = (use_subtitle or "und").split("_")[0][:2].lower()
+                job["full_transcript"] = " ".join(s.get("text", "") for s in sub_segs)
+                _save_job(job_id, job)
+                yield _sse_event("final", {
+                    "segments": sub_segs,
+                    "source_lang": job["source_lang"],
+                    "full_transcript": job["full_transcript"],
+                    "speaker_clones": {},
+                    "cast_sources": {},
+                })
+                yield _sse_event("done", {})
+                return
+            yield _sse_event("warning", {
+                "detail": (
+                    "No usable subtitle track was found for this video "
+                    "(language: %s). Falling back to local speech recognition."
+                    % (use_subtitle or "any")
+                ),
+            })
 
         preflight_error: Optional[str] = None
         # Extra machine-readable fields merged into the preflight `error` SSE event

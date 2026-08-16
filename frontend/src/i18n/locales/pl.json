@@ -1115,7 +1115,22 @@
     "resolving": "Rozpoznawanie...",
     "quality": "Jakość",
     "quality_auto": "Auto (zalecane)",
-    "import_resolved": "Importuj ten film"
+    "import_resolved": "Importuj ten film",
+    "timing_label": "Timing:",
+    "timing_title": "Strategia timingu — jak dubbing godzi TTS w naturalnym tempie z oryginalną osią czasu.",
+    "timing_concise": "Zwięzły",
+    "timing_concise_title": "Tłumacz skraca tekst, aby zmieścił się w naturalnym tempie. Przepełnienia widać w odznace wiersza, aby można było skrócić segment.",
+    "timing_stretch_video": "Rozciągnij wideo",
+    "timing_stretch_video_title": "Audio gra w naturalnym tempie; każdy segment wideo jest rozciągany (setpts ffmpeg na segment), aby się zmieścił. Całkowity czas rośnie. Wymaga ponownego kodowania.",
+    "timing_strict_slot": "Sztywny slot",
+    "timing_strict_slot_title": "Starszy tryb: kompresuje audio, aby zmieścić się w oryginalnym timingu. Przy gęstych językach może brzmieć pośpiesznie lub piskliwie.",
+    "subtitle_found_title": "Ten film ma własną ścieżkę napisów",
+    "subtitle_found_hint": "Użyj bezpośrednio — bez lokalnego rozpoznawania mowy (szybciej i idealnie zgodnie z filmem).",
+    "use_video_subtitles": "Użyj napisów wideo ({{lang}})",
+    "use_local_asr": "Rozpoznaj lokalnie zamiast tego",
+    "import_own_srt": "Mam własny plik napisów (.srt) — pomiń rozpoznawanie",
+    "translate_log_title": "Dziennik tłumaczenia ({{count}})",
+    "translate_log_clear": "Wyczyść"
   },
   "glossary": {
     "title": "Glosariusz",
@@ -2080,7 +2095,13 @@
     "upgrading_preview": "Uaktualniam segmenty w jakości podglądu {{count}} do pełnej jakości…",
     "session_expired": "Ta sesja dubowania wygasła lub została wyczyszczona — prześlij film ponownie, aby rozpocząć nową.",
     "translating_progress": "Tłumaczenie na {{lang}} — {{done}}/{{total}} segmentów…",
-    "translate_partial_kept": "Przed błędem przetłumaczono {{done}}/{{total}} segmentów — ukończone zostają zachowane, ponów próbę, aby kontynuować."
+    "translate_partial_kept": "Przed błędem przetłumaczono {{done}}/{{total}} segmentów — ukończone zostają zachowane, ponów próbę, aby kontynuować.",
+    "translate_log_start": "Tłumaczenie {{total}} segmentów na {{lang}}…",
+    "translate_log_batch": "Partia gotowa: {{done}}/{{total}} (błędów {{failed}}, degradacji {{degraded}})",
+    "translate_log_batch_error": "Żądanie partii nieudane: {{error}}",
+    "translate_log_done": "Gotowe: {{total}} segmentów, {{failed}} błędów (jakość: {{quality}})",
+    "translate_log_failed": "Zatrzymano wcześniej: przetłumaczono {{done}}/{{total}}. Resztę przez \"Ponów nieudane\".",
+    "subtitle_seed_failed": "Nie udało się zaimportować napisów: {{message}}"
   },
   "tts_errors": {
     "enter_text": "Proszę wpisać tekst",

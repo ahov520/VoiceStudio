@@ -48,6 +48,10 @@ export default function DubTab(props) {
     handleDubStop,
     handleDubGenerate,
     handleDubImportSrt,
+    availableSubs = [],
+    subtitleChoicePending = false,
+    handleDubUseSubtitles,
+    handleDubUseLocalAsr,
     handleDubDownload,
     handleDubAudioDownload,
     handleAudioExport,
@@ -156,6 +160,27 @@ export default function DubTab(props) {
     [seekWaveform, handleSegmentPreview],
   );
   const [ingestUrl, setIngestUrl] = useState('');
+  // Live translation log: every batch/failure line from handleTranslateAll,
+  // rendered in a collapsible panel below the editor (cap 200 lines).
+  const [translateLog, setTranslateLog] = useState([]);
+  const translateLogRef = useRef(null);
+  const pushTranslateLog = useCallback((line) => {
+    setTranslateLog((prev) => {
+      const next = [...prev, { at: Date.now(), line }];
+      return next.length > 200 ? next.slice(next.length - 200) : next;
+    });
+  }, []);
+  const clearTranslateLog = useCallback(() => setTranslateLog([]), []);
+  const handleTranslateAllLogged = useCallback(
+    (langOverride, options) =>
+      handleTranslateAll(langOverride, { ...(options || {}), onLog: pushTranslateLog }),
+    [handleTranslateAll, pushTranslateLog],
+  );
+  useEffect(() => {
+    if (translateLogRef.current) {
+      translateLogRef.current.scrollTop = translateLogRef.current.scrollHeight;
+    }
+  }, [translateLog]);
   // URL ingest resolve step: preview card + quality picker before the
   // background download starts (Bilibili / Douyin / YouTube / any yt-dlp host).
   const [resolvedVideo, setResolvedVideo] = useState(null);
@@ -272,7 +297,7 @@ export default function DubTab(props) {
                 }),
                 { homeMode: 'dub' },
               );
-              const ok = await handleTranslateAll(l.code);
+              const ok = await handleTranslateAllLogged(l.code);
               // Partial translations are useful for manual review, but an
               // automated batch must never synthesize the untranslated rows
               // into a mixed-language track.
@@ -314,7 +339,7 @@ export default function DubTab(props) {
   }, [
     multiLangMode,
     batchTargets,
-    handleTranslateAll,
+    handleTranslateAllLogged,
     handleDubGenerate,
     setDubLang,
     switchDubLangCode,
@@ -326,7 +351,7 @@ export default function DubTab(props) {
   // translation lands in segments[].translations[code], so Generate can
   // reuse the complete maps without retranslating or losing another language.
   const onTranslateClick = useCallback(async () => {
-    if (!multiLangMode) return handleTranslateAll();
+    if (!multiLangMode) return handleTranslateAllLogged();
     if (multiBatchRunningRef.current) return false;
     multiBatchRunningRef.current = true;
     setMultiBatchBusy(true);
@@ -336,7 +361,7 @@ export default function DubTab(props) {
       for (const target of batchTargets) {
         setDubLang(target.lang);
         switchDubLangCode(target.code);
-        const ok = await handleTranslateAll(target.code);
+        const ok = await handleTranslateAllLogged(target.code);
         if (!ok) allOk = false;
       }
     } finally {
@@ -346,7 +371,7 @@ export default function DubTab(props) {
       setMultiBatchBusy(false);
     }
     return allOk;
-  }, [multiLangMode, batchTargets, handleTranslateAll, setDubLang, switchDubLangCode]);
+  }, [multiLangMode, batchTargets, handleTranslateAllLogged, setDubLang, switchDubLangCode]);
 
   // Live ETA while generating — elapsed ticks each second; remaining is
   // extrapolated from the current/total rate so it's only meaningful once
@@ -460,7 +485,7 @@ export default function DubTab(props) {
   const showCheckpoint =
     reviewMode === 'on' && checkpointStage && !dismissedStages.has(checkpointStage);
   const onCheckpointContinue = () => {
-    if (checkpointStage === 'asr') handleTranslateAll?.();
+    if (checkpointStage === 'asr') handleTranslateAllLogged?.();
     else if (checkpointStage === 'translate') handleDubGenerate?.();
   };
   const onCheckpointDismiss = () => {
@@ -685,6 +710,11 @@ export default function DubTab(props) {
           handleInstallMissingAsr={handleInstallMissingAsr}
           handleDubRetryTranscribe={handleDubRetryTranscribe}
           handleDubImportSrt={handleDubImportSrt}
+          availableSubs={availableSubs}
+          subtitleChoicePending={subtitleChoicePending}
+          onUseSubtitles={handleDubUseSubtitles}
+          onUseLocalAsr={handleDubUseLocalAsr}
+          onImportSrt={handleDubImportSrt}
           dubLocalBlobUrl={dubLocalBlobUrl}
           dubPrepStage={dubPrepStage}
           dubPrepProgress={dubPrepProgress}
@@ -884,6 +914,37 @@ export default function DubTab(props) {
             dubSegments={dubSegments}
             translateQuality={translateQuality}
           />
+          {/* Live translation log panel — real-time lines from Translate All /
+              Retry failed / multi-language batches (see handleTranslateAll). */}
+          {translateLog.length > 0 && (
+            <div className="shrink-0 mt-[6px] [border:1px_solid_var(--chrome-border)] rounded-[8px] bg-[var(--chrome-bg)]">
+              <div className="flex items-center justify-between px-[10px] py-[5px]">
+                <span className="text-[0.68rem] text-fg-muted font-medium">
+                  {t('dub.translate_log_title', { count: translateLog.length })}
+                </span>
+                <button
+                  type="button"
+                  className="text-[0.62rem] text-fg-muted hover:text-fg"
+                  onClick={clearTranslateLog}
+                >
+                  {t('dub.translate_log_clear')}
+                </button>
+              </div>
+              <div
+                ref={translateLogRef}
+                className="max-h-[120px] overflow-y-auto px-[10px] pb-[6px] flex flex-col gap-[2px] font-mono"
+              >
+                {translateLog.map((entry, i) => (
+                  <div key={i} className="text-[0.62rem] text-fg-muted leading-relaxed">
+                    <span className="text-[#83a598]">
+                      {new Date(entry.at).toLocaleTimeString()}{' '}
+                    </span>
+                    {entry.line}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
 

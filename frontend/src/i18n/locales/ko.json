@@ -1115,7 +1115,22 @@
     "resolving": "확인 중...",
     "quality": "화질",
     "quality_auto": "자동 (권장)",
-    "import_resolved": "이 동영상 가져오기"
+    "import_resolved": "이 동영상 가져오기",
+    "timing_label": "타이밍:",
+    "timing_title": "타이밍 전략 — 자연 속도 TTS를 원래 타임라인에 맞추는 방식.",
+    "timing_concise": "간결",
+    "timing_concise_title": "번역 시 텍스트를 줄여 자연 속도에 맞춥니다. 넘치는 부분은 행 배지로 표시되어 직접 줄일 수 있습니다.",
+    "timing_stretch_video": "동영상 늘이기",
+    "timing_stretch_video_title": "오디오는 자연 속도로 재생되고, 동영상의 각 세그먼트를 늘려(ffmpeg setpts) 맞춥니다. 총 길이가 늘어나며 재인코딩이 필요합니다.",
+    "timing_strict_slot": "엄격 슬롯",
+    "timing_strict_slot_title": "레거시: 원래 타이밍에 맞게 오디오를 압축. 밀도 높은 대상 언어에서는 급하거나 쥐소리처럼 들릴 수 있음.",
+    "subtitle_found_title": "이 동영상에는 자체 자막이 있습니다",
+    "subtitle_found_hint": "바로 사용하세요 — 로컬 음성 인식이 필요 없습니다(더 빠르고 영상과 정확히 일치).",
+    "use_video_subtitles": "동영상 자막 사용 ({{lang}})",
+    "use_local_asr": "대신 로컬 인식 사용",
+    "import_own_srt": "내 자막 파일(.srt) 사용 — 인식 건너뛰기",
+    "translate_log_title": "번역 로그 ({{count}})",
+    "translate_log_clear": "지우기"
   },
   "glossary": {
     "title": "용어집",
@@ -2080,7 +2095,13 @@
     "upgrading_preview": "{{count}} 미리보기 품질 세그먼트를 전체 품질로 업그레이드하는 중…",
     "session_expired": "이 더빙 세션이 만료되었거나 정리되었습니다. 새 동영상을 시작하려면 동영상을 다시 업로드하세요.",
     "translating_progress": "{{lang}}(으)로 번역 중 — {{done}}/{{total}} 세그먼트…",
-    "translate_partial_kept": "오류 전까지 {{done}}/{{total}} 세그먼트를 번역했습니다 — 완료분은 유지되며, 재시도하면 이어서 진행됩니다."
+    "translate_partial_kept": "오류 전까지 {{done}}/{{total}} 세그먼트를 번역했습니다 — 완료분은 유지되며, 재시도하면 이어서 진행됩니다.",
+    "translate_log_start": "{{total}}개 세그먼트를 {{lang}}(으)로 번역 중…",
+    "translate_log_batch": "배치 완료: {{done}}/{{total}} (실패 {{failed}}, 저하 {{degraded}})",
+    "translate_log_batch_error": "배치 요청 실패: {{error}}",
+    "translate_log_done": "완료: {{total}}개, 실패 {{failed}}개 (품질: {{quality}})",
+    "translate_log_failed": "조기 중단: {{done}}/{{total}} 번역됨. 나머지는 \"실패 재시도\"로 계속하세요.",
+    "subtitle_seed_failed": "자막 가져오기 실패: {{message}}"
   },
   "tts_errors": {
     "enter_text": "텍스트를 입력해주세요",

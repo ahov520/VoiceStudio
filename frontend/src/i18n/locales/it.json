@@ -1115,7 +1115,22 @@
     "resolving": "Analisi...",
     "quality": "Qualità",
     "quality_auto": "Auto (consigliato)",
-    "import_resolved": "Importa questo video"
+    "import_resolved": "Importa questo video",
+    "timing_label": "Timing:",
+    "timing_title": "Strategia di timing: come il doppiaggio concilia il TTS a ritmo naturale con la timeline originale.",
+    "timing_concise": "Conciso",
+    "timing_concise_title": "Il traduttore accorcia il testo per adattarlo al ritmo naturale. Gli sforamenti compaiono nel badge della riga per accorciare il segmento.",
+    "timing_stretch_video": "Stira il video",
+    "timing_stretch_video_title": "L'audio suona a ritmo naturale; ogni segmento del video viene allungato (setpts ffmpeg per segmento) per adattarsi. La durata totale cresce. Richiede una passata di re-encode.",
+    "timing_strict_slot": "Slot rigido",
+    "timing_strict_slot_title": "Legacy: comprime l'audio per adattarsi al timing originale. Può suonare affrettato o stridulo con lingue ad alta densità.",
+    "subtitle_found_title": "Questo video ha la propria traccia di sottotitoli",
+    "subtitle_found_hint": "Usala direttamente — nessuna riconoscimento vocale locale (più veloce e identico al video).",
+    "use_video_subtitles": "Usa i sottotitoli del video ({{lang}})",
+    "use_local_asr": "Riconosci localmente invece",
+    "import_own_srt": "Ho il mio file di sottotitoli (.srt) — salta il riconoscimento",
+    "translate_log_title": "Registro di traduzione ({{count}})",
+    "translate_log_clear": "Pulisci"
   },
   "glossary": {
     "title": "Glossario",
@@ -2080,7 +2095,13 @@
     "upgrading_preview": "Aggiornamento dei segmenti dalla qualità di anteprima {{count}} alla qualità totale…",
     "session_expired": "Questa sessione di doppiaggio è scaduta o è stata ripulita: ricarica il tuo video per avviarne uno nuovo.",
     "translating_progress": "Traduzione in {{lang}} — {{done}}/{{total}} segmenti…",
-    "translate_partial_kept": "Tradotti {{done}}/{{total}} segmenti prima dell’errore: quelli completati restano, riprova per continuare."
+    "translate_partial_kept": "Tradotti {{done}}/{{total}} segmenti prima dell’errore: quelli completati restano, riprova per continuare.",
+    "translate_log_start": "Traduzione di {{total}} segmenti in {{lang}}…",
+    "translate_log_batch": "Lotto completato: {{done}}/{{total}} (falliti {{failed}}, degradati {{degraded}})",
+    "translate_log_batch_error": "Richiesta del lotto fallita: {{error}}",
+    "translate_log_done": "Fatto: {{total}} segmenti, {{failed}} falliti (qualità: {{quality}})",
+    "translate_log_failed": "Interrotto prima: {{done}}/{{total}} tradotti. Usa \"Riprova falliti\" per il resto.",
+    "subtitle_seed_failed": "Importazione sottotitoli fallita: {{message}}"
   },
   "tts_errors": {
     "enter_text": "Inserisci il testo",

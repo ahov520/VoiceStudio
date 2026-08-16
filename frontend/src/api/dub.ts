@@ -110,14 +110,25 @@ export async function dubIngestUrl(
   );
 }
 
-export function transcribeStreamUrl(jobId: string, numSpeakers?: number | null): string {
+export function transcribeStreamUrl(
+  jobId: string,
+  numSpeakers?: number | null,
+  useSubtitle?: string | null,
+): string {
   const base = `${API}/dub/transcribe-stream/${jobId}`;
   // Optional pyannote speaker-count hint (#274). Only appended when a positive
   // integer; otherwise the backend auto-detects.
+  const qs = new URLSearchParams();
   if (numSpeakers && Number.isFinite(numSpeakers) && numSpeakers > 0) {
-    return `${base}?num_speakers=${Math.floor(numSpeakers)}`;
+    qs.set('num_speakers', String(Math.floor(numSpeakers)));
   }
-  return base;
+  // Seed segments from the video's own subtitle track (Bilibili AI 字幕 /
+  // YouTube captions) and skip local ASR entirely.
+  if (useSubtitle) {
+    qs.set('use_subtitle', useSubtitle);
+  }
+  const q = qs.toString();
+  return q ? `${base}?${q}` : base;
 }
 
 export async function dubAbort(jobId: string): Promise<void> {

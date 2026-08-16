@@ -576,6 +576,10 @@ function App() {
     handleTranslateAll,
     handleRetryFailedTranslations,
     handleDubImportSrt,
+    availableSubs,
+    subtitleChoicePending,
+    handleDubUseSubtitles,
+    handleDubUseLocalAsr,
   } = useDubWorkflow({
     loadProjects,
     loadProfiles,
@@ -1636,6 +1640,11 @@ function App() {
                     handleDubIngestUrl={handleDubIngestUrl}
                     handleDubRetryTranscribe={handleDubRetryTranscribe}
                     handleInstallMissingAsr={handleInstallMissingAsr}
+                    handleDubImportSrt={handleDubImportSrt}
+                    availableSubs={availableSubs}
+                    subtitleChoicePending={subtitleChoicePending}
+                    handleDubUseSubtitles={handleDubUseSubtitles}
+                    handleDubUseLocalAsr={handleDubUseLocalAsr}
                     handleDubStop={handleDubStop}
                     handleDubGenerate={handleDubGenerate}
                     handleDubDownload={handleDubDownload}

@@ -1115,7 +1115,22 @@
     "resolving": "Wird aufgelöst...",
     "quality": "Qualität",
     "quality_auto": "Auto (empfohlen)",
-    "import_resolved": "Dieses Video importieren"
+    "import_resolved": "Dieses Video importieren",
+    "timing_label": "Timing:",
+    "timing_title": "Timing-Strategie — wie der Dub natürliches TTS-Tempo mit der Original-Timeline vereinbart.",
+    "timing_concise": "Prägnant",
+    "timing_concise_title": "Der Übersetzer kürzt den Text, damit er im natürlichen Tempo passt. Überläufe erscheinen im Zeilen-Badge, damit Sie das Segment kürzen können.",
+    "timing_stretch_video": "Video strecken",
+    "timing_stretch_video_title": "Audio läuft im natürlichen Tempo; jedes Videosegment wird gestreckt (pro Segment ffmpeg setpts), damit es passt. Die Gesamtdauer wächst. Erfordert einen Re-Encode-Durchlauf.",
+    "timing_strict_slot": "Strikter Slot",
+    "timing_strict_slot_title": "Legacy: komprimiert Audio, um das Original-Timing zu treffen. Kann bei dichten Zielsprachen gehetzt oder quäkig klingen.",
+    "subtitle_found_title": "Dieses Video hat eine eigene Untertitelspur",
+    "subtitle_found_hint": "Direkt verwenden — keine lokale Spracherkennung nötig (schneller und exakt zur Video passend).",
+    "use_video_subtitles": "Video-Untertitel verwenden ({{lang}})",
+    "use_local_asr": "Stattdessen lokal erkennen",
+    "import_own_srt": "Ich habe eine eigene Untertiteldatei (.srt) — Erkennung überspringen",
+    "translate_log_title": "Übersetzungsprotokoll ({{count}})",
+    "translate_log_clear": "Leeren"
   },
   "glossary": {
     "title": "Glossar",
@@ -2080,7 +2095,13 @@
     "upgrading_preview": "Upgrade von {{count}} Segment(en) in Vorschauqualität auf volle Qualität…",
     "session_expired": "Diese Dub-Sitzung ist abgelaufen oder wurde bereinigt. Laden Sie Ihr Video erneut hoch, um eine neue zu starten.",
     "translating_progress": "Übersetze nach {{lang}} — {{done}}/{{total}} Segmente…",
-    "translate_partial_kept": "Vor dem Fehler wurden {{done}}/{{total}} Segmente übersetzt — die fertigen bleiben erhalten, erneut versuchen setzt fort."
+    "translate_partial_kept": "Vor dem Fehler wurden {{done}}/{{total}} Segmente übersetzt — die fertigen bleiben erhalten, erneut versuchen setzt fort.",
+    "translate_log_start": "Übersetze {{total}} Segment(e) nach {{lang}}…",
+    "translate_log_batch": "Batch fertig: {{done}}/{{total}} (fehlgeschlagen {{failed}}, degradiert {{degraded}})",
+    "translate_log_batch_error": "Batch-Anfrage fehlgeschlagen: {{error}}",
+    "translate_log_done": "Fertig: {{total}} Segmente, {{failed}} fehlgeschlagen (Qualität: {{quality}})",
+    "translate_log_failed": "Früh gestoppt: {{done}}/{{total}} übersetzt. Für den Rest „Fehlgeschlagene erneut versuchen“ nutzen.",
+    "subtitle_seed_failed": "Untertitelimport fehlgeschlagen: {{message}}"
   },
   "tts_errors": {
     "enter_text": "Bitte geben Sie Text ein",

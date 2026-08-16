@@ -1115,7 +1115,22 @@
     "resolving": "Bezig met oplossen...",
     "quality": "Kwaliteit",
     "quality_auto": "Auto (aanbevolen)",
-    "import_resolved": "Deze video importeren"
+    "import_resolved": "Deze video importeren",
+    "timing_label": "Timing:",
+    "timing_title": "Timingstrategie: hoe de dub natuurlijk tempo-TTS met de oorspronkelijke tijdlijn verzoent.",
+    "timing_concise": "Beknopt",
+    "timing_concise_title": "De vertaler knipt tekst zodat deze past in het natuurlijke tempo. Overschotten verschijnen in de rijbadge zodat u het segment kunt inkorten.",
+    "timing_stretch_video": "Video uitrekken",
+    "timing_stretch_video_title": "Audio speelt in natuurlijk tempo; elk videosegment wordt uitgerekt (setpts ffmpeg per segment) om te passen. De totale duur groeit. Vereist een her-encodeerpass.",
+    "timing_strict_slot": "Strikte slot",
+    "timing_strict_slot_title": "Legacy: comprimeert audio om de oorspronkelijke timing te halen. Kan gehaast of pieperig klinken bij dichte doeltalen.",
+    "subtitle_found_title": "Deze video heeft een eigen ondertitelingsspoor",
+    "subtitle_found_hint": "Gebruik het direct — geen lokale spraakherkenning nodig (sneller en exact gelijk aan de video).",
+    "use_video_subtitles": "Video-ondertitels gebruiken ({{lang}})",
+    "use_local_asr": "Herken liever lokaal",
+    "import_own_srt": "Ik heb mijn eigen ondertitelbestand (.srt) — herkenning overslaan",
+    "translate_log_title": "VertaalLog ({{count}})",
+    "translate_log_clear": "Wissen"
   },
   "glossary": {
     "title": "Woordenlijst",
@@ -2080,7 +2095,13 @@
     "upgrading_preview": "{{count}} segment(en) van voorbeeldkwaliteit upgraden naar volledige kwaliteit…",
     "session_expired": "Deze kopieersessie is verlopen of opgeschoond. Upload je video opnieuw om een nieuwe te starten.",
     "translating_progress": "Vertalen naar {{lang}} — {{done}}/{{total}} segmenten…",
-    "translate_partial_kept": "Vóór de fout zijn {{done}}/{{total}} segmenten vertaald — de voltooide blijven bewaard, opnieuw proberen gaat verder."
+    "translate_partial_kept": "Vóór de fout zijn {{done}}/{{total}} segmenten vertaald — de voltooide blijven bewaard, opnieuw proberen gaat verder.",
+    "translate_log_start": "{{total}} segment(en) naar {{lang}} aan het vertalen…",
+    "translate_log_batch": "Batch klaar: {{done}}/{{total}} (mislukt {{failed}}, gedegradeerd {{degraded}})",
+    "translate_log_batch_error": "Batchverzoek mislukt: {{error}}",
+    "translate_log_done": "Klaar: {{total}} segmenten, {{failed}} mislukt (kwaliteit: {{quality}})",
+    "translate_log_failed": "Vroeg gestopt: {{done}}/{{total}} vertaald. Gebruik \"Mislukte opnieuw\" voor de rest.",
+    "subtitle_seed_failed": "Ondertitelimport mislukt: {{message}}"
   },
   "tts_errors": {
     "enter_text": "Voer tekst in",

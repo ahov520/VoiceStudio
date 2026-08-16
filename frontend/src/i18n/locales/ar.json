@@ -1115,7 +1115,22 @@
     "resolving": "جارٍ التحليل...",
     "quality": "الجودة",
     "quality_auto": "تلقائي (موصى به)",
-    "import_resolved": "استيراد هذا الفيديو"
+    "import_resolved": "استيراد هذا الفيديو",
+    "timing_label": "التوقيت:",
+    "timing_title": "استراتيجية التوقيت — كيف يوائم الدبلجة النص الصوتي الطبيعي مع الخط الزمني الأصلي.",
+    "timing_concise": "مختصر",
+    "timing_concise_title": "يختصر المترجم النص ليتناسب مع السرعة الطبيعية. تظهر الزيادات في شارة الصف لتقوم بتقصير المقطع.",
+    "timing_stretch_video": "تمديد الفيديو",
+    "timing_stretch_video_title": "يعمل الصوت بالسرعة الطبيعية؛ يتم تمديد كل مقطع من الفيديو (setpts ffmpeg لكل مقطع) ليتناسب. تزداد المدة الإجمالية. يتطلب إعادة ترميز.",
+    "timing_strict_slot": "فتحة صارمة",
+    "timing_strict_slot_title": "الوضع القديم: ضغط الصوت ليتناسب مع التوقيت الأصلي. قد يبدو متعجلاً أو حاداً مع اللغات عالية الكثافة.",
+    "subtitle_found_title": "يحتوي هذا الفيديو على مسار الترجمة الخاص به",
+    "subtitle_found_hint": "استخدمه مباشرة — لا حاجة للتعرف على الكلام محلياً (أسرع ومطابق للفيديو تماماً).",
+    "use_video_subtitles": "استخدام ترجمة الفيديو ({{lang}})",
+    "use_local_asr": "التعرف محلياً بدلاً من ذلك",
+    "import_own_srt": "لدي ملف الترجمة الخاص بي (.srt) — تخطي التعرف",
+    "translate_log_title": "سجل الترجمة ({{count}})",
+    "translate_log_clear": "مسح"
   },
   "glossary": {
     "title": "مسرد",
@@ -2080,7 +2095,13 @@
     "upgrading_preview": "جارٍ ترقية مقطع (مقاطع) جودة المعاينة {{count}} إلى الجودة الكاملة...",
     "session_expired": "انتهت صلاحية جلسة الدبلجة هذه أو تم تنظيفها — أعد تحميل الفيديو لبدء مقطع جديد.",
     "translating_progress": "جارٍ الترجمة إلى {{lang}} — {{done}}/{{total}} مقطعًا…",
-    "translate_partial_kept": "تُرجم {{done}}/{{total}} مقطعًا قبل الخطأ — المقاطع المكتملة محفوظة، أعد المحاولة للمتابعة."
+    "translate_partial_kept": "تُرجم {{done}}/{{total}} مقطعًا قبل الخطأ — المقاطع المكتملة محفوظة، أعد المحاولة للمتابعة.",
+    "translate_log_start": "ترجمة {{total}} مقطعاً إلى {{lang}}…",
+    "translate_log_batch": "اكتملت الدفعة: {{done}}/{{total}} (فشل {{failed}}، منخفضة {{degraded}})",
+    "translate_log_batch_error": "فشل طلب الدفعة: {{error}}",
+    "translate_log_done": "اكتمل: {{total}} مقطعاً، فشل {{failed}} (الجودة: {{quality}})",
+    "translate_log_failed": "توقف مبكراً: ترجم {{done}}/{{total}}. استخدم \"إعادة المحاولة الفاشلة\" للباقي.",
+    "subtitle_seed_failed": "فشل استيراد الترجمة: {{message}}"
   },
   "tts_errors": {
     "enter_text": "الرجاء إدخال النص",

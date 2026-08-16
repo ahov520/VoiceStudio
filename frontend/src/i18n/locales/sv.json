@@ -1115,7 +1115,22 @@
     "resolving": "Analyserar...",
     "quality": "Kvalitet",
     "quality_auto": "Auto (rekommenderat)",
-    "import_resolved": "Importera den här videon"
+    "import_resolved": "Importera den här videon",
+    "timing_label": "Timing:",
+    "timing_title": "Timingstrategi — hur dubbningen förenar TTS i naturlig takt med den ursprungliga tidslinjen.",
+    "timing_concise": "Kortfattad",
+    "timing_concise_title": "Översättaren kortar texten så att den passar i naturlig takt. Överskott visas i radens märke så att du kan korta segmentet.",
+    "timing_stretch_video": "Sträck ut video",
+    "timing_stretch_video_title": "Ljudet spelas i naturlig takt; varje videosegment sträcks ut (setpts ffmpeg per segment) för att passa. Total längd växer. Kräver en omkodningsomgång.",
+    "timing_strict_slot": "Strikt slot",
+    "timing_strict_slot_title": "Äldre läge: komprimerar ljudet för att passa den ursprungliga timingen. Kan låta stressat eller pipigt vid täta målspråk.",
+    "subtitle_found_title": "Den här videon har ett eget undertextspår",
+    "subtitle_found_hint": "Använd den direkt — ingen lokal taligenkänning behövs (snabbare och exakt samma som videon).",
+    "use_video_subtitles": "Använd video-undertexter ({{lang}})",
+    "use_local_asr": "Känn igen lokalt istället",
+    "import_own_srt": "Jag har min egen undertextfil (.srt) — hoppa över igenkänning",
+    "translate_log_title": "Översättningslogg ({{count}})",
+    "translate_log_clear": "Rensa"
   },
   "glossary": {
     "title": "Ordlista",
@@ -2080,7 +2095,13 @@
     "upgrading_preview": "Uppgraderar {{count}} segment(er) med förhandsvisningskvalitet till full kvalitet...",
     "session_expired": "Den här dubbsessionen löpte ut eller rensades upp – ladda upp din video igen för att starta en ny.",
     "translating_progress": "Översätter till {{lang}} — {{done}}/{{total}} segment…",
-    "translate_partial_kept": "{{done}}/{{total}} segment översattes före felet — de klara behålls, försök igen för att fortsätta."
+    "translate_partial_kept": "{{done}}/{{total}} segment översattes före felet — de klara behålls, försök igen för att fortsätta.",
+    "translate_log_start": "Översätter {{total}} segment till {{lang}}…",
+    "translate_log_batch": "Batch klar: {{done}}/{{total}} (misslyckade {{failed}}, degraderade {{degraded}})",
+    "translate_log_batch_error": "Batchförfrågan misslyckades: {{error}}",
+    "translate_log_done": "Klar: {{total}} segment, {{failed}} misslyckade (kvalitet: {{quality}})",
+    "translate_log_failed": "Stoppad tidigt: {{done}}/{{total}} översatta. Använd \"Försök igen\" för resten.",
+    "subtitle_seed_failed": "Undertextimport misslyckades: {{message}}"
   },
   "tts_errors": {
     "enter_text": "Vänligen ange text",

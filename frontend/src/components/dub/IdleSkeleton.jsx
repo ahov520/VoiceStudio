@@ -17,6 +17,7 @@ import {
   Trash2,
   Play,
   Download,
+  Captions,
 } from 'lucide-react';
 import { Button, Progress } from '../../ui';
 import { useEffect, useRef } from 'react';
@@ -96,6 +97,11 @@ export default function IdleSkeleton({
   resolvedVideo,
   chosenFormatId,
   setChosenFormatId,
+  availableSubs,
+  subtitleChoicePending,
+  onUseSubtitles,
+  onUseLocalAsr,
+  onImportSrt,
   fetchYtSubs,
   setFetchYtSubs,
   youtubeCookieFile,
@@ -141,6 +147,50 @@ export default function IdleSkeleton({
     const size = fmtSize(f.filesize);
     return `${base}${codec}${size ? ` · ${size}` : ''}`;
   };
+  const srtInputRef = useRef(null);
+  // ── Subtitle-first choice card ──────────────────────────────────────
+  // The video carries its own subtitle track (Bilibili AI 字幕 / YouTube
+  // captions): let the user take it (skips local ASR) or import their own
+  // SRT, instead of forcing recognition.
+  const renderSubtitleChoice = () => (
+    <div className="flex-1 flex flex-col items-center justify-center min-h-0 gap-[10px] px-[16px]">
+      <div className="text-[0.85rem] text-fg font-medium">{t('dub.subtitle_found_title')}</div>
+      <div className="text-[0.7rem] text-fg-muted text-center max-w-[420px]">
+        {t('dub.subtitle_found_hint')}
+      </div>
+      <div className="flex flex-wrap gap-[8px] justify-center items-center">
+        {availableSubs.map((lang) => (
+          <Button
+            key={lang}
+            variant="primary"
+            size="sm"
+            onClick={() => onUseSubtitles(lang)}
+          >
+            <Captions size={13} /> {t('dub.use_video_subtitles', { lang })}
+          </Button>
+        ))}
+        <Button variant="subtle" size="sm" onClick={onUseLocalAsr}>
+          {t('dub.use_local_asr')}
+        </Button>
+        <label className="inline-flex items-center gap-[6px] cursor-pointer">
+          <input
+            ref={srtInputRef}
+            type="file"
+            accept=".srt,.vtt,.txt,text/plain"
+            className="hidden"
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (f) onImportSrt(f);
+              if (srtInputRef.current) srtInputRef.current.value = '';
+            }}
+          />
+          <span className="text-[0.68rem] text-fg-muted hover:text-fg underline underline-offset-2">
+            {t('dub.import_own_srt')}
+          </span>
+        </label>
+      </div>
+    </div>
+  );
   return (
     <div className="flex-1 flex flex-col min-h-0">
       {/* Header bar */}
@@ -266,12 +316,16 @@ export default function IdleSkeleton({
                   ) : dubStep === 'installing-asr' ? (
                     <AsrInstallStatus t={t} install={asrInstall} onAbort={handleDubAbort} />
                   ) : dubStep === 'transcribing' ? (
-                    <TranscribeOverlay
-                      elapsed={transcribeElapsed}
-                      progress={transcribeProgress}
-                      duration={dubDuration}
-                      onAbort={handleDubAbort}
-                    />
+                    subtitleChoicePending && availableSubs.length ? (
+                      renderSubtitleChoice()
+                    ) : (
+                      <TranscribeOverlay
+                        elapsed={transcribeElapsed}
+                        progress={transcribeProgress}
+                        duration={dubDuration}
+                        onAbort={handleDubAbort}
+                      />
+                    )
                   ) : null
                 }
               />
@@ -365,12 +419,16 @@ export default function IdleSkeleton({
             // video here" dropzone. Render the transcribe progress here too so
             // the main view always reflects the pipeline stage, on every path.
             <div className="flex-1 flex flex-col items-center justify-center min-h-0">
-              <TranscribeOverlay
-                elapsed={transcribeElapsed}
-                progress={transcribeProgress}
-                duration={dubDuration}
-                onAbort={handleDubAbort}
-              />
+              {subtitleChoicePending && availableSubs.length ? (
+                renderSubtitleChoice()
+              ) : (
+                <TranscribeOverlay
+                  elapsed={transcribeElapsed}
+                  progress={transcribeProgress}
+                  duration={dubDuration}
+                  onAbort={handleDubAbort}
+                />
+              )}
             </div>
           ) : dubStep === 'idle' ? (
             <>

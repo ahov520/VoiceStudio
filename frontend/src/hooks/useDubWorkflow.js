@@ -116,6 +116,12 @@ export default function useDubWorkflow({
   // 45 minutes. A measured fraction is the only thing that can't lie.
   const [transcribeProgress, setTranscribeProgress] = useState(0);
   const [asrInstall, setAsrInstall] = useState(null);
+  // Subtitle-first transcription: languages of the video's own subtitle
+  // tracks (Bilibili AI 字幕 / YouTube captions via yt-dlp VTT), offered to
+  // the user so they can skip local ASR entirely.
+  const [availableSubs, setAvailableSubs] = useState([]);
+  const availableSubsRef = useRef([]);
+  const [subtitleChoicePending, setSubtitleChoicePending] = useState(false);
 
   const dubAbortCtrlRef = useRef(null);
   const dubClientJobIdRef = useRef(null);
@@ -236,13 +242,13 @@ export default function useDubWorkflow({
 
   // ── SSE: wait for transcription stream ──
   const _waitForTranscribe = useCallback(
-    (jobId, ctrl) =>
+    (jobId, ctrl, useSubtitle) =>
       new Promise((resolve, reject) => {
-        // Read the optional speaker-count hint at stream-open time (#274) so the
-        // user's choice for this job is honoured without threading it through the
-        // three call sites. null → pyannote auto-detect.
+        // Read the optional speaker-count hint at stream-open time (#274) s
+        // the user's choice for this job is honoured without threading it throu
+        // the three call sites. null — pyannote auto-detect.
         const numSpeakers = useAppStore.getState().dubNumSpeakers;
-        const evt = new EventSource(transcribeStreamUrl(jobId, numSpeakers));
+        const evt = new EventSource(transcribeStreamUrl(jobId, numSpeakers, useSubtitle));
         let gotFinal = false;
         // Latch the real cause from a named `error` event. EventSource also fires
         // its *native* error (no `data`) on any connection close, which can race
@@ -417,6 +423,10 @@ export default function useDubWorkflow({
               break;
             case 'download_done':
               if (m.filename) setDubFilename(m.filename);
+              if (Array.isArray(m.youtube_subs) && m.youtube_subs.length) {
+                availableSubsRef.current = m.youtube_subs;
+                setAvailableSubs(m.youtube_subs);
+              }
               break;
             case 'extract_start':
               setDubPrepStage('extract');
@@ -523,6 +533,110 @@ export default function useDubWorkflow({
   );
 
   // ── Handlers ──
+
+  // Shared tail of every ingest path: enter the transcribe stage and wait for
+  // segments. `useSubtitle` seeds from the video's own subtitle track and
+  // skips local ASR (Bilibili AI 字幕 / YouTube captions).
+  const startTranscribe = useCallback(
+    async (jobId, ctrl, useSubtitle) => {
+      setDubStep('transcribing');
+      setDubPrepStage(null);
+      setDubSegments([]);
+      setTranscribeStart(Date.now());
+      setSubtitleChoicePending(false);
+      useAppStore.getState().showPill('transcribing', t('dub_workflow.transcribing_audio'), {
+        cancellable: true,
+        homeMode: 'dub',
+      });
+      try {
+        await _waitForTranscribe(jobId, ctrl, useSubtitle);
+        setTranscribeStart(null);
+        setDubStep('editing');
+        useAppStore.getState().completePill(t('dub_workflow.transcription_complete'));
+        loadProjects();
+        loadProfiles();
+      } catch (err) {
+        setTranscribeStart(null);
+        throw err;
+      }
+    },
+    [
+      setDubStep,
+      setDubPrepStage,
+      setDubSegments,
+      setTranscribeStart,
+      setSubtitleChoicePending,
+      _waitForTranscribe,
+      loadProjects,
+      loadProfiles,
+      t,
+    ],
+  );
+
+  // User picked the video's own subtitle track: skip ASR, seed from the VTT.
+  const handleDubUseSubtitles = useCallback(
+    async (lang) => {
+      const jobId = dubClientJobIdRef.current || dubJobId;
+      if (!jobId) return;
+      const ctrl = new AbortController();
+      dubAbortCtrlRef.current = ctrl;
+      try {
+        await startTranscribe(jobId, ctrl, lang);
+      } catch (err) {
+        setDubPrepStage(null);
+        if (err.name === 'AbortError') {
+          setDubStep('idle');
+          useAppStore.getState().dismissPill();
+        } else if (isExpiredDubJobError(err)) {
+          _resetStaleDubSession();
+        } else {
+          setDubError(err.message);
+          setDubStep('idle');
+          toastErrorWithReport(
+            t('dub_workflow.subtitle_seed_failed', { message: err.message }),
+            err,
+          );
+        }
+      } finally {
+        dubAbortCtrlRef.current = null;
+      }
+    },
+    [
+      dubJobId,
+      startTranscribe,
+      setDubError,
+      setDubStep,
+      setDubPrepStage,
+      _resetStaleDubSession,
+      t,
+    ],
+  );
+
+  // User declined the subtitle track: run normal local ASR.
+  const handleDubUseLocalAsr = useCallback(async () => {
+    const jobId = dubClientJobIdRef.current || dubJobId;
+    if (!jobId) return;
+    const ctrl = new AbortController();
+    dubAbortCtrlRef.current = ctrl;
+    try {
+      await startTranscribe(jobId, ctrl, null);
+    } catch (err) {
+      setDubPrepStage(null);
+      if (err.name === 'AbortError') {
+        setDubStep('idle');
+        useAppStore.getState().dismissPill();
+      } else if (isExpiredDubJobError(err)) {
+        _resetStaleDubSession();
+      } else {
+        setDubError(err.message);
+        setDubStep('idle');
+        toastErrorWithReport(t('dub_workflow.transcription_failed', { message: err.message }), err);
+      }
+    } finally {
+      dubAbortCtrlRef.current = null;
+    }
+  }, [dubJobId, startTranscribe, setDubError, setDubStep, setDubPrepStage, _resetStaleDubSession, t]);
+
   const handleDubUpload = useCallback(
     async (dubVideoFile) => {
       if (!dubVideoFile) return;
@@ -567,20 +681,17 @@ export default function useDubWorkflow({
             homeMode: 'dub',
           });
         await _waitForPrep(data.task_id, ctrl);
-        setDubStep('transcribing');
-        setDubPrepStage(null);
-        setTranscribeStart(Date.now());
-        setDubSegments([]);
-        useAppStore.getState().showPill('transcribing', t('dub_workflow.transcribing_audio'), {
-          cancellable: true,
-          homeMode: 'dub',
-        });
-        await _waitForTranscribe(data.job_id, ctrl);
-        setTranscribeStart(null);
-        setDubStep('editing');
-        useAppStore.getState().completePill(t('dub_workflow.transcription_complete'));
-        loadProjects();
-        loadProfiles();
+        // Subtitle-first: when the video carries its own subtitle track, offer
+        // it (skips local ASR entirely) instead of auto-recognizing.
+        if (availableSubsRef.current.length) {
+          setDubStep('transcribing');
+          setDubPrepStage(null);
+          setDubSegments([]);
+          setTranscribeStart(null);
+          setSubtitleChoicePending(true);
+          return;
+        }
+        await startTranscribe(data.job_id, ctrl, null);
       } catch (err) {
         setDubPrepStage(null);
         if (err.name === 'AbortError') {
@@ -613,8 +724,10 @@ export default function useDubWorkflow({
       setDubFilename,
       setDubTaskId,
       setDubSegments,
+      setTranscribeStart,
+      setSubtitleChoicePending,
       _waitForPrep,
-      _waitForTranscribe,
+      startTranscribe,
       loadProjects,
       loadProfiles,
       _resetStaleDubSession,
@@ -665,20 +778,17 @@ export default function useDubWorkflow({
             homeMode: 'dub',
           });
         await _waitForPrep(data.task_id, ctrl);
-        setDubStep('transcribing');
-        setDubPrepStage(null);
-        setTranscribeStart(Date.now());
-        setDubSegments([]);
-        useAppStore.getState().showPill('transcribing', t('dub_workflow.transcribing_audio'), {
-          cancellable: true,
-          homeMode: 'dub',
-        });
-        await _waitForTranscribe(data.job_id, ctrl);
-        setTranscribeStart(null);
-        setDubStep('editing');
-        useAppStore.getState().completePill(t('dub_workflow.transcription_complete'));
-        loadProjects();
-        loadProfiles();
+        // Subtitle-first: same offer as the local-file path (Bilibili AI 字幕
+        // / YouTube captions come down with the video via the yt-dlp VTT pass).
+        if (availableSubsRef.current.length) {
+          setDubStep('transcribing');
+          setDubPrepStage(null);
+          setDubSegments([]);
+          setTranscribeStart(null);
+          setSubtitleChoicePending(true);
+          return;
+        }
+        await startTranscribe(data.job_id, ctrl, null);
         toast.success(t('dub_workflow.ingested', { url: clean.slice(0, 60) }));
       } catch (err) {
         setDubPrepStage(null);
@@ -717,8 +827,10 @@ export default function useDubWorkflow({
       setDubJobId,
       setDubTaskId,
       setDubSegments,
+      setTranscribeStart,
+      setSubtitleChoicePending,
       _waitForPrep,
-      _waitForTranscribe,
+      startTranscribe,
       loadProjects,
       loadProfiles,
       _resetStaleDubSession,
@@ -896,7 +1008,11 @@ export default function useDubWorkflow({
       const toRequestSegment = (s) => ({
         id: String(s.id),
         text: s.text_original && s.text_original.trim() ? s.text_original : s.text,
-        target_lang: s.target_lang,
+        // ALWAYS the language the user picked for this run, never a stale
+        // per-segment value: a segment translated once (e.g. to 'en') keeps
+        // its old target_lang, and the backend honours it FIRST - so a later
+        // Translate All into zh-CN silently re-translated to English.
+        target_lang: targetLang,
         direction: s.direction || undefined,
         slot_seconds: s.end != null && s.start != null ? s.end - s.start : undefined,
         // Timeline position — lets the backend's duration planner borrow
@@ -912,6 +1028,14 @@ export default function useDubWorkflow({
       let meta = null; // first response's request-level flags (same every batch)
       let hardError = null;
       let doneCount = 0;
+      // Live translation log (optional onLog callback): the Dub tab renders
+      // a real-time panel from these lines so a long LLM run shows what is
+      // happening instead of a bare progress pill.
+      const onLog =
+        options && typeof options.onLog === 'function'
+          ? options.onLog
+          : () => {};
+      onLog(t('dub_workflow.translate_log_start', { lang: targetLang, total: segs.length }));
 
       try {
         for (let i = 0; i < segs.length; i += TRANSLATE_BATCH_SIZE) {
@@ -953,6 +1077,7 @@ export default function useDubWorkflow({
             // everything already applied — retrying continues from the
             // failed rows instead of starting over.
             hardError = err;
+            onLog(t('dub_workflow.translate_log_batch_error', { error: err?.message || String(err) }));
             break;
           }
           if (meta === null) meta = data;
@@ -1003,9 +1128,30 @@ export default function useDubWorkflow({
           doneCount = Math.min(i + batch.length, segs.length);
           setPillLabel(pillLabel(doneCount));
           setPillProgress(Math.round((doneCount / segs.length) * 100));
+          onLog(
+            t('dub_workflow.translate_log_batch', {
+              done: doneCount,
+              total: segs.length,
+              failed: errors.length,
+              degraded: degraded.length,
+            }),
+          );
         }
       } finally {
         dismissPill();
+      }
+
+      if (hardError) {
+        onLog(t('dub_workflow.translate_log_failed', { total: segs.length, done: doneCount }));
+      } else if (meta) {
+        onLog(
+          t('dub_workflow.translate_log_done', {
+            total: segs.length,
+            failed: errors.length,
+            quality: meta.quality_used || translateQuality,
+            provider: meta.provider || translateProvider,
+          }),
+        );
       }
 
       if (meta && meta.cinematic_skipped === 'no-llm-configured') {
@@ -1336,5 +1482,9 @@ export default function useDubWorkflow({
     handleTranslateAll,
     handleRetryFailedTranslations,
     handleDubImportSrt,
+    availableSubs,
+    subtitleChoicePending,
+    handleDubUseSubtitles,
+    handleDubUseLocalAsr,
   };
 }

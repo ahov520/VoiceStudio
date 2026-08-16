@@ -1115,7 +1115,22 @@
     "resolving": "Analyse...",
     "quality": "Qualité",
     "quality_auto": "Auto (recommandé)",
-    "import_resolved": "Importer cette vidéo"
+    "import_resolved": "Importer cette vidéo",
+    "timing_label": "Timing:",
+    "timing_title": "Stratégie de timing — comment le doublage réconcilie le TTS à débit naturel avec la timeline d'origine.",
+    "timing_concise": "Concis",
+    "timing_concise_title": "Le traducteur raccourcit le texte pour tenir au rythme naturel. Les dépassements apparaissent dans le badge de la ligne pour que vous puissiez raccourcir le segment.",
+    "timing_stretch_video": "Étirer la vidéo",
+    "timing_stretch_video_title": "L'audio joue au rythme naturel; chaque segment de la vidéo est étiré (setpts ffmpeg par segment) pour s'adapter. La durée totale augmente. Nécessite un ré-encodage.",
+    "timing_strict_slot": "Créneau strict",
+    "timing_strict_slot_title": "Héritage : compresse l'audio pour tenir le timing d'origine. Peut sonner précipité ou nasillard sur les langues cibles denses.",
+    "subtitle_found_title": "Cette vidéo a sa propre piste de sous-titres",
+    "subtitle_found_hint": "Utilisez-la directement — pas besoin de reconnaissance vocale locale (plus rapide et identique à la vidéo).",
+    "use_video_subtitles": "Utiliser les sous-titres ({{lang}})",
+    "use_local_asr": "Reconnaître localement à la place",
+    "import_own_srt": "J'ai mon propre fichier de sous-titres (.srt) — ignorer la reconnaissance",
+    "translate_log_title": "Journal de traduction ({{count}})",
+    "translate_log_clear": "Effacer"
   },
   "glossary": {
     "title": "Glossaire",
@@ -2080,7 +2095,13 @@
     "upgrading_preview": "Mise à niveau de {{count}} segments en qualité d'aperçu vers une qualité complète…",
     "session_expired": "Cette session de doublage a expiré ou a été nettoyée : téléchargez à nouveau votre vidéo pour en démarrer une nouvelle.",
     "translating_progress": "Traduction vers {{lang}} — {{done}}/{{total}} segments…",
-    "translate_partial_kept": "{{done}}/{{total}} segments traduits avant l’erreur — les segments terminés sont conservés, réessayez pour continuer."
+    "translate_partial_kept": "{{done}}/{{total}} segments traduits avant l’erreur — les segments terminés sont conservés, réessayez pour continuer.",
+    "translate_log_start": "Traduction de {{total}} segment(s) vers {{lang}}…",
+    "translate_log_batch": "Lot terminé : {{done}}/{{total}} (échecs {{failed}}, dégradés {{degraded}})",
+    "translate_log_batch_error": "Échec de la demande du lot : {{error}}",
+    "translate_log_done": "Terminé : {{total}} segments, {{failed}} échecs (qualité : {{quality}})",
+    "translate_log_failed": "Arrêté tôt : {{done}}/{{total}} traduits. Utilisez « Réessayer les échecs » pour le reste.",
+    "subtitle_seed_failed": "Échec de l'import des sous-titres : {{message}}"
   },
   "tts_errors": {
     "enter_text": "Veuillez saisir du texte",

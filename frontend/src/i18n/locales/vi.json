@@ -1115,7 +1115,22 @@
     "resolving": "Đang phân tích...",
     "quality": "Chất lượng",
     "quality_auto": "Tự động (được khuyến nghị)",
-    "import_resolved": "Nhập video này"
+    "import_resolved": "Nhập video này",
+    "timing_label": "Thời gian:",
+    "timing_title": "Chiến lược thời gian — cách lồng tiếng dung hòa TTS tốc độ tự nhiên với dòng thời gian gốc.",
+    "timing_concise": "Ngắn gọn",
+    "timing_concise_title": "Trình dịch rút gọn văn bản để khớp tốc độ tự nhiên. Phần tràn hiện trên huy hiệu dòng để bạn rút ngắn phân đoạn.",
+    "timing_stretch_video": "Kéo giãn video",
+    "timing_stretch_video_title": "Âm thanh phát ở tốc độ tự nhiên; từng phân đoạn video được kéo giãn (setpts ffmpeg từng phân đoạn) để khớp. Tổng thời lượng tăng lên. Cần mã hóa lại.",
+    "timing_strict_slot": "Khe thời gian nghiêm ngặt",
+    "timing_strict_slot_title": "Chế độ cũ: nén âm thanh để khớp thời gian gốc. Có thể nghe gấp gáp hoặc chói ở ngôn ngữ đích dày đặc.",
+    "subtitle_found_title": "Video này có sẵn track phụ đề riêng",
+    "subtitle_found_hint": "Dùng trực tiếp — không cần nhận dạng giọng nói cục bộ (nhanh hơn và khớp chính xác với video).",
+    "use_video_subtitles": "Dùng phụ đề video ({{lang}})",
+    "use_local_asr": "Nhận dạng cục bộ thay thế",
+    "import_own_srt": "Tôi có file phụ đề riêng (.srt) — bỏ qua nhận dạng",
+    "translate_log_title": "Nhật ký dịch ({{count}})",
+    "translate_log_clear": "Xóa"
   },
   "glossary": {
     "title": "Thuật ngữ",
@@ -2080,7 +2095,13 @@
     "upgrading_preview": "Đang nâng cấp {{count}} phân đoạn chất lượng xem trước lên chất lượng đầy đủ…",
     "session_expired": "Phiên lồng tiếng này đã hết hạn hoặc đã bị xóa - hãy tải lại video của bạn lên để bắt đầu một video mới.",
     "translating_progress": "Đang dịch sang {{lang}} — {{done}}/{{total}} phân đoạn…",
-    "translate_partial_kept": "Đã dịch {{done}}/{{total}} phân đoạn trước khi gặp lỗi — phần đã xong được giữ lại, thử lại để tiếp tục."
+    "translate_partial_kept": "Đã dịch {{done}}/{{total}} phân đoạn trước khi gặp lỗi — phần đã xong được giữ lại, thử lại để tiếp tục.",
+    "translate_log_start": "Đang dịch {{total}} phân đoạn sang {{lang}}…",
+    "translate_log_batch": "Xong lô: {{done}}/{{total}} (lỗi {{failed}}, giảm chất lượng {{degraded}})",
+    "translate_log_batch_error": "Yêu cầu lô thất bại: {{error}}",
+    "translate_log_done": "Xong: {{total}} phân đoạn, {{failed}} lỗi (chất lượng: {{quality}})",
+    "translate_log_failed": "Dừng sớm: đã dịch {{done}}/{{total}}. Dùng \"Thử lại lỗi\" cho phần còn lại.",
+    "subtitle_seed_failed": "Nhập phụ đề thất bại: {{message}}"
   },
   "tts_errors": {
     "enter_text": "Vui lòng nhập văn bản",

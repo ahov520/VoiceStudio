@@ -1115,7 +1115,22 @@
     "resolving": "Çözümleniyor...",
     "quality": "Kalite",
     "quality_auto": "Otomatik (önerilir)",
-    "import_resolved": "Bu videoyu içe aktar"
+    "import_resolved": "Bu videoyu içe aktar",
+    "timing_label": "Zamanlama:",
+    "timing_title": "Zamanlama stratejisi — dublaj doğal hızlı TTS ile orijinal zaman çizelgesini nasıl bağdaştırır.",
+    "timing_concise": "Öz",
+    "timing_concise_title": "Çevirmen metni doğal hızda sığacak şekilde kısaltır. Taşan kısımlar satır rozetinde görünür, segmenti kısaltabilirsiniz.",
+    "timing_stretch_video": "Videoyu uzat",
+    "timing_stretch_video_title": "Ses doğal hızda oynar; videonun her bölümü uyması için uzatılır (bölüm başına ffmpeg setpts). Toplam süre uzar. Yeniden kodlama gerekir.",
+    "timing_strict_slot": "Katı slot",
+    "timing_strict_slot_title": "Eski mod: sesi orijinal zamanlamaya sığdırmak için sıkıştırır. Yoğun dillerde aceleci veya cılız duyulabilir.",
+    "subtitle_found_title": "Bu videonun kendi altyazı parçası var",
+    "subtitle_found_hint": "Doğrudan kullanın — yerel konuşma tanımaya gerek yok (daha hızlı ve videoyla birebir).",
+    "use_video_subtitles": "Video altyazılarını kullan ({{lang}})",
+    "use_local_asr": "Bunun yerine yerel tanı",
+    "import_own_srt": "Kendi altyazı dosyam var (.srt) — tanımayı atla",
+    "translate_log_title": "Çeviri günlüğü ({{count}})",
+    "translate_log_clear": "Temizle"
   },
   "glossary": {
     "title": "Sözlük",
@@ -2080,7 +2095,13 @@
     "upgrading_preview": "{{count}} önizleme kalitesinde segment(ler) tam kaliteye yükseltiliyor…",
     "session_expired": "Bu dub oturumunun süresi doldu veya temizlendi. Yeni bir video başlatmak için videonuzu yeniden yükleyin.",
     "translating_progress": "{{lang}} diline çevriliyor — {{done}}/{{total}} segment…",
-    "translate_partial_kept": "Hatadan önce {{done}}/{{total}} segment çevrildi — bitenler korunur, devam etmek için yeniden deneyin."
+    "translate_partial_kept": "Hatadan önce {{done}}/{{total}} segment çevrildi — bitenler korunur, devam etmek için yeniden deneyin.",
+    "translate_log_start": "{{total}} bölüm {{lang}} diline çevriliyor…",
+    "translate_log_batch": "Parti bitti: {{done}}/{{total}} (başarısız {{failed}}, düşük {{degraded}})",
+    "translate_log_batch_error": "Parti isteği başarısız: {{error}}",
+    "translate_log_done": "Bitti: {{total}} bölüm, {{failed}} başarısız (kalite: {{quality}})",
+    "translate_log_failed": "Erken durdu: {{done}}/{{total}} çevrildi. Gerisi için \"Başarısızları yeniden dene\".",
+    "subtitle_seed_failed": "Altyazı içe aktarma başarısız: {{message}}"
   },
   "tts_errors": {
     "enter_text": "Lütfen metni girin",

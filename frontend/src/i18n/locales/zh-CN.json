@@ -1074,7 +1074,22 @@
     "resolving": "解析中...",
     "quality": "清晰度",
     "quality_auto": "自动（推荐）",
-    "import_resolved": "导入此视频"
+    "import_resolved": "导入此视频",
+    "timing_label": "时间轴:",
+    "timing_title": "时间轴策略 —— 配音如何以自然语速匹配原始时间线。",
+    "timing_concise": "简洁",
+    "timing_concise_title": "翻译时精简文本，以自然语速匹配时间。放不下的部分会在行内标记提示，可手动缩短该句。",
+    "timing_stretch_video": "拉伸视频",
+    "timing_stretch_video_title": "音频以自然语速播放，视频逐段拉伸（ffmpeg setpts）来匹配。总时长变长，需要重新编码。",
+    "timing_strict_slot": "严格槽位",
+    "timing_strict_slot_title": "传统模式：压缩音频以匹配原始时间轴。高密度目标语言下可能听感急促或像花栗鼠。",
+    "subtitle_found_title": "该视频自带字幕",
+    "subtitle_found_hint": "可以直接使用，无需本地语音识别（更快，且与视频完全一致）。",
+    "use_video_subtitles": "使用视频自带字幕 ({{lang}})",
+    "use_local_asr": "改用本地识别",
+    "import_own_srt": "我有自己的字幕文件 (.srt) — 跳过识别",
+    "translate_log_title": "翻译日志 ({{count}})",
+    "translate_log_clear": "清空"
   },
   "glossary": {
     "title": "术语表",
@@ -2087,7 +2102,13 @@
     "upgrading_preview": "正在将 {{count}} 个预览质量片段升级为完整质量…",
     "session_expired": "此配音会话已过期或已清理——请重新上传视频以开始新的会话。",
     "translating_progress": "正在翻译为{{lang}}——第 {{done}}/{{total}} 段…",
-    "translate_partial_kept": "出错前已翻译 {{done}}/{{total}} 段——已完成的部分已保留,重试可继续。"
+    "translate_partial_kept": "出错前已翻译 {{done}}/{{total}} 段——已完成的部分已保留,重试可继续。",
+    "translate_log_start": "开始翻译 {{total}} 句 → {{lang}}…",
+    "translate_log_batch": "批次完成: {{done}}/{{total}}（失败 {{failed}}，降级 {{degraded}}）",
+    "translate_log_batch_error": "批次请求失败: {{error}}",
+    "translate_log_done": "完成: {{total}} 句，失败 {{failed}} 句（质量: {{quality}}）",
+    "translate_log_failed": "提前中止: 已翻译 {{done}}/{{total}} 句。其余可用“重试失败”继续。",
+    "subtitle_seed_failed": "字幕导入失败: {{message}}"
   },
   "tts_errors": {
     "enter_text": "请输入文字",

@@ -1115,7 +1115,22 @@
     "resolving": "Menganalisis...",
     "quality": "Kualitas",
     "quality_auto": "Otomatis (disarankan)",
-    "import_resolved": "Impor video ini"
+    "import_resolved": "Impor video ini",
+    "timing_label": "Timing:",
+    "timing_title": "Strategi timing — bagaimana dub menyelaraskan TTS berkecepatan alami dengan linimasa asli.",
+    "timing_concise": "Ringkas",
+    "timing_concise_title": "Penerjemah memangkas teks agar muat pada kecepatan alami. Kelebihan muncul di lencana baris sehingga Anda bisa memendekkan segmen.",
+    "timing_stretch_video": "Rentangkan video",
+    "timing_stretch_video_title": "Audio diputar dengan kecepatan alami; setiap segmen video direntangkan (setpts ffmpeg per segmen) agar pas. Durasi total bertambah. Perlu pengodean ulang.",
+    "timing_strict_slot": "Slot ketat",
+    "timing_strict_slot_title": "Legacy: mengompresi audio agar pas dengan timing asli. Bisa terdengar terburu-buru di bahasa target berdensitas tinggi.",
+    "subtitle_found_title": "Video ini memiliki trek subtitle sendiri",
+    "subtitle_found_hint": "Gunakan langsung — tanpa pengenalan suara lokal (lebih cepat dan persis dengan videonya).",
+    "use_video_subtitles": "Gunakan subtitle video ({{lang}})",
+    "use_local_asr": "Kenali secara lokal sebagai gantinya",
+    "import_own_srt": "Saya punya file subtitle sendiri (.srt) — lewati pengenalan",
+    "translate_log_title": "Log terjemahan ({{count}})",
+    "translate_log_clear": "Bersihkan"
   },
   "glossary": {
     "title": "Glosarium",
@@ -2080,7 +2095,13 @@
     "upgrading_preview": "Meningkatkan {{count}} segmen kualitas pratinjau ke kualitas penuh…",
     "session_expired": "Sesi sulih suara ini telah habis masa berlakunya atau telah dibersihkan — unggah ulang video Anda untuk memulai yang baru.",
     "translating_progress": "Menerjemahkan ke {{lang}} — {{done}}/{{total}} segmen…",
-    "translate_partial_kept": "{{done}}/{{total}} segmen diterjemahkan sebelum galat — yang selesai tetap tersimpan, coba lagi untuk melanjutkan."
+    "translate_partial_kept": "{{done}}/{{total}} segmen diterjemahkan sebelum galat — yang selesai tetap tersimpan, coba lagi untuk melanjutkan.",
+    "translate_log_start": "Menerjemahkan {{total}} segmen ke {{lang}}…",
+    "translate_log_batch": "Batch selesai: {{done}}/{{total}} (gagal {{failed}}, terdegradasi {{degraded}})",
+    "translate_log_batch_error": "Permintaan batch gagal: {{error}}",
+    "translate_log_done": "Selesai: {{total}} segmen, {{failed}} gagal (kualitas: {{quality}})",
+    "translate_log_failed": "Berhenti lebih awal: {{done}}/{{total}} diterjemahkan. Gunakan \"Ulangi yang gagal\" untuk sisanya.",
+    "subtitle_seed_failed": "Gagal mengimpor subtitle: {{message}}"
   },
   "tts_errors": {
     "enter_text": "Silakan masukkan teks",
