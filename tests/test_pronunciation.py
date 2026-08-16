@@ -263,3 +263,24 @@ def test_inline_redos_safe():
     t0 = time.perf_counter()
     apply_inline_overrides(s)
     assert time.perf_counter() - t0 < 0.5
+
+
+def test_cjk_terms_match_mid_sentence():
+    """CJK-edged keys must match inside unsegmented Chinese text.
+
+    ``\b`` never fires between two CJK chars (both are ``\w``), so the old
+    boundary guards made 「银行」 match only next to spaces/punctuation — the
+    dictionary silently did nothing for ordinary Chinese sentences (#zh-ux
+    pass 2). CJK edges now carry no guard; longest-first ordering protects
+    overlaps (「银行」 inside 「银行卡」 still substitutes the right reading).
+    """
+    assert apply_lexicon("去银行取钱", {"银行": "银航"}) == "去银航取钱"
+    assert apply_lexicon("他去了重庆市", {"重庆": "崇庆"}) == "他去了崇庆市"
+    # A CJK hit inside a longer run is still the same reading context.
+    assert apply_lexicon("刷银行卡", {"银行": "银航"}) == "刷银航卡"
+
+
+def test_latin_word_boundaries_unchanged_by_cjk_fix():
+    """English keys keep their ``\b`` guards after the CJK edge change."""
+    assert apply_lexicon("a banked abank", {"bank": "X"}) == "a banked abank"
+    assert apply_lexicon("I bank here.", {"bank": "BANK"}) == "I BANK here."

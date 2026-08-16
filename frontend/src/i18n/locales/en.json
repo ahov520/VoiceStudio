@@ -3245,5 +3245,18 @@
     "emotion_tense": "Tense",
     "sample_script": "Lin Wan: Just go. I never want to see you again.\nShe turns her back to the door, her voice trembling.\nLao Chen: Don't be like this. We had a deal.\nLin Wan: A deal about what? That you'd never lie to me?\nLao Chen: (bitter smile) Some things, I have no choice.",
     "default_project_name": "{name}'s script"
+  },
+  "zhcheck": {
+    "open_btn": "Speech check",
+    "title": "Chinese speech check",
+    "polyphone_hint": "Words the engine may misread — pick the correct reading and save it to the pronunciation dictionary. It then applies to every synthesis.",
+    "reading_for": "Reading for {{word}}",
+    "save": "Save",
+    "covered": "in dictionary",
+    "error": "Failed",
+    "no_polyphones": "No polyphones detected.",
+    "numbers_section": "Number reading",
+    "apply": "Apply",
+    "applied": "Applied"
   }
 }

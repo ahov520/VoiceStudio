@@ -1,5 +1,6 @@
 import { Command, Plus, ChevronDown } from 'lucide-react';
 import DemoPresetGrid from '../DemoPresetGrid';
+import ChineseSpeechCheck from './ChineseSpeechCheck';
 import { TAGS } from '../../utils/constants';
 
 // `.tag-btn` (special-token chips in the Insert menu) migrated from index.css to
@@ -42,9 +43,14 @@ export default function ScriptPanel({
             screenshot showed the CMU chips clipped). Below always has room
             here: the panel is the topmost element in every mount. */}
       <div className={`${STUDIO_PANEL} relative z-[10] overflow-visible`}>
-        <div className="label-row">
-          <Command className="label-icon" size={14} />{' '}
-          {t('clone.script', { defaultValue: 'Script' })}
+        <div className="flex items-center gap-[6px]">
+          <div className="label-row flex-1 min-w-0">
+            <Command className="label-icon" size={14} />{' '}
+            {t('clone.script', { defaultValue: 'Script' })}
+          </div>
+          {/* Chinese speech pre-flight (polyphones + number reading) — renders
+              only while the script contains Chinese. */}
+          <ChineseSpeechCheck t={t} text={text} setText={setText} />
         </div>
         {/* Design-tab empty state: 7-card demo grid until the user
               interacts; then it steps aside for the standard form. */}

@@ -140,20 +140,25 @@ _save_job          = dub_pipeline.save_job
 # ASR (with a warning) when no matching VTT exists.
 
 
-def _segments_from_job_subtitles(job_id: str, lang_hint: str) -> list[dict]:
+def _segments_from_job_subtitles(job_id: str, lang_hint: str) -> tuple[list[dict], str | None]:
     """Parse the job's downloaded VTT subtitle files into dub segments.
 
     Matches the file whose language tag equals/prefixes ``lang_hint``
-    (``original.zh.vtt`` for hint ``zh``), else returns the first VTT found.
-    Returns [] when the job dir has no usable subtitles.
+    (``original.zh.vtt`` for hint ``zh``), else falls back to the first VTT
+    found — a requested track is often NOT downloadable (YouTube's
+    auto-translated captions only exist as a translate-on-read track, so
+    yt-dlp silently skips ``zh-Hans`` and only ``original.en.vtt`` lands on
+    disk). Returns ``(segments, language_of_the_file_actually_used)`` so the
+    caller labels the transcript with the real source language instead of
+    the requested one; ``([], None)`` when the job dir has no usable VTT.
     """
     job_dir = _safe_job_dir(job_id)
     if not job_dir or not os.path.isdir(job_dir):
-        return []
+        return [], None
     import glob
     vtts = sorted(glob.glob(os.path.join(job_dir, "*.vtt")))
     if not vtts:
-        return []
+        return [], None
     hint = (lang_hint or "").lower()
     chosen = None
     if hint:
@@ -165,15 +170,17 @@ def _segments_from_job_subtitles(job_id: str, lang_hint: str) -> list[dict]:
                 break
     if chosen is None:
         chosen = vtts[0]
+    chosen_base = os.path.splitext(os.path.basename(chosen))[0]
+    chosen_lang = chosen_base.rsplit(".", 1)[-1].lower() if "." in chosen_base else None
     segs = dub_pipeline.parse_vtt_segments(chosen)
     if not segs:
-        return []
+        return [], None
     try:
         segs = assign_speakers_heuristic(segs, 1)
     except Exception:  # noqa: BLE001 - heuristic must never block subtitle use
         for s in segs:
             s["speaker"] = "Speaker 1"
-    return segs
+    return segs, chosen_lang
 
 # Pasted subtitle text is a transcript, not a media file: a feature-length
 # film's .srt is ~150 KB. 2 MB of characters is ~13x the worst realistic case
@@ -781,10 +788,16 @@ async def dub_transcribe_stream(
         # captions via the yt-dlp VTT pass). No model load, no GPU time.
         # Falls back to local recognition with a warning when no VTT match.
         if job and use_subtitle:
-            sub_segs = _segments_from_job_subtitles(job_id, use_subtitle)
+            sub_segs, sub_lang = _segments_from_job_subtitles(job_id, use_subtitle)
             if sub_segs:
                 job["segments"] = sub_segs
-                job["source_lang"] = (use_subtitle or "und").split("_")[0][:2].lower()
+                # Label with the language of the file ACTUALLY seeded from —
+                # a requested auto-translated track is often not downloadable
+                # (only the original-language VTT lands), and a mismatched
+                # label would point the Translate step the wrong way.
+                job["source_lang"] = (
+                    sub_lang or (use_subtitle or "und").split("_")[0][:2].lower()
+                )
                 job["full_transcript"] = " ".join(s.get("text", "") for s in sub_segs)
                 _save_job(job_id, job)
                 yield _sse_event("final", {
