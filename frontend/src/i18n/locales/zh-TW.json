@@ -925,11 +925,11 @@
     "speakers": "揚聲器",
     "video_dubbing_studio": "視訊配音工作室",
     "drop_here": "將視訊或音訊拖放到此處",
-    "paste_url": "…或貼上 YouTube/影片 URL",
+    "paste_url": "…或貼上 YouTube / B站 / 抖音 影片連結",
     "ingest": "攝取",
     "pull_captions": "擷取 YouTube 字幕 + 自動翻譯",
-    "youtube_auth": "YouTube 登入（選用）",
-    "youtube_cookie_file": "選擇匯出的 cookies.txt",
+    "youtube_auth": "登入 Cookie（YouTube / B站 / 抖音，高畫質用）",
+    "youtube_cookie_file": "選擇 cookies.txt 匯出檔案",
     "remove_cookie_file": "移除 Cookie 檔案",
     "cookie_transport_error": "Cookie 匯出檔只能透過 HTTPS 或本機桌面應用程式傳送。",
     "cookie_size_error": "Cookie 匯出檔必須小於或等於 1 MB。",
@@ -1109,7 +1109,12 @@
     "languages_done": "已完成",
     "languages_pending": "待處理",
     "retry_failed": "重試失敗段（{{count}}）",
-    "retry_failed_title": "只重新翻譯上次失敗的段落"
+    "retry_failed_title": "只重新翻譯上次失敗的段落",
+    "resolve_url": "解析",
+    "resolving": "解析中...",
+    "quality": "畫質",
+    "quality_auto": "自動（建議）",
+    "import_resolved": "匯入此影片"
   },
   "glossary": {
     "title": "詞彙表",

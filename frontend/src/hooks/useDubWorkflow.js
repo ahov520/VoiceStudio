@@ -654,6 +654,7 @@ export default function useDubWorkflow({
           fetchSubs: !!opts.fetchSubs,
           subLangs: opts.subLangs,
           cookieFile: opts.cookieFile,
+          formatId: opts.formatId,
         });
         setDubJobId(data.job_id);
         setDubTaskId(data.task_id);

@@ -22,7 +22,7 @@ import {
 // view must instead reflect the pipeline stage on every ingest path.
 
 const DROP_HINT = 'Drop video or audio here';
-const URL_PLACEHOLDER = '…or paste YouTube / video URL';
+const URL_PLACEHOLDER = '…or paste YouTube / Bilibili / Douyin link';
 const TRANSCRIBING = 'Transcribing audio…';
 
 function baseProps(overrides = {}) {
@@ -59,6 +59,12 @@ function baseProps(overrides = {}) {
     ingestUrl: '',
     setIngestUrl: noop,
     onIngestUrl: noop,
+    onResolveUrl: noop,
+    resolvingUrl: false,
+    resolveError: null,
+    resolvedVideo: null,
+    chosenFormatId: null,
+    setChosenFormatId: noop,
     fetchYtSubs: false,
     setFetchYtSubs: noop,
     youtubeCookieFile: null,
@@ -182,5 +188,46 @@ describe('IdleSkeleton — pipeline-stage vs idle dropzone', () => {
     const { container } = renderIdle({ dubStep: 'stopping', dubJobId: 'job-url-3' });
     expect(container.querySelector('.dub-idle-drop')).toBeNull();
     expect(screen.queryByPlaceholderText(URL_PLACEHOLDER)).not.toBeInTheDocument();
+  });
+
+  it('shows a Resolve button next to Ingest for URL imports', () => {
+    renderIdle({ ingestUrl: 'https://www.bilibili.com/video/BV1xx411c7mD' });
+    expect(screen.getByRole('button', { name: 'Resolve' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Ingest' })).toBeInTheDocument();
+  });
+
+  it('renders the resolved-video preview card with a quality picker', () => {
+    renderIdle({
+      ingestUrl: 'https://www.bilibili.com/video/BV1xx411c7mD',
+      resolvedVideo: {
+        title: 'Example video',
+        uploader: 'Some Uploader',
+        duration: 125,
+        thumbnail: '',
+        extractor_key: 'BiliBili',
+        webpage_url: '',
+        formats: [
+          { id: '100', note: '1080p', ext: 'mp4', height: 1080, fps: 30, vcodec: 'avc1', acodec: 'none', filesize: 1048576 },
+          { id: '80', note: 'DASH audio', ext: 'm4a', height: null, fps: null, vcodec: 'none', acodec: 'mp4a', filesize: null },
+        ],
+      },
+    });
+    expect(screen.getByText('Example video')).toBeInTheDocument();
+    expect(screen.getByText(/Some Uploader · 2:05/)).toBeInTheDocument();
+    const quality = screen.getByText('Quality');
+    expect(quality).toBeInTheDocument();
+    // Both format rows plus the auto option are offered.
+    const select = quality.closest('div').querySelector('select');
+    expect(select.options.length).toBe(3);
+    expect(select.options[0].text).toBe('Auto (recommended)');
+    expect(screen.getByRole('button', { name: 'Import this video' })).toBeInTheDocument();
+  });
+
+  it('shows the resolve error inline when resolution fails', () => {
+    renderIdle({
+      ingestUrl: 'https://example.com/broken',
+      resolveError: 'Could not resolve this video link: Unsupported URL',
+    });
+    expect(screen.getByText(/Could not resolve this video link/)).toBeInTheDocument();
   });
 });

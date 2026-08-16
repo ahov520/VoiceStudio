@@ -21,6 +21,8 @@ export interface IngestUrlOptions {
   subLangs?: string[];
   /** Explicit cookies.txt export used only for this import. */
   cookieFile?: File;
+  /** yt-dlp format selector picked from resolveIngestUrl; absent = auto. */
+  formatId?: string;
 }
 
 export const DUB_COOKIE_TRANSPORT_ERROR = 'DUB_COOKIE_TRANSPORT';
@@ -41,12 +43,52 @@ export function _cookieTransportAllowed(apiBase: string): boolean {
   );
 }
 
+export interface ResolvedVideoFormat {
+  id: string;
+  note: string;
+  ext: string;
+  height: number | null;
+  fps: number | null;
+  vcodec: string;
+  acodec: string;
+  filesize: number | null;
+}
+
+export interface ResolvedVideoInfo {
+  title: string;
+  uploader: string;
+  duration: number | null;
+  thumbnail: string;
+  extractor_key: string;
+  webpage_url: string;
+  formats: ResolvedVideoFormat[];
+}
+
+export async function resolveIngestUrl(
+  url: string,
+  cookieFile?: File | null,
+  opts: { signal?: AbortSignal } = {},
+): Promise<ResolvedVideoInfo> {
+  if (cookieFile && !_cookieTransportAllowed(API)) {
+    throw cookieSelectionError(DUB_COOKIE_TRANSPORT_ERROR);
+  }
+  if (cookieFile && cookieFile.size > MAX_COOKIE_EXPORT_BYTES) {
+    throw cookieSelectionError(DUB_COOKIE_SIZE_ERROR);
+  }
+  const cookieText = cookieFile ? await cookieFile.text() : undefined;
+  return apiJson('/dub/ingest-url/resolve', {
+    method: 'POST',
+    body: JSON.stringify({ url, cookie_file: cookieText }),
+    signal: opts.signal,
+  });
+}
+
 export async function dubIngestUrl(
   url: string,
   jobId: string,
   opts: IngestUrlOptions = {},
 ): Promise<unknown> {
-  const { signal, fetchSubs, subLangs, cookieFile } = opts;
+  const { signal, fetchSubs, subLangs, cookieFile, formatId } = opts;
   if (cookieFile && !_cookieTransportAllowed(API)) {
     throw cookieSelectionError(DUB_COOKIE_TRANSPORT_ERROR);
   }
@@ -62,6 +104,7 @@ export async function dubIngestUrl(
       fetch_subs: fetchSubs || undefined,
       sub_langs: subLangs && subLangs.length ? subLangs : undefined,
       cookie_file: cookieText,
+      format_id: formatId || undefined,
     },
     { signal },
   );

@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useAppStore } from '../store';
 import { API } from '../api/client';
 import { listTranslationEngines, installTranslationEngine } from '../api/engines';
-import { dubQc } from '../api/dub';
+import { dubQc, resolveIngestUrl } from '../api/dub';
 import toast from 'react-hot-toast';
 import { toastErrorWithReport } from '../utils/errorToast';
 import useTimelineOnsets from '../hooks/useTimelineOnsets';
@@ -156,6 +156,12 @@ export default function DubTab(props) {
     [seekWaveform, handleSegmentPreview],
   );
   const [ingestUrl, setIngestUrl] = useState('');
+  // URL ingest resolve step: preview card + quality picker before the
+  // background download starts (Bilibili / Douyin / YouTube / any yt-dlp host).
+  const [resolvedVideo, setResolvedVideo] = useState(null);
+  const [resolvingUrl, setResolvingUrl] = useState(false);
+  const [resolveError, setResolveError] = useState(null);
+  const [chosenFormatId, setChosenFormatId] = useState(null);
   // Dubbing demo: show the side-by-side player above the drop zone on
   // first-run / no-project state. localStorage flag persists dismissal
   // across sessions so power users don't see it every launch.
@@ -524,10 +530,33 @@ export default function DubTab(props) {
       fetchSubs: fetchYtSubs,
       subLangs: undefined,
       cookieFile: youtubeCookieFile || undefined,
+      formatId: chosenFormatId || undefined,
     });
     setIngestUrl('');
     setYoutubeCookieFile(null);
+    setResolvedVideo(null);
+    setChosenFormatId(null);
   };
+  const onResolveUrl = useCallback(async () => {
+    const clean = (ingestUrl || '').trim();
+    if (!clean || !resolveIngestUrl) return;
+    setResolvingUrl(true);
+    setResolveError(null);
+    setResolvedVideo(null);
+    setChosenFormatId(null);
+    try {
+      const info = await resolveIngestUrl(clean, youtubeCookieFile || null);
+      setResolvedVideo(info);
+      // Keep the last quality pick if it still exists in the fresh format list.
+      setChosenFormatId((prev) =>
+        prev && info.formats.some((f) => f.id === prev) ? prev : null,
+      );
+    } catch (err) {
+      setResolveError(err?.message || String(err));
+    } finally {
+      setResolvingUrl(false);
+    }
+  }, [ingestUrl, youtubeCookieFile]);
   // Track-switcher visibility is keyed to the persisted tracks ONLY — not the
   // language dropdown. Restored projects can carry finished tracks while
   // dubLangCode reads 'und' (older dub_history rows froze language_code at
@@ -676,6 +705,12 @@ export default function DubTab(props) {
           ingestUrl={ingestUrl}
           setIngestUrl={setIngestUrl}
           onIngestUrl={onIngestUrl}
+          onResolveUrl={onResolveUrl}
+          resolvingUrl={resolvingUrl}
+          resolveError={resolveError}
+          resolvedVideo={resolvedVideo}
+          chosenFormatId={chosenFormatId}
+          setChosenFormatId={setChosenFormatId}
           fetchYtSubs={fetchYtSubs}
           setFetchYtSubs={setFetchYtSubs}
           youtubeCookieFile={youtubeCookieFile}

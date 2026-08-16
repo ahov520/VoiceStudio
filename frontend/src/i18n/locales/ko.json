@@ -1109,7 +1109,12 @@
     "languages_done": "완료",
     "languages_pending": "대기 중",
     "retry_failed": "실패분 재시도 ({{count}})",
-    "retry_failed_title": "지난번에 실패한 세그먼트만 다시 번역합니다"
+    "retry_failed_title": "지난번에 실패한 세그먼트만 다시 번역합니다",
+    "resolve_url": "확인",
+    "resolving": "확인 중...",
+    "quality": "화질",
+    "quality_auto": "자동 (권장)",
+    "import_resolved": "이 동영상 가져오기"
   },
   "glossary": {
     "title": "용어집",

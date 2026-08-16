@@ -1109,7 +1109,12 @@
     "languages_done": "مكتمل",
     "languages_pending": "قيد الانتظار",
     "retry_failed": "إعادة المحاولة للفاشلة ({{count}})",
-    "retry_failed_title": "أعد ترجمة المقاطع التي فشلت محاولتها الأخيرة فقط"
+    "retry_failed_title": "أعد ترجمة المقاطع التي فشلت محاولتها الأخيرة فقط",
+    "resolve_url": "تحليل",
+    "resolving": "جارٍ التحليل...",
+    "quality": "الجودة",
+    "quality_auto": "تلقائي (موصى به)",
+    "import_resolved": "استيراد هذا الفيديو"
   },
   "glossary": {
     "title": "مسرد",

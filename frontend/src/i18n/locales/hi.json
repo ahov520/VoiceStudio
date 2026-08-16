@@ -1109,7 +1109,12 @@
     "languages_done": "पूर्ण",
     "languages_pending": "बाकी",
     "retry_failed": "विफल पुनः प्रयास ({{count}})",
-    "retry_failed_title": "केवल वे खंड फिर से अनुवाद करें जिनका पिछला प्रयास विफल रहा"
+    "retry_failed_title": "केवल वे खंड फिर से अनुवाद करें जिनका पिछला प्रयास विफल रहा",
+    "resolve_url": "जांचें",
+    "resolving": "जांच हो रही है...",
+    "quality": "गुणवत्ता",
+    "quality_auto": "स्वतः (अनुशंसित)",
+    "import_resolved": "यह वीडियो आयात करें"
   },
   "glossary": {
     "title": "शब्दावली",

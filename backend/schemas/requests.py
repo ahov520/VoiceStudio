@@ -201,6 +201,18 @@ class DubIngestUrlRequest(BaseModel):
     # automatically: browser cookie stores contain unrelated login secrets and
     # VoiceStudio must not inspect them without a deliberate user action.
     cookie_file: Optional[str] = None
+    # yt-dlp format selector override picked from /dub/ingest-url/resolve
+    # (e.g. "137+140" for a specific Bilibili/YouTube combo). Absent = the
+    # default h264+aac compatibility-first chain.
+    format_id: Optional[str] = None
+
+
+class ResolveVideoRequest(BaseModel):
+    url: str
+    # Same per-import cookie export contract as DubIngestUrlRequest: some
+    # hosts (Bilibili high-bitrate, Douyin) only expose full quality with a
+    # logged-in session. Used for the resolve call only.
+    cookie_file: Optional[str] = None
 
 class ProjectSaveRequest(BaseModel):
     name: str

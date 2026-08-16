@@ -854,6 +854,85 @@ def _delete_cookie_export(cookie_file: str | None) -> bool:
     return True
 
 
+#: Cap on format rows returned to the UI. Bilibili DASH alone can expose
+#: dozens of video-only + audio-only streams; the picker only needs the
+#: sensible top of the list, and the payload should stay small.
+_RESOLVE_MAX_FORMATS = 40
+#: Formats with a video track. Audio-only rows (vcodec "none") are kept too
+#: so an audio-only host (podcast feeds, some Douyin audio) still resolves.
+_VIDEO_ONLY_KEYS = ("height", "fps", "vcodec", "acodec", "ext", "filesize")
+
+
+def resolve_video_info(url: str, cookie_file: str | None = None) -> dict:
+    """Fetch video metadata + a compact format list via yt-dlp (no download).
+
+    Returns a JSON-safe summary for the /dub/ingest-url/resolve endpoint:
+    title, uploader, duration, thumbnail, extractor_key and up to
+    ``_RESOLVE_MAX_FORMATS`` format rows (id, note, ext, height, fps,
+    codecs, size). ``process=False`` keeps the raw ``formats`` list so the
+    user sees every real quality option instead of yt-dlp's auto-pick.
+
+    Raises RuntimeError with a user-presentable message on failure (bad URL,
+    login-gated video without cookies, extractor errors).
+    """
+    import yt_dlp
+
+    opts: dict = {
+        "quiet": True,
+        "no_warnings": True,
+        "noplaylist": True,
+        "socket_timeout": 30,
+        "retries": 3,
+        "extractor_retries": 2,
+    }
+    if cookie_file:
+        opts["cookiefile"] = cookie_file
+    try:
+        with yt_dlp.YoutubeDL(opts) as ydl:
+            info = ydl.extract_info(url, download=False, process=False)
+    except Exception as exc:
+        # yt-dlp wraps everything in DownloadError; surface the inner reason
+        # when available, keep the message short and credential-free.
+        reason = getattr(exc, "msg", None) or str(exc)
+        raise RuntimeError(f"Could not resolve this video link: {reason}") from exc
+
+    raw_formats = info.get("formats") or []
+    rows = []
+    for f in raw_formats:
+        vcodec = f.get("vcodec") or "none"
+        acodec = f.get("acodec") or "none"
+        if vcodec == "none" and acodec == "none":
+            continue  # muxing-only placeholders, not a pickable stream
+        rows.append({
+            "id": f.get("format_id") or "",
+            "note": f.get("format_note") or "",
+            "ext": f.get("ext") or "",
+            "height": f.get("height") or (f.get("resolution") if f.get("resolution") not in (None, "audio only") else None),
+            "fps": f.get("fps"),
+            "vcodec": vcodec,
+            "acodec": acodec,
+            "filesize": f.get("filesize") or f.get("filesize_approx"),
+        })
+    # Video rows first (height desc), audio-only rows after; dedupe by id.
+    seen: set[str] = set()
+    deduped = []
+    for row in sorted(rows, key=lambda r: (r["vcodec"] == "none", -(r["height"] or 0))):
+        if row["id"] and row["id"] in seen:
+            continue
+        seen.add(row["id"])
+        deduped.append(row)
+    duration = info.get("duration")
+    return {
+        "title": info.get("title") or info.get("id") or "Untitled",
+        "uploader": info.get("uploader") or info.get("channel") or "",
+        "duration": round(duration) if isinstance(duration, (int, float)) else None,
+        "thumbnail": info.get("thumbnail") or "",
+        "extractor_key": info.get("extractor_key") or info.get("ie_key") or "",
+        "webpage_url": info.get("webpage_url") or url,
+        "formats": deduped[:_RESOLVE_MAX_FORMATS],
+    }
+
+
 def yt_download_sync(
     url: str,
     job_dir: str,
@@ -862,6 +941,7 @@ def yt_download_sync(
     sub_langs: list[str] | None = None,
     progress_hook=None,
     cookie_file: str | None = None,
+    format_id: str | None = None,
 ) -> tuple[str, str, list[str]]:
     """Blocking yt-dlp download into `job_dir`.
 
@@ -874,6 +954,10 @@ def yt_download_sync(
     trips HTTP 429, and the downstream Translate step handles target
     languages more reliably than YouTube's machine translations anyway.
     Pass an explicit `sub_langs` list to override the default selection.
+
+    `format_id` overrides the default compatibility-first format chain with
+    a yt-dlp selector chosen by the user from /dub/ingest-url/resolve (e.g.
+    a specific Bilibili DASH combo). Absent keeps the h264+aac chain.
     """
     import glob
     import yt_dlp
@@ -903,7 +987,9 @@ def yt_download_sync(
         # inside mp4, leaving a black <video> in the dub editor. Fall
         # back to any combo only when no h264/aac variant exists, then
         # the post-download codec probe below will transcode it.
-        "format": (
+        # A user-picked `format_id` (Bilibili/Douyin quality select) wins
+        # over this chain entirely.
+        "format": format_id or (
             "bv*[vcodec^=avc1][ext=mp4]+ba[acodec^=mp4a][ext=m4a]/"
             "bv*[vcodec^=avc1]+ba[acodec^=mp4a]/"
             "b[vcodec^=avc1][acodec^=mp4a]/"
@@ -1126,6 +1212,7 @@ async def ingest_pipeline(
             fetch_subs = bool(source.get("fetch_subs"))
             sub_langs = source.get("sub_langs") or None
             cookie_file = source.get("cookie_file") or None
+            format_id = source.get("format_id") or None
             yield prep_event("download_start", url=url)
             # Bridge yt-dlp's per-fragment progress callback (fires inside
             # the worker thread) into the async generator via a threadsafe
@@ -1156,6 +1243,7 @@ async def ingest_pipeline(
                 fetch_subs=fetch_subs, sub_langs=sub_langs,
                 progress_hook=_yt_progress,
                 cookie_file=cookie_file,
+                format_id=format_id,
             ))
             try:
                 while not dl_task.done():

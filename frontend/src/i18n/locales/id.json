@@ -1109,7 +1109,12 @@
     "languages_done": "Selesai",
     "languages_pending": "Tertunda",
     "retry_failed": "Coba lagi yang gagal ({{count}})",
-    "retry_failed_title": "Terjemahkan ulang hanya segmen yang percobaan terakhirnya gagal"
+    "retry_failed_title": "Terjemahkan ulang hanya segmen yang percobaan terakhirnya gagal",
+    "resolve_url": "Analisis",
+    "resolving": "Menganalisis...",
+    "quality": "Kualitas",
+    "quality_auto": "Otomatis (disarankan)",
+    "import_resolved": "Impor video ini"
   },
   "glossary": {
     "title": "Glosarium",

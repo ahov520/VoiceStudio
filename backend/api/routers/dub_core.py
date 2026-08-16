@@ -18,7 +18,11 @@ from core.config import PREVIEW_DIR
 from core.tasks import task_manager
 from core.logging_utils import log_safe
 from core import event_bus
-from schemas.requests import DubIngestUrlRequest, ParseSubtitleTextRequest
+from schemas.requests import (
+    DubIngestUrlRequest,
+    ParseSubtitleTextRequest,
+    ResolveVideoRequest,
+)
 from services.model_manager import get_model, _gpu_pool, _cpu_pool, get_diarization_pipeline, offload_tts_for_asr, restore_tts_after_asr, should_preload_tts_asr
 from services.asr_backend import (
     ASR_TRANSCRIBE_TIMEOUT_S,
@@ -513,6 +517,7 @@ async def dub_ingest_url(req: DubIngestUrlRequest, request: Request):
         "fetch_subs": bool(req.fetch_subs),
         "sub_langs": req.sub_langs or None,
         "cookie_file": cookie_path,
+        "format_id": req.format_id or None,
     }
     try:
         await task_manager.add_task(
@@ -531,6 +536,61 @@ async def dub_ingest_url(req: DubIngestUrlRequest, request: Request):
         status_code=202,
         content={"job_id": job_id, "task_id": task_id, "filename": ""},
     )
+
+
+@router.post("/dub/ingest-url/resolve")
+async def dub_ingest_url_resolve(req: ResolveVideoRequest, request: Request):
+    """Resolve a remote video URL without downloading (yt-dlp metadata pass).
+
+    Returns title / uploader / duration / thumbnail / extractor + a compact
+    format list so the UI can show a preview card and a quality picker
+    before committing to the background download. Works for any yt-dlp
+    extractor — YouTube, Bilibili, Douyin, Vimeo, etc.
+
+    Cookie exports follow the same transport rule as /dub/ingest-url (HTTPS
+    or local desktop only) and are deleted immediately after the resolve
+    call — this endpoint never persists credentials.
+    """
+    url = (req.url or "").strip()
+    if not url or not (url.startswith("http://") or url.startswith("https://")):
+        raise HTTPException(
+            status_code=400,
+            detail="URL must start with http:// or https://. Paste a full video link (e.g. a Bilibili BV link, a Douyin share link, or a YouTube watch URL).",
+        )
+
+    try:
+        import yt_dlp  # noqa: F401
+    except ImportError:
+        raise HTTPException(
+            status_code=500,
+            detail="URL resolve needs yt-dlp, but it isn't installed. Install it (`pip install yt-dlp`) and restart the server.",
+        )
+
+    if req.cookie_file and not _cookie_transport_allowed(
+        request.url.scheme,
+        request.client.host if request.client else None,
+        request.headers.get("origin"),
+    ):
+        raise HTTPException(
+            status_code=403,
+            detail="Cookie exports require HTTPS or the local desktop app.",
+        )
+    cookie_path = _stage_cookie_export(req.cookie_file)
+    try:
+        info = await asyncio.to_thread(
+            dub_pipeline.resolve_video_info, url, cookie_path
+        )
+    except RuntimeError as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
+    finally:
+        # Resolve is stateless: the credential was only needed for the
+        # metadata call. Delete it now; a follow-up ingest uploads again.
+        if cookie_path:
+            try:
+                os.unlink(cookie_path)
+            except OSError:
+                pass
+    return JSONResponse(content=info)
 
 
 TRANSCRIBE_CHUNK_S = float(os.environ.get("OMNIVOICE_TRANSCRIBE_CHUNK_S", "30.0"))

@@ -1109,7 +1109,12 @@
     "languages_done": "Completate",
     "languages_pending": "In attesa",
     "retry_failed": "Riprova falliti ({{count}})",
-    "retry_failed_title": "Ritraduci solo i segmenti il cui ultimo tentativo è fallito"
+    "retry_failed_title": "Ritraduci solo i segmenti il cui ultimo tentativo è fallito",
+    "resolve_url": "Analizza",
+    "resolving": "Analisi...",
+    "quality": "Qualità",
+    "quality_auto": "Auto (consigliato)",
+    "import_resolved": "Importa questo video"
   },
   "glossary": {
     "title": "Glossario",

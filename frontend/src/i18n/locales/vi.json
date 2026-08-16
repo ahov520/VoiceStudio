@@ -1109,7 +1109,12 @@
     "languages_done": "Hoàn tất",
     "languages_pending": "Đang chờ",
     "retry_failed": "Thử lại phần lỗi ({{count}})",
-    "retry_failed_title": "Chỉ dịch lại những phân đoạn mà lần thử trước thất bại"
+    "retry_failed_title": "Chỉ dịch lại những phân đoạn mà lần thử trước thất bại",
+    "resolve_url": "Phân tích",
+    "resolving": "Đang phân tích...",
+    "quality": "Chất lượng",
+    "quality_auto": "Tự động (được khuyến nghị)",
+    "import_resolved": "Nhập video này"
   },
   "glossary": {
     "title": "Thuật ngữ",

@@ -1109,7 +1109,12 @@
     "languages_done": "Klart",
     "languages_pending": "Väntar",
     "retry_failed": "Försök igen misslyckade ({{count}})",
-    "retry_failed_title": "Översätt bara om de segment vars senaste försök misslyckades"
+    "retry_failed_title": "Översätt bara om de segment vars senaste försök misslyckades",
+    "resolve_url": "Analysera",
+    "resolving": "Analyserar...",
+    "quality": "Kvalitet",
+    "quality_auto": "Auto (rekommenderat)",
+    "import_resolved": "Importera den här videon"
   },
   "glossary": {
     "title": "Ordlista",

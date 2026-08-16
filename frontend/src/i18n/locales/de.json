@@ -1109,7 +1109,12 @@
     "languages_done": "Fertig",
     "languages_pending": "Ausstehend",
     "retry_failed": "Fehlgeschlagene wiederholen ({{count}})",
-    "retry_failed_title": "Nur die zuletzt fehlgeschlagenen Segmente neu übersetzen"
+    "retry_failed_title": "Nur die zuletzt fehlgeschlagenen Segmente neu übersetzen",
+    "resolve_url": "Auflösen",
+    "resolving": "Wird aufgelöst...",
+    "quality": "Qualität",
+    "quality_auto": "Auto (empfohlen)",
+    "import_resolved": "Dieses Video importieren"
   },
   "glossary": {
     "title": "Glossar",

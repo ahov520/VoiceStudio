@@ -1109,7 +1109,12 @@
     "languages_done": "Gereed",
     "languages_pending": "In behandeling",
     "retry_failed": "Mislukte opnieuw ({{count}})",
-    "retry_failed_title": "Alleen de segmenten waarvan de laatste poging mislukte opnieuw vertalen"
+    "retry_failed_title": "Alleen de segmenten waarvan de laatste poging mislukte opnieuw vertalen",
+    "resolve_url": "Oplossen",
+    "resolving": "Bezig met oplossen...",
+    "quality": "Kwaliteit",
+    "quality_auto": "Auto (aanbevolen)",
+    "import_resolved": "Deze video importeren"
   },
   "glossary": {
     "title": "Woordenlijst",

@@ -1109,7 +1109,12 @@
     "languages_done": "Gotowe",
     "languages_pending": "Oczekujące",
     "retry_failed": "Ponów nieudane ({{count}})",
-    "retry_failed_title": "Przetłumacz ponownie tylko segmenty, których ostatnia próba się nie powiodła"
+    "retry_failed_title": "Przetłumacz ponownie tylko segmenty, których ostatnia próba się nie powiodła",
+    "resolve_url": "Rozpoznaj",
+    "resolving": "Rozpoznawanie...",
+    "quality": "Jakość",
+    "quality_auto": "Auto (zalecane)",
+    "import_resolved": "Importuj ten film"
   },
   "glossary": {
     "title": "Glosariusz",

@@ -90,6 +90,12 @@ export default function IdleSkeleton({
   ingestUrl,
   setIngestUrl,
   onIngestUrl,
+  onResolveUrl,
+  resolvingUrl,
+  resolveError,
+  resolvedVideo,
+  chosenFormatId,
+  setChosenFormatId,
   fetchYtSubs,
   setFetchYtSubs,
   youtubeCookieFile,
@@ -108,6 +114,33 @@ export default function IdleSkeleton({
       youtubeCookieInputRef.current.value = '';
     }
   }, [youtubeCookieFile]);
+  // URL resolve preview helpers (pure, no i18n needed for units).
+  const fmtDuration = (secs) => {
+    if (!Number.isFinite(secs) || secs <= 0) return '';
+    const h = Math.floor(secs / 3600);
+    const m = Math.floor((secs % 3600) / 60);
+    const s = Math.floor(secs % 60);
+    const mm = String(m).padStart(2, '0');
+    const ss = String(s).padStart(2, '0');
+    return h > 0 ? `${h}:${mm}:${ss}` : `${m}:${ss}`;
+  };
+  const fmtSize = (bytes) => {
+    if (!Number.isFinite(bytes) || bytes <= 0) return '';
+    return bytes >= 1024 * 1024 * 1024
+      ? `${(bytes / 1024 / 1024 / 1024).toFixed(1)} GB`
+      : `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+  };
+  const qualityLabel = (f) => {
+    const base = f.note || (f.height ? `${f.height}p` : f.ext || f.id);
+    const codec =
+      f.vcodec && f.vcodec !== 'none'
+        ? ` · ${f.vcodec.split('.')[0]}`
+        : f.acodec && f.acodec !== 'none'
+          ? ' · audio'
+          : '';
+    const size = fmtSize(f.filesize);
+    return `${base}${codec}${size ? ` · ${size}` : ''}`;
+  };
   return (
     <div className="flex-1 flex flex-col min-h-0">
       {/* Header bar */}
@@ -412,6 +445,18 @@ export default function IdleSkeleton({
                     onClick={(e) => {
                       e.preventDefault();
                       e.stopPropagation();
+                      onResolveUrl?.();
+                    }}
+                    disabled={!ingestUrl.trim() || resolvingUrl}
+                    className={`dub-ingest-row__cta ${ingestUrl.trim() && !resolvingUrl ? 'is-ready' : ''}`}
+                  >
+                    {resolvingUrl ? t('dub.resolving') : t('dub.resolve_url')}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
                       onIngestUrl();
                     }}
                     disabled={!ingestUrl.trim()}
@@ -420,6 +465,73 @@ export default function IdleSkeleton({
                     {t('dub.ingest')}
                   </button>
                 </div>
+                {resolveError && (
+                  <div className="mt-[6px] px-[8px] py-[5px] text-[0.65rem] text-[#fb4934] bg-[rgba(251,73,52,0.08)] rounded-[5px]">
+                    {resolveError}
+                  </div>
+                )}
+                {resolvedVideo && (
+                  <div
+                    className="mt-[8px] flex gap-[8px] items-start p-[8px] [border:1px_solid_rgba(255,255,255,0.08)] rounded-[8px] bg-[rgba(255,255,255,0.03)] text-left"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                    }}
+                  >
+                    {resolvedVideo.thumbnail ? (
+                      <img
+                        src={resolvedVideo.thumbnail}
+                        alt=""
+                        className="w-[72px] h-[44px] object-cover rounded-[4px] shrink-0"
+                        loading="lazy"
+                      />
+                    ) : (
+                      <div className="w-[72px] h-[44px] rounded-[4px] shrink-0 bg-[rgba(255,255,255,0.05)] flex items-center justify-center">
+                        <Link2 size={14} color="#a89984" />
+                      </div>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <div className="text-[0.7rem] text-fg font-medium leading-snug line-clamp-2">
+                        {resolvedVideo.title}
+                      </div>
+                      <div className="text-[0.6rem] text-fg-muted mt-[2px] truncate">
+                        {[resolvedVideo.uploader, fmtDuration(resolvedVideo.duration)]
+                          .filter(Boolean)
+                          .join(' · ')}
+                      </div>
+                      {resolvedVideo.formats.length > 0 && (
+                        <div className="flex items-center gap-[6px] mt-[5px]">
+                          <span className="text-[0.6rem] text-fg-muted whitespace-nowrap">
+                            {t('dub.quality')}
+                          </span>
+                          <select
+                            className="input-base text-[0.62rem] min-w-0 flex-1"
+                            value={chosenFormatId || ''}
+                            onChange={(e) => setChosenFormatId?.(e.target.value || null)}
+                          >
+                            <option value="">{t('dub.quality_auto')}</option>
+                            {resolvedVideo.formats.map((f) => (
+                              <option key={f.id} value={f.id}>
+                                {qualityLabel(f)}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
+                      <button
+                        type="button"
+                        className="mt-[6px] text-[0.62rem] text-[#b8bb26] hover:underline"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          onIngestUrl();
+                        }}
+                      >
+                        {t('dub.import_resolved')}
+                      </button>
+                    </div>
+                  </div>
+                )}
                 <label
                   className="flex items-center gap-[6px] mt-[6px] px-[6px] py-[4px] text-[0.62rem] text-fg-muted cursor-pointer rounded-[4px] bg-[rgba(255,255,255,0.02)] hover:text-fg hover:bg-[rgba(255,255,255,0.05)]"
                   title={t('dub.pull_captions_title')}

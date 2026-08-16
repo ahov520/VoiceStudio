@@ -208,7 +208,7 @@ describe('EnginesTab', () => {
   });
 
   it('mounts the cloud-TTS config panels on the TTS tab only', async () => {
-    render(<EnginesTab />);
+    renderEnginesTab();
     await waitFor(() => screen.getByText('VoiceStudio (test)'));
     // TTS tab: OpenAI-compatible TTS + ElevenLabs + DashScope panels.
     await screen.findByTestId('tts-openai-compat-base-url');

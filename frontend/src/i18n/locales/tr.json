@@ -1109,7 +1109,12 @@
     "languages_done": "Tamamlandı",
     "languages_pending": "Bekliyor",
     "retry_failed": "Başarısızları yeniden dene ({{count}})",
-    "retry_failed_title": "Yalnızca son denemesi başarısız olan segmentleri yeniden çevir"
+    "retry_failed_title": "Yalnızca son denemesi başarısız olan segmentleri yeniden çevir",
+    "resolve_url": "Çöz",
+    "resolving": "Çözümleniyor...",
+    "quality": "Kalite",
+    "quality_auto": "Otomatik (önerilir)",
+    "import_resolved": "Bu videoyu içe aktar"
   },
   "glossary": {
     "title": "Sözlük",

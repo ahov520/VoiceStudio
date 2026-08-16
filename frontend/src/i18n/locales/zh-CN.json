@@ -884,11 +884,11 @@
     "speakers": "说话人",
     "video_dubbing_studio": "视频配音工作室",
     "drop_here": "拖放视频或音频文件",
-    "paste_url": "…或粘贴 YouTube / 视频链接",
+    "paste_url": "…或粘贴 YouTube / B站 / 抖音 视频链接",
     "ingest": "导入",
     "pull_captions": "拉取 YouTube 字幕 + 自动翻译",
-    "youtube_auth": "YouTube 登录（可选）",
-    "youtube_cookie_file": "选择导出的 cookies.txt",
+    "youtube_auth": "登录 Cookie（YouTube / B站 / 抖音，高清用）",
+    "youtube_cookie_file": "选择 cookies.txt 导出文件",
     "remove_cookie_file": "移除 Cookie 文件",
     "cookie_transport_error": "Cookie 导出文件只能通过 HTTPS 或本地桌面应用发送。",
     "cookie_size_error": "Cookie 导出文件必须小于或等于 1 MB。",
@@ -1068,7 +1068,12 @@
     "languages_done": "已完成",
     "languages_pending": "待处理",
     "retry_failed": "重试失败段（{{count}}）",
-    "retry_failed_title": "只重新翻译上次失败的段落"
+    "retry_failed_title": "只重新翻译上次失败的段落",
+    "resolve_url": "解析",
+    "resolving": "解析中...",
+    "quality": "清晰度",
+    "quality_auto": "自动（推荐）",
+    "import_resolved": "导入此视频"
   },
   "glossary": {
     "title": "术语表",

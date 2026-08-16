@@ -1109,7 +1109,12 @@
     "languages_done": "完了",
     "languages_pending": "保留中",
     "retry_failed": "失敗分を再試行（{{count}}）",
-    "retry_failed_title": "前回失敗したセグメントだけを再翻訳します"
+    "retry_failed_title": "前回失敗したセグメントだけを再翻訳します",
+    "resolve_url": "解析",
+    "resolving": "解析中...",
+    "quality": "画質",
+    "quality_auto": "自動（推奨）",
+    "import_resolved": "この動画をインポート"
   },
   "glossary": {
     "title": "用語集",

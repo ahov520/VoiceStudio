@@ -1109,7 +1109,12 @@
     "languages_done": "Готово",
     "languages_pending": "Очікує",
     "retry_failed": "Повторити невдалі ({{count}})",
-    "retry_failed_title": "Перекласти заново лише сегменти, остання спроба яких не вдалася"
+    "retry_failed_title": "Перекласти заново лише сегменти, остання спроба яких не вдалася",
+    "resolve_url": "Розпізнати",
+    "resolving": "Розпізнавання...",
+    "quality": "Якість",
+    "quality_auto": "Авто (рекомендовано)",
+    "import_resolved": "Імпортувати це відео"
   },
   "glossary": {
     "title": "Глосарій",

@@ -1187,10 +1187,10 @@
     "speakers": "speakers",
     "video_dubbing_studio": "Video Dubbing Studio",
     "drop_here": "Drop video or audio here",
-    "paste_url": "…or paste YouTube / video URL",
+    "paste_url": "…or paste YouTube / Bilibili / Douyin link",
     "ingest": "Ingest",
     "pull_captions": "Pull YouTube captions + auto-translations",
-    "youtube_auth": "YouTube sign-in (optional)",
+    "youtube_auth": "Login cookies (YouTube / Bilibili / Douyin)",
     "youtube_cookie_file": "Choose a cookies.txt export",
     "remove_cookie_file": "Remove cookie file",
     "cookie_transport_error": "Cookie exports require HTTPS or the local desktop app.",
@@ -1381,7 +1381,12 @@
     "languages_done": "Done",
     "languages_pending": "Pending",
     "retry_failed": "Retry failed ({{count}})",
-    "retry_failed_title": "Re-translate only the segments whose last attempt failed"
+    "retry_failed_title": "Re-translate only the segments whose last attempt failed",
+    "resolve_url": "Resolve",
+    "resolving": "Resolving...",
+    "quality": "Quality",
+    "quality_auto": "Auto (recommended)",
+    "import_resolved": "Import this video"
   },
   "glossary": {
     "title": "Glossary",

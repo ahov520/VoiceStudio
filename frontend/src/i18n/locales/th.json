@@ -1109,7 +1109,12 @@
     "languages_done": "เสร็จแล้ว",
     "languages_pending": "รอดำเนินการ",
     "retry_failed": "ลองส่วนที่ล้มเหลวอีกครั้ง ({{count}})",
-    "retry_failed_title": "แปลใหม่เฉพาะส่วนที่ความพยายามครั้งล่าสุดล้มเหลว"
+    "retry_failed_title": "แปลใหม่เฉพาะส่วนที่ความพยายามครั้งล่าสุดล้มเหลว",
+    "resolve_url": "วิเคราะห์",
+    "resolving": "กำลังวิเคราะห์...",
+    "quality": "คุณภาพ",
+    "quality_auto": "อัตโนมัติ (แนะนำ)",
+    "import_resolved": "นำเข้าวิดีโอนี้"
   },
   "glossary": {
     "title": "อภิธานศัพท์",
