@@ -908,7 +908,9 @@
     "device_family_cpu": "CPU",
     "device_load_failed": "Failed to load device setting",
     "cloud_providers": "Cloud providers",
-    "separation": "Vocal separation"
+    "separation": "Vocal separation",
+    "theme_light": "Light",
+    "theme_auto": "Auto"
   },
   "about": {
     "app": "App",

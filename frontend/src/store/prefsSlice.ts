@@ -11,6 +11,7 @@ import { apiJson, apiPost } from '../api/client';
 
 type TranslateQuality = 'fast' | 'autofit' | 'cinematic';
 type ThemeId =
+  | 'auto'
   | 'gruvbox'
   | 'midnight'
   | 'nord'
@@ -21,7 +22,8 @@ type ThemeId =
   | 'dracula'
   | 'everforest'
   | 'one-dark'
-  | 'kanagawa';
+  | 'kanagawa'
+  | 'light';
 
 /** Dictation start/stop semantics — mirror of the backend `dictation.mode`. */
 type DictationMode = 'toggle' | 'hold';
@@ -407,7 +409,12 @@ export const createPrefsSlice: StateCreator<PrefsSlice, [], [], PrefsSlice> = (s
   langPromptSeen: false,
   setLangPromptSeen: (seen) => set({ langPromptSeen: seen }),
 
-  theme: 'gruvbox',
+  // Fresh installs default to "auto" (follow the OS): light theme on a
+  // light-mode OS, the Gruvbox dark default otherwise (zh-UX pass 1 — the
+  // app used to be dark-only, which reads as a developer tool to mainstream
+  // users). Persisted users keep whatever they chose — zustand persist
+  // merges over this seed, so only first launches see it.
+  theme: 'auto',
   setTheme: (id) => {
     set({ theme: id });
     // Apply to DOM — gruvbox is default (no attribute)

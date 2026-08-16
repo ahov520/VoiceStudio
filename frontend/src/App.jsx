@@ -151,12 +151,19 @@ function App() {
   // itself produces, which is the other half of the first-run oscillation
   // fixed in UiScaleSetup.jsx — see the long comment there. A live read also
   // can't be the "startup" suggestion by definition.
-  const [startupSuggestedScale] = useState(() =>
-    suggestUiScale({
+  const [startupSuggestedScale] = useState(() => {
+    const suggested = suggestUiScale({
       width: typeof window === 'undefined' ? 1440 : window.innerWidth,
       height: typeof window === 'undefined' ? 900 : window.innerHeight,
-    }),
-  );
+    });
+    // zh-UX pass 1: floor the suggestion at 1.1× on a Chinese-language OS.
+    // CJK glyphs read comfortably one notch larger, and the compact default
+    // density was tuned for Inter. Only affects users who never pick a scale
+    // themselves — resolveUiScale ignores the suggestion once configured.
+    const zhOs =
+      typeof navigator !== 'undefined' && (navigator.language || '').toLowerCase().startsWith('zh');
+    return zhOs ? Math.max(suggested, 1.1) : suggested;
+  });
   const effectiveUiScale = resolveUiScale({
     configured: uiScaleConfigured,
     previewed: uiScalePreviewed,

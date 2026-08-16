@@ -43,6 +43,15 @@ describe('LanguageSwitchPrompt — first-run offer to switch the UI to English',
     expect(container.firstChild).toBeNull();
   });
 
+  // zh-UX pass 1: first-class locales never get the English nudge — Chinese
+  // users have a complete maintained bundle, so offering English reads as
+  // "your language is second-rate".
+  it.each(['zh-CN', 'zh-TW'])('never shows for the first-class locale %s', (locale) => {
+    seed({ locale });
+    const { container } = render(withI18n(<LanguageSwitchPrompt />));
+    expect(container.firstChild).toBeNull();
+  });
+
   it('never shows once the seen flag is set (one-time)', () => {
     seed({ langPromptSeen: true });
     const { container } = render(withI18n(<LanguageSwitchPrompt />));

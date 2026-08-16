@@ -98,14 +98,20 @@
   --font-display: var(--font-serif);
   --font-ui:      var(--font-sans);
 
-  --text-2xs:   0.58rem;
-  --text-xs:    0.62rem;
-  --text-sm:    0.68rem;
-  --text-base:  0.72rem;
-  --text-md:    0.78rem;
-  --text-lg:    0.88rem;
-  --text-xl:    1.05rem;
-  --text-2xl:   1.4rem;
+  /* zh-UX pass 1: scale bumped ~13% (base 0.72→0.8125rem = 13px). The old
+     sizes were tuned for Inter at developer-tool density; Chinese users read
+     汉字 comfortably only a step larger, and mainstream-creator positioning
+     wants a friendlier default. The whole scale moves together so relative
+     hierarchy is unchanged. Users who want the old density can drop UI scale
+     (Settings → Appearance) one notch. */
+  --text-2xs:   0.65rem;
+  --text-xs:    0.70rem;
+  --text-sm:    0.77rem;
+  --text-base:  0.8125rem;
+  --text-md:    0.88rem;
+  --text-lg:    1.0rem;
+  --text-xl:    1.18rem;
+  --text-2xl:   1.55rem;
 
   --weight-regular:  400;
   --weight-medium:   500;
@@ -242,9 +248,14 @@
      (now consolidated above; being unlayered, that copy used to win — so
      these literals carry the exact stacks that were computed before the
      de-dup, preserving every resolved value). */
-  --font-sans:    'Inter Variable', 'Inter', -apple-system, BlinkMacSystemFont, 'Söhne', 'Helvetica Neue', Arial, sans-serif;
-  --font-mono:    'IBM Plex Mono', ui-monospace, 'SF Mono', 'Cascadia Code', Menlo, monospace;
-  --font-serif:   'Source Serif 4 Variable', 'Source Serif 4', 'Söhne Breit', Georgia, serif;
+  /* CJK fallbacks (PingFang SC → … → Noto Sans CJK SC) sit AFTER the Latin
+     faces so Inter still owns Latin glyphs while Chinese runs render in a
+     proper pan-Chinese face instead of whatever the OS last-resorts to.
+     System-safe: every face is preinstalled on its home platform (macOS
+     PingFang, Windows YaHei, Linux Noto via distro packages); no downloads. */
+  --font-sans:    'Inter Variable', 'Inter', -apple-system, BlinkMacSystemFont, 'Söhne', 'Helvetica Neue', Arial, 'PingFang SC', 'HarmonyOS Sans SC', 'MiSans', 'Microsoft YaHei', 'Noto Sans CJK SC', sans-serif;
+  --font-mono:    'IBM Plex Mono', ui-monospace, 'SF Mono', 'Cascadia Code', Menlo, 'Noto Sans Mono CJK SC', 'Microsoft YaHei', monospace;
+  --font-serif:   'Source Serif 4 Variable', 'Source Serif 4', 'Söhne Breit', Georgia, 'Songti SC', 'SimSun', serif;
 }
 
 /* ── shadcn/ui semantic token bridge ─────────────────────────────────────
@@ -773,18 +784,111 @@
   --select-caret: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2210%22%20height%3D%226%22%3E%3Cpath%20d%3D%22M1%201l4%204%204-4%22%20fill%3D%22none%22%20stroke%3D%22%23c8c093%22%20stroke-width%3D%221.5%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fsvg%3E");
 }
 
+/* ── Light (warm paper) ───────────────────────────────────────────── */
+/* zh-UX pass 1: the first shipped LIGHT theme — before this the app was
+   dark-only (10 dark skins, no light), which reads as "developer tool" to
+   mainstream-creator users. Palette is Gruvbox Light's contrast-safe dark
+   accents on a warm paper base, so it stays in the project's design family
+   while giving 大众用户 the bright, airy look they expect by default.
+   `auto` (fresh-install default) resolves to this block on light-mode OSes.
+   The legacy vars (--text-primary, --bg, --glass-*, …) are overridden too —
+   unlike the dark themes (which leave them on the gruvbox defaults), light
+   MUST flip them or the few pages still consuming them render cream-on-white. */
+[data-theme="light"] {
+  --color-fg:            #3c3836;
+  --color-fg-muted:      #6f675d;
+  --color-fg-subtle:     #928374;
+  --color-fg-inverse:    #fbf1c7;
+
+  --color-bg:            #faf6ed;
+  --color-bg-elev-1:     rgba(255, 255, 255, 0.88);
+  --color-bg-elev-2:     rgba(60, 56, 54, 0.06);
+  --color-bg-elev-3:     rgba(60, 56, 54, 0.03);
+
+  --color-border:        rgba(60, 56, 54, 0.14);
+  --color-border-strong: rgba(60, 56, 54, 0.26);
+  --color-border-warm:   rgba(177, 98, 134, 0.18);
+
+  --color-brand:         #b16286;
+  --color-brand-hover:   #8f4f70;
+  --color-brand-glow:    rgba(177, 98, 134, 0.25);
+
+  --color-accent:        #b57614;
+  --color-success:       #427b58;
+  --color-warn:          #af3a03;
+  --color-danger:        #9d0006;
+  --color-info:          #076678;
+
+  /* Legacy var overrides — see block comment above. */
+  --primary:             #b16286;
+  --primary-hover:       #8f4f70;
+  --accent:              #b57614;
+  --bg:                  #faf6ed;
+  --glass-bg:            rgba(255, 255, 255, 0.85);
+  --glass-border:        rgba(60, 56, 54, 0.12);
+  --text-primary:        #3c3836;
+  --text-secondary:      #6f675d;
+
+  /* Chrome overrides for components using legacy vars */
+  --chrome-bg:           #f1ead8;
+  --chrome-fg:           #3c3836;
+  --chrome-fg-muted:     #6f675d;
+  --chrome-fg-dim:       #928374;
+  --chrome-border:       #ddd3bb;
+
+  /* Light — bg #faf6ed is light. */
+  color-scheme: light;
+  --select-caret: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2210%22%20height%3D%226%22%3E%3Cpath%20d%3D%22M1%201l4%204%204-4%22%20fill%3D%22none%22%20stroke%3D%22%236f675d%22%20stroke-width%3D%221.5%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fsvg%3E");
+}
+
 /* ── System-preference sync ────────────────────────────────────────── */
 /* When theme is "auto", the light theme activates on light-mode OS.
-   Currently we don't ship a light theme; this is scaffolding for
-   community contributions. */
+   The token set mirrors [data-theme="light"] above (CSS can't reference one
+   block from another; the dark side of "auto" intentionally falls through to
+   the default :root Gruvbox tokens, matching every other theme's baseline). */
 @media (prefers-color-scheme: light) {
   [data-theme="auto"] {
-    /* Future light theme tokens go here. NOTE: no light theme ships yet, so
-       "auto" still renders the dark default tokens even on a light-mode OS —
-       which is why `color-scheme` is intentionally left at the :root `dark`
-       here (a `light` value would make native form chrome mismatch the still
-       -dark surface). When a real light theme lands, set `color-scheme: light`
-       and its own --select-caret in this block. */
+    --color-fg:            #3c3836;
+    --color-fg-muted:      #6f675d;
+    --color-fg-subtle:     #928374;
+    --color-fg-inverse:    #fbf1c7;
+
+    --color-bg:            #faf6ed;
+    --color-bg-elev-1:     rgba(255, 255, 255, 0.88);
+    --color-bg-elev-2:     rgba(60, 56, 54, 0.06);
+    --color-bg-elev-3:     rgba(60, 56, 54, 0.03);
+
+    --color-border:        rgba(60, 56, 54, 0.14);
+    --color-border-strong: rgba(60, 56, 54, 0.26);
+    --color-border-warm:   rgba(177, 98, 134, 0.18);
+
+    --color-brand:         #b16286;
+    --color-brand-hover:   #8f4f70;
+    --color-brand-glow:    rgba(177, 98, 134, 0.25);
+
+    --color-accent:        #b57614;
+    --color-success:       #427b58;
+    --color-warn:          #af3a03;
+    --color-danger:        #9d0006;
+    --color-info:          #076678;
+
+    --primary:             #b16286;
+    --primary-hover:       #8f4f70;
+    --accent:              #b57614;
+    --bg:                  #faf6ed;
+    --glass-bg:            rgba(255, 255, 255, 0.85);
+    --glass-border:        rgba(60, 56, 54, 0.12);
+    --text-primary:        #3c3836;
+    --text-secondary:      #6f675d;
+
+    --chrome-bg:           #f1ead8;
+    --chrome-fg:           #3c3836;
+    --chrome-fg-muted:     #6f675d;
+    --chrome-fg-dim:       #928374;
+    --chrome-border:       #ddd3bb;
+
+    color-scheme: light;
+    --select-caret: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2210%22%20height%3D%226%22%3E%3Cpath%20d%3D%22M1%201l4%204%204-4%22%20fill%3D%22none%22%20stroke%3D%22%236f675d%22%20stroke-width%3D%221.5%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fsvg%3E");
   }
 }
 
@@ -835,6 +939,24 @@ body {
   line-height: 1.5;
   overflow-x: hidden;
   min-height: 100vh;
+}
+
+/* ── CJK typography ──────────────────────────────────────────────────
+   i18n keeps `document.documentElement.lang` in sync with the UI locale
+   (i18n/index.ts), so `html[lang^="zh"]` matches exactly when the UI is
+   Chinese. CJK glyphs read best with a little more leading than Inter's
+   1.5 (their em squares sit higher) and with strict line breaking so
+   punctuation and ideographs wrap per 中文排版惯例. Scoped to body level
+   so per-component leading overrides still win where they're deliberate. */
+html[lang^="zh"] body {
+  line-height: 1.65;
+  line-break: strict;
+  word-break: normal;
+}
+/* Latin-only flourishes (kerning/letter-spacing tuned for Inter) fight CJK
+   runs — neutralize the tracking on Chinese UI so 汉字 aren't pulled apart. */
+html[lang^="zh"] h1, html[lang^="zh"] h2, html[lang^="zh"] h3, html[lang^="zh"] h4 {
+  letter-spacing: 0;
 }
 
 /* Default headings — sans, tight leading. Overrides live per page. */
@@ -5468,6 +5590,16 @@ button.dub-stepper__action:focus-visible {
   /* Crisp ring drawn outside the dot — calm by default, accent-free until active. */
   box-shadow: 0 0 0 1px var(--chrome-border), 0 0 0 3px transparent;
   transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+/* "Auto" — a half-dark/half-light split swatch says "depends on your OS"
+   without words. Drawn on the base circle so the active ring above still applies. */
+.appearance-panel__theme-dot--split {
+  background: linear-gradient(
+    135deg,
+    var(--dot-color) 0 50%,
+    var(--dot-color-alt, var(--chrome-fg-dim)) 50% 100%
+  );
 }
 
 .appearance-panel__theme-dot:hover {

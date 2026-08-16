@@ -30,6 +30,15 @@ import i18n, { LANGUAGES } from '../i18n';
 import { useAppStore } from '../store';
 import { Button } from '../ui';
 
+/** Locales maintained as first-class translations. The first-run "prefer
+ *  English?" nudge NEVER shows for these — pushing English at, say, a Chinese
+ *  user whose bundle is complete reads as "your language is second-rate"
+ *  (zh-UX pass 1). Coverage alone can't draw this line (every shipped locale
+ *  sits at ~84% of en's keys — the gap is uniformly new untranslated English),
+ *  so it's an editorial list: add a code here when its translation becomes
+ *  first-class. */
+const PROMPT_EXEMPT_LOCALES = new Set(['zh-CN', 'zh-TW']);
+
 /** Native language name for a locale code (e.g. 'de' → 'Deutsch'), from the
  * i18n LANGUAGES table — never a hardcoded string in component code. */
 function nativeName(code) {
@@ -55,7 +64,15 @@ export default function LanguageSwitchPrompt() {
     return unsub;
   }, [hydrated]);
 
-  if (!hydrated || localeChosen || langPromptSeen || locale === 'en') return null;
+  if (
+    !hydrated ||
+    localeChosen ||
+    langPromptSeen ||
+    locale === 'en' ||
+    PROMPT_EXEMPT_LOCALES.has(locale)
+  ) {
+    return null;
+  }
 
   const language = nativeName(locale);
   // English offer line: always from the 'en' bundle, independent of the active
