@@ -96,3 +96,42 @@ def test_success_after_403_on_alternate_client(tmp_path, monkeypatch):
         return
     assert calls["n"] >= 2
     assert result[1] == "ok"  # title from the successful (alternate-client) extract
+
+
+def test_403_escalation_relaxes_pinned_format_id(tmp_path, monkeypatch):
+    """A user-picked format_id must not kill the client-escalation retry.
+
+    The alternate player clients serve a different format table — the tv
+    client has no muxed format 18, so a retry that keeps the pinned id
+    aborts with "Requested format is not available" and turns the 403
+    fallback into the final failure. The escalation must append the
+    compatibility chain so the retry can proceed.
+    """
+    import yt_dlp
+
+    formats = []
+
+    class _FakeYDL:
+        def __init__(self, opts):
+            self._opts = opts
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *a):
+            return False
+
+        def extract_info(self, url, download=True):
+            ea = (self._opts.get("extractor_args") or {}).get("youtube", {})
+            if not ea.get("player_client"):
+                raise Exception("HTTP Error 403: Forbidden")  # default client 403s
+            formats.append(self._opts.get("format"))
+            return {"title": "ok"}  # alternate client succeeds
+
+        def prepare_filename(self, info):
+            return "unused"
+
+    monkeypatch.setattr(yt_dlp, "YoutubeDL", _FakeYDL)
+
+    dub_pipeline.yt_download_sync("https://youtu.be/abc", str(tmp_path), format_id="18")
+    assert formats == [f"18/{dub_pipeline._DUB_FORMAT_CHAIN}"]
