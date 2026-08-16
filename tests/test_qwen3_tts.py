@@ -128,6 +128,7 @@ def test_metadata():
 
 
 def test_generate_normalizes_language_and_pins_mode(monkeypatch):
+    from pathlib import Path
     from services import subprocess_backend
     from engines.qwen3_tts import Qwen3TTSBackend
 
@@ -138,6 +139,17 @@ def test_generate_normalizes_language_and_pins_mode(monkeypatch):
         return "ok"
 
     monkeypatch.setattr(subprocess_backend.SubprocessBackend, "generate", _fake_generate)
+    # Belt & braces for the module docstring's "no subprocess spawn" promise:
+    # patch the SUBCLASS's resolver too. In a full-suite run an earlier test
+    # can leave `services.*` purged from sys.modules, so the base-class patch
+    # above can end up on a different module object than the one this class
+    # inherited from — the CI-only failure mode where the real generate ran,
+    # bootstrapped a sidecar venv, and downloaded torch inside a unit test.
+    monkeypatch.setattr(
+        Qwen3TTSBackend,
+        "venv_python",
+        classmethod(lambda cls: Path("/nonexistent-qwen3-python")),
+    )
     inst = Qwen3TTSBackend()
     # language 'zh-CN' -> 'zh' (GGUF --tts-lang table); mode pinned.
     out = inst.generate("你好", language="zh-CN", ref_audio="/tmp/a.wav")
