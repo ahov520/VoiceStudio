@@ -99,3 +99,21 @@ def test_cosyvoice_without_reference_rejects_missing_sft_speakers():
         assert "Use voice cloning" in str(exc)
     else:
         raise AssertionError("CosyVoice must not invent a missing SFT speaker")
+
+
+def test_cosyvoice_resolves_installed_hf_snapshot(monkeypatch, tmp_path):
+    cache = tmp_path / "hf_cache"
+    snapshot = (
+        cache
+        / "models--FunAudioLLM--Fun-CosyVoice3-0.5B-2512"
+        / "snapshots"
+        / "29e01c4e8d000f4bcd70751be16fa94bf3d85a18"
+    )
+    snapshot.mkdir(parents=True)
+    (snapshot / "cosyvoice3.yaml").write_text("model", encoding="utf-8")
+    monkeypatch.delenv("OMNIVOICE_COSYVOICE_MODEL", raising=False)
+    monkeypatch.setenv("HF_HUB_CACHE", str(cache))
+    monkeypatch.delenv("HF_HOME", raising=False)
+    monkeypatch.delenv("LOCALAPPDATA", raising=False)
+
+    assert CosyVoiceBackend._resolved_model_dir() == str(snapshot)

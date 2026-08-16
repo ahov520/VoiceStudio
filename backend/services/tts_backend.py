@@ -1574,6 +1574,8 @@ class CosyVoiceBackend(TTSBackend):
 
     _CV3_EOP = "<|endofprompt|>"
     _CV3_ASSISTANT_PREFIX = "You are a helpful assistant."
+    _MODEL_REPO_ID = "FunAudioLLM/Fun-CosyVoice3-0.5B-2512"
+    _DEFAULT_MODEL_DIR = "pretrained_models/Fun-CosyVoice3-0.5B"
 
     def __init__(self):
         self._model = None
@@ -1603,10 +1605,38 @@ class CosyVoiceBackend(TTSBackend):
 
     @staticmethod
     def _resolved_model_dir() -> str:
-        return os.environ.get(
-            "OMNIVOICE_COSYVOICE_MODEL",
-            "pretrained_models/Fun-CosyVoice3-0.5B",
-        )
+        configured = (os.environ.get("OMNIVOICE_COSYVOICE_MODEL") or "").strip()
+        if configured:
+            return configured
+
+        # The model catalogue downloads curated weights into the shared HF
+        # cache.  CosyVoice's AutoModel does not know that cache when given
+        # its old relative default, so discover a complete local snapshot
+        # before allowing it to attempt a network download.
+        cache_roots = []
+        hf_hub_cache = (os.environ.get("HF_HUB_CACHE") or "").strip()
+        hf_home = (os.environ.get("HF_HOME") or "").strip()
+        if hf_hub_cache:
+            cache_roots.append(hf_hub_cache)
+        if hf_home:
+            cache_roots.append(os.path.join(hf_home, "hub"))
+        local_app = (os.environ.get("LOCALAPPDATA") or "").strip()
+        if local_app:
+            cache_roots.append(os.path.join(local_app, "OmniVoice", "hf_cache"))
+
+        repo_cache_name = "models--" + CosyVoiceBackend._MODEL_REPO_ID.replace("/", "--")
+        for cache_root in cache_roots:
+            snapshots = os.path.join(cache_root, repo_cache_name, "snapshots")
+            try:
+                candidates = sorted(os.listdir(snapshots), reverse=True)
+            except OSError:
+                continue
+            for revision in candidates:
+                snapshot = os.path.join(snapshots, revision)
+                if os.path.isfile(os.path.join(snapshot, "cosyvoice3.yaml")):
+                    return snapshot
+
+        return CosyVoiceBackend._DEFAULT_MODEL_DIR
 
     def model_identity(self) -> Optional[str]:
         # v1/v2/v3 all live behind the one "cosyvoice" id — the directory
@@ -1621,6 +1651,12 @@ class CosyVoiceBackend(TTSBackend):
             raise RuntimeError(f"CosyVoice unavailable: {msg}")
         from cosyvoice.cli.cosyvoice import AutoModel  # type: ignore[import-not-found]
         model_dir = self._resolved_model_dir()
+        if model_dir == self._DEFAULT_MODEL_DIR and not os.path.isdir(model_dir):
+            raise RuntimeError(
+                "CosyVoice model is not installed locally. Install the "
+                "CosyVoice 3 model from Model Catalogue, or set "
+                "OMNIVOICE_COSYVOICE_MODEL to its model directory."
+            )
         logger.info("Loading CosyVoice from %s", model_dir)
         self._model = AutoModel(model_dir=model_dir)
 
