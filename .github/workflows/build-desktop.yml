@@ -228,6 +228,17 @@ jobs:
           ls -la "$BINDIR/"
 
       # ── Tauri build (no signing, no updater bundles, no release) ──────
+      # tauri.conf.json sets createUpdaterArtifacts: true (needed by
+      # release.yml's signed updater channel). That forces the bundler to
+      # require TAURI_SIGNING_PRIVATE_KEY even for a plain MSI/AppImage/DMG.
+      # Override it at build time with a generated config file (passing a
+      # file path dodges cmd/PowerShell quoting hell with inline JSON).
+      - name: Disable updater artifacts (unsigned build)
+        shell: bash
+        run: |
+          printf '{"bundle":{"createUpdaterArtifacts":false}}\n' \
+            > frontend/src-tauri/tauri.unsigned-build.conf.json
+
       - name: Build (Tauri)
         uses: tauri-apps/tauri-action@v0
         env:
@@ -240,7 +251,10 @@ jobs:
           APPIMAGE_EXTRACT_AND_RUN: 1
         with:
           projectPath: frontend
-          args: --target ${{ matrix.rust_target }} --bundles ${{ matrix.bundles }}
+          args: >-
+            --target ${{ matrix.rust_target }}
+            --bundles ${{ matrix.bundles }}
+            --config src-tauri/tauri.unsigned-build.conf.json
 
       # ── Upload installers as workflow artifacts ───────────────────────
       - name: Upload installers
