@@ -138,13 +138,20 @@ def test_generate_normalizes_language_and_pins_mode(monkeypatch):
         captured.update(kw)
         return "ok"
 
-    monkeypatch.setattr(subprocess_backend.SubprocessBackend, "generate", _fake_generate)
-    # Belt & braces for the module docstring's "no subprocess spawn" promise:
-    # patch the SUBCLASS's resolver too. In a full-suite run an earlier test
-    # can leave `services.*` purged from sys.modules, so the base-class patch
-    # above can end up on a different module object than the one this class
-    # inherited from — the CI-only failure mode where the real generate ran,
-    # bootstrapped a sidecar venv, and downloaded torch inside a unit test.
+    # Patch the base class THIS class actually inherits from, not whatever
+    # `from services import subprocess_backend` resolves to right now: in a
+    # full-suite run an earlier test can purge `services.*` from sys.modules,
+    # leaving two module objects alive — the freshly imported one above and
+    # the one Qwen3TTSBackend was defined against. Patching the import left
+    # the real generate bound on CI, which bootstrapped a sidecar venv and
+    # downloaded torch inside a unit test promising no spawn.
+    _base = next(
+        c for c in Qwen3TTSBackend.__mro__[1:] if c.__name__ == "SubprocessBackend"
+    )
+    monkeypatch.setattr(_base, "generate", _fake_generate)
+    # Belt & braces for the "no subprocess spawn" promise: the subclass's
+    # resolver is patched too, so any escape path fails fast instead of
+    # resolving a real venv.
     monkeypatch.setattr(
         Qwen3TTSBackend,
         "venv_python",
