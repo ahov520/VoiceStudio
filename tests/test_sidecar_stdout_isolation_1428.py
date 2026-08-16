@@ -46,6 +46,7 @@ EXPECTED_SIDECARS = {
     ENGINES / "moss_tts_v15" / "main.py",
     ENGINES / "omnivoice_subprocess" / "main.py",
     ENGINES / "pockettts" / "main.py",
+    ENGINES / "qwen3_tts" / "main.py",
     ENGINES / "supertonic3" / "sidecar.py",
 }
 

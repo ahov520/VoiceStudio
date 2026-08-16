@@ -60,6 +60,8 @@ tts_engines:
     readme: "**Confucius4-TTS**"
     doc: docs/engines/confucius4-tts.md
   - id: pockettts
+  # Qwen3-TTS 1.7B adapter (transformers + GGUF Q8 via llama-tts), sidecar engine.
+  - id: qwen3-tts
   # Cloud/remote TTS engines (bring-your-own-API-key): keys are configured in
   # Settings → Cloud providers, so they are opt-in rather than README-table
   # engines. Registered in tts_backend._REGISTRY.
