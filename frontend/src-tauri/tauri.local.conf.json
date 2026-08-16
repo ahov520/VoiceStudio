@@ -1,0 +1,8 @@
+{
+  "build": {
+    "beforeBundleCommand": "cmd /c echo skip inject-apprun on local Windows build"
+  },
+  "bundle": {
+    "createUpdaterArtifacts": false
+  }
+}
