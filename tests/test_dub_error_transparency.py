@@ -217,7 +217,9 @@ def test_demucs_separates_the_hq_stereo_extraction(tmp_path, monkeypatch):
     monkeypatch.setattr(dp, "run_proc_factory", _factory)
     monkeypatch.setattr(dp, "run_proc_streaming_stderr", _streaming)
     monkeypatch.setattr(dp, "find_ffmpeg", lambda: "ffmpeg")
-    monkeypatch.setattr(dp, "get_best_device", lambda: "cpu")
+    # get_best_device lives on services.model_manager now (separation_backend
+    # imports it locally at call time), not on dub_pipeline.
+    monkeypatch.setattr("services.model_manager.get_best_device", lambda: "cpu")
 
     video = tmp_path / "clip.mp4"
     video.write_bytes(b"\x00" * 64)

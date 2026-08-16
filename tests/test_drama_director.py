@@ -12,6 +12,7 @@ import pytest
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "backend"))
 
 from services import drama_director as dd  # noqa: E402
+from services import llm_skills  # noqa: E402
 
 
 # ── Emotion -> delivery ────────────────────────────────────────────────────
@@ -101,6 +102,22 @@ def test_llm_exception_falls_back_to_heuristic():
 
     parsed = dd.parse_script_director("老陈: 别这样。", llm=_Boom())
     assert parsed["cast"][0]["name"] == "老陈"
+
+
+def test_default_parse_uses_registered_skill_and_offline_fallback(monkeypatch):
+    assert llm_skills.get_skill("drama_director") is not None
+    monkeypatch.setattr(
+        llm_skills,
+        "skill_backend",
+        lambda skill_id, *, active=None: dd.OffBackend(),
+    )
+
+    parsed = dd.parse_script_director("Alice: Hello.")
+
+    assert parsed["lines"] == [{
+        "speaker": "Alice", "text": "Hello.", "emotion": "neutral",
+        "intensity": 0.5, "stage": "",
+    }]
 
 
 # ── Cast voice suggestion ──────────────────────────────────────────────────

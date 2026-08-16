@@ -85,8 +85,6 @@ describe('StoriesEditor virtualization (imported-novel performance)', () => {
     fireEvent.change(textareas[0], { target: { value: 'Edited first line' } });
     expect(useAppStore.getState().storyTracks[0].text).toBe('Edited first line');
     // Untouched neighbours keep their object identity (memo-friendly updates).
-    expect(useAppStore.getState().storyTracks[1].text).toBe(
-      'Line number 2 of the imported novel.',
-    );
+    expect(useAppStore.getState().storyTracks[1].text).toBe('Line number 2 of the imported novel.');
   });
 });

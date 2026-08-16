@@ -207,8 +207,26 @@ describe('IdleSkeleton — pipeline-stage vs idle dropzone', () => {
         extractor_key: 'BiliBili',
         webpage_url: '',
         formats: [
-          { id: '100', note: '1080p', ext: 'mp4', height: 1080, fps: 30, vcodec: 'avc1', acodec: 'none', filesize: 1048576 },
-          { id: '80', note: 'DASH audio', ext: 'm4a', height: null, fps: null, vcodec: 'none', acodec: 'mp4a', filesize: null },
+          {
+            id: '100',
+            note: '1080p',
+            ext: 'mp4',
+            height: 1080,
+            fps: 30,
+            vcodec: 'avc1',
+            acodec: 'none',
+            filesize: 1048576,
+          },
+          {
+            id: '80',
+            note: 'DASH audio',
+            ext: 'm4a',
+            height: null,
+            fps: null,
+            vcodec: 'none',
+            acodec: 'mp4a',
+            filesize: null,
+          },
         ],
       },
     });

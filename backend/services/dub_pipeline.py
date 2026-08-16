@@ -28,6 +28,7 @@ from __future__ import annotations
 
 import asyncio
 import hashlib
+import http.cookiejar
 import json
 import logging
 import os
@@ -36,6 +37,8 @@ import shutil
 import subprocess
 import threading
 import time
+import urllib.parse
+import urllib.request
 from collections import OrderedDict
 from typing import AsyncIterator, Optional
 
@@ -862,6 +865,209 @@ _RESOLVE_MAX_FORMATS = 40
 #: so an audio-only host (podcast feeds, some Douyin audio) still resolves.
 _VIDEO_ONLY_KEYS = ("height", "fps", "vcodec", "acodec", "ext", "filesize")
 
+_BILIBILI_QN_HEIGHTS = {
+    6: 240,
+    16: 360,
+    32: 480,
+    64: 720,
+    80: 1080,
+    112: 1080,
+    116: 1080,
+    120: 2160,
+    125: 1080,
+    126: 4320,
+}
+_BILIBILI_HEADERS = {
+    "Accept": "application/json, text/plain, */*",
+    "Referer": "https://www.bilibili.com/",
+    "User-Agent": "VoiceStudio/1.0",
+}
+_BILIBILI_ID_RE = re.compile(r"(?:^|/)(BV[0-9A-Za-z]+|av[0-9]+)(?:/|$)", re.IGNORECASE)
+
+
+def _bilibili_ref(url: str) -> dict | None:
+    """Return the Bilibili video id and selected anthology page, if present."""
+    parsed = urllib.parse.urlparse(url)
+    host = (parsed.hostname or "").lower().rstrip(".")
+    if host != "bilibili.com" and not host.endswith(".bilibili.com"):
+        return None
+    query = urllib.parse.parse_qs(parsed.query)
+    bvid = next(iter(query.get("bvid", [])), None)
+    match = _BILIBILI_ID_RE.search(parsed.path)
+    video_id = bvid or (match.group(1) if match else None)
+    if not video_id:
+        return None
+    page_raw = next(iter(query.get("p", [])), None)
+    try:
+        page = max(1, int(page_raw)) if page_raw else 1
+    except (TypeError, ValueError):
+        page = 1
+    if video_id.lower().startswith("bv"):
+        return {"bvid": video_id[:2].upper() + video_id[2:], "page": page}
+    return {"aid": video_id[2:], "page": page}
+
+
+def _bilibili_should_fallback(exc: BaseException) -> bool:
+    """Limit the API fallback to Bilibili's webpage/risk-control failures."""
+    message = str(exc).lower()
+    return any(
+        marker in message
+        for marker in (
+            "http error 412",
+            "precondition failed",
+            "unable to download webpage",
+            "no video formats found",
+            "unable to extract initial state",
+        )
+    )
+
+
+def _bilibili_api_json(path: str, query: dict, cookie_file: str | None = None) -> dict:
+    """Call a public Bilibili API endpoint, optionally using exported cookies."""
+    url = f"https://api.bilibili.com/{path.lstrip('/')}?{urllib.parse.urlencode(query)}"
+    request = urllib.request.Request(url, headers=_BILIBILI_HEADERS)
+    opener = urllib.request.build_opener()
+    if cookie_file:
+        jar = http.cookiejar.MozillaCookieJar(cookie_file)
+        try:
+            jar.load(ignore_discard=True, ignore_expires=True)
+        except (OSError, http.cookiejar.LoadError):
+            pass
+        opener.add_handler(urllib.request.HTTPCookieProcessor(jar))
+    with opener.open(request, timeout=30) as response:
+        payload = json.loads(response.read().decode("utf-8"))
+    if payload.get("code") != 0:
+        message = payload.get("message") or "Bilibili API request failed"
+        raise RuntimeError(f"Bilibili API request failed: {message}")
+    return payload.get("data") or {}
+
+
+def _bilibili_view(ref: dict, cookie_file: str | None = None) -> tuple[dict, dict]:
+    query = {"bvid": ref["bvid"]} if ref.get("bvid") else {"aid": ref["aid"]}
+    view = _bilibili_api_json("x/web-interface/view", query, cookie_file)
+    pages = view.get("pages") or []
+    page_number = min(ref["page"], len(pages)) if pages else 1
+    page = pages[page_number - 1] if pages else {"cid": view.get("cid"), "page": 1}
+    return view, page
+
+
+def _bilibili_play_info(ref: dict, cid: int, qn: int = 80, cookie_file: str | None = None) -> dict:
+    query = {
+        **({"bvid": ref["bvid"]} if ref.get("bvid") else {"avid": ref["aid"]}),
+        "cid": cid,
+        "fnval": 0,
+        "qn": qn,
+        "fourk": 1,
+    }
+    return _bilibili_api_json("x/player/playurl", query, cookie_file)
+
+
+def _bilibili_info_from_api(url: str, cookie_file: str | None = None) -> tuple[dict, dict, dict]:
+    ref = _bilibili_ref(url)
+    if not ref:
+        raise RuntimeError("Not a supported Bilibili video URL")
+    view, page = _bilibili_view(ref, cookie_file)
+    cid = page.get("cid")
+    if not cid:
+        raise RuntimeError("Bilibili did not return a playable page")
+    play = _bilibili_play_info(ref, int(cid), cookie_file=cookie_file)
+    descriptions = {
+        int(item["quality"]): item.get("new_description") or item.get("display_desc") or ""
+        for item in (play.get("support_formats") or [])
+        if isinstance(item, dict) and str(item.get("quality", "")).isdigit()
+    }
+    qualities = [int(q) for q in (play.get("accept_quality") or []) if str(q).isdigit()]
+    if not qualities and play.get("quality") is not None:
+        qualities = [int(play["quality"])]
+    for qn in qualities:
+        descriptions.setdefault(qn, f"{_BILIBILI_QN_HEIGHTS.get(qn, qn)}p")
+    formats = [
+        {
+            "id": str(qn),
+            "note": descriptions.get(qn, ""),
+            "ext": "mp4",
+            "height": _BILIBILI_QN_HEIGHTS.get(qn),
+            "fps": None,
+            "vcodec": "unknown",
+            "acodec": "unknown",
+            "filesize": None,
+        }
+        for qn in qualities
+    ]
+    title = view.get("title") or ref.get("bvid") or ref.get("aid") or "Bilibili video"
+    if len(view.get("pages") or []) > 1:
+        title = f"{title} p{page.get('page', ref['page']):02d} {page.get('part') or ''}".strip()
+    info = {
+        "title": title,
+        "uploader": (view.get("owner") or {}).get("name") or "",
+        "duration": view.get("duration"),
+        "thumbnail": view.get("pic") or "",
+        "extractor_key": "BiliBili",
+        "webpage_url": url,
+        "formats": formats,
+    }
+    return info, ref, page
+
+
+def _bilibili_qn_from_selector(format_id: str | None) -> int:
+    """Map yt-dlp's Bilibili DASH ids (e.g. 30032) back to API quality ids."""
+    if not format_id:
+        return 80
+    raw = str(format_id).split("+", 1)[0].strip()
+    if not raw.isdigit():
+        return 80
+    value = int(raw)
+    if value in _BILIBILI_QN_HEIGHTS:
+        return value
+    suffix = value % 1000
+    return suffix if suffix in _BILIBILI_QN_HEIGHTS else 80
+
+
+def _download_bilibili_api(
+    url: str,
+    job_dir: str,
+    *,
+    format_id: str | None = None,
+    progress_hook=None,
+    cookie_file: str | None = None,
+) -> tuple[str, dict]:
+    """Download a Bilibili page through its signed legacy MP4 API fallback."""
+    import yt_dlp
+
+    info, ref, page = _bilibili_info_from_api(url, cookie_file)
+    accepted = [
+        int(q["id"])
+        for q in (info.get("formats") or [])
+        if isinstance(q, dict) and str(q.get("id", "")).isdigit()
+    ]
+    qn = _bilibili_qn_from_selector(format_id)
+    if accepted and qn not in accepted:
+        qn = max(accepted)
+    play = _bilibili_play_info(ref, int(page["cid"]), qn, cookie_file)
+    durl = next(iter(play.get("durl") or []), None)
+    media_url = None
+    if isinstance(durl, dict):
+        media_url = durl.get("url") or next(iter(durl.get("backup_url") or []), None)
+    if not media_url:
+        raise RuntimeError("Bilibili did not return a downloadable MP4")
+    target = os.path.join(job_dir, "original.mp4")
+    options = {
+        "outtmpl": target,
+        "quiet": True,
+        "no_warnings": True,
+        "retries": 10,
+        "fragment_retries": 10,
+        "updatetime": False,
+        "http_headers": _BILIBILI_HEADERS,
+    }
+    if progress_hook is not None:
+        options["progress_hooks"] = [progress_hook]
+    with yt_dlp.YoutubeDL(options) as ydl:
+        ydl.download([media_url])
+    if not os.path.isfile(target):
+        raise RuntimeError("Bilibili download did not produce a video file")
+    return target, info
+
 
 def resolve_video_info(url: str, cookie_file: str | None = None) -> dict:
     """Fetch video metadata + a compact format list via yt-dlp (no download).
@@ -870,7 +1076,9 @@ def resolve_video_info(url: str, cookie_file: str | None = None) -> dict:
     title, uploader, duration, thumbnail, extractor_key and up to
     ``_RESOLVE_MAX_FORMATS`` format rows (id, note, ext, height, fps,
     codecs, size). ``process=False`` keeps the raw ``formats`` list so the
-    user sees every real quality option instead of yt-dlp's auto-pick.
+    user sees every real quality option instead of yt-dlp's auto-pick. A
+    video-only DASH row is returned as a selector paired with bestaudio, so
+    choosing a video quality never imports a silent file.
 
     Raises RuntimeError with a user-presentable message on failure (bad URL,
     login-gated video without cookies, extractor errors).
@@ -891,6 +1099,15 @@ def resolve_video_info(url: str, cookie_file: str | None = None) -> dict:
         with yt_dlp.YoutubeDL(opts) as ydl:
             info = ydl.extract_info(url, download=False, process=False)
     except Exception as exc:
+        # Bilibili may return a browser verification page (HTTP 412) even for
+        # public videos. Its signed legacy API still provides metadata and a
+        # muxed MP4, so use that path before surfacing the extraction error.
+        if _bilibili_ref(url) and _bilibili_should_fallback(exc):
+            try:
+                info, _, _ = _bilibili_info_from_api(url, cookie_file)
+                return info
+            except Exception as fallback_exc:
+                logger.warning("Bilibili API resolve fallback failed: %s", log_safe(fallback_exc))
         # yt-dlp wraps everything in DownloadError; surface the inner reason
         # when available, keep the message short and credential-free.
         reason = getattr(exc, "msg", None) or str(exc)
@@ -903,8 +1120,16 @@ def resolve_video_info(url: str, cookie_file: str | None = None) -> dict:
         acodec = f.get("acodec") or "none"
         if vcodec == "none" and acodec == "none":
             continue  # muxing-only placeholders, not a pickable stream
+        format_id = str(f.get("format_id") or "").strip()
+        if not format_id:
+            continue
+        # DASH video rows do not carry an audio stream. The frontend submits
+        # one picker value, so make that value a complete yt-dlp selector.
+        selector = format_id
+        if vcodec != "none" and acodec == "none":
+            selector = f"{format_id}+bestaudio/best"
         rows.append({
-            "id": f.get("format_id") or "",
+            "id": selector,
             "note": f.get("format_note") or "",
             "ext": f.get("ext") or "",
             "height": f.get("height") or (f.get("resolution") if f.get("resolution") not in (None, "audio only") else None),
@@ -913,7 +1138,7 @@ def resolve_video_info(url: str, cookie_file: str | None = None) -> dict:
             "acodec": acodec,
             "filesize": f.get("filesize") or f.get("filesize_approx"),
         })
-    # Video rows first (height desc), audio-only rows after; dedupe by id.
+    # Video rows first (height desc), audio-only rows after; dedupe by selector.
     seen: set[str] = set()
     deduped = []
     for row in sorted(rows, key=lambda r: (r["vcodec"] == "none", -(r["height"] or 0))):
@@ -1040,6 +1265,7 @@ def yt_download_sync(
     # mistaken for a finished download.
     info = None
     path = None
+    bilibili_fallback = False
     transient_used = 0
     client_idx = 0
     while True:
@@ -1050,6 +1276,22 @@ def yt_download_sync(
             break
         except Exception as exc:
             _cleanup_partial_download(job_dir)
+            if _bilibili_ref(url) and _bilibili_should_fallback(exc):
+                try:
+                    path, info = _download_bilibili_api(
+                        url,
+                        job_dir,
+                        format_id=format_id,
+                        progress_hook=progress_hook,
+                        cookie_file=cookie_file,
+                    )
+                    bilibili_fallback = True
+                    break
+                except Exception as fallback_exc:
+                    logger.warning(
+                        "Bilibili API download fallback failed: %s",
+                        log_safe(fallback_exc),
+                    )
             # 403 Forbidden: not transient — escalate the YouTube player client,
             # which commonly bypasses a signature-protected format set (#625).
             if _is_forbidden_download_error(exc) and client_idx < len(_YT_PLAYER_CLIENTS):
@@ -1096,7 +1338,7 @@ def yt_download_sync(
     title = info.get("title") or os.path.basename(video_path)
 
     sub_files: list[str] = []
-    if fetch_subs:
+    if fetch_subs and not bilibili_fallback:
         if sub_langs:
             langs = list(sub_langs)
         else:

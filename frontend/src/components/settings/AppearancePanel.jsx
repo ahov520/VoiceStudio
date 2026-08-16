@@ -14,6 +14,10 @@ import { SettingsSection, SettingRow, InfoHint, SettingsToggle } from './primiti
 
 // Append-only: the keyboard-navigation test walks the list from Gruvbox with
 // ArrowDown and expects Midnight next — inserting mid-list breaks that order.
+// `light`/`auto` (zh-UX pass 1) ride at the end; their labels go through t()
+// because unlike the proper-noun skins they're common words every locale
+// should localize (zh-CN renders them via the locale bundle), while `auto`
+// also carries a second dot color rendered as a half-dark/half-light swatch.
 const THEMES = [
   { id: 'gruvbox', label: 'Gruvbox', dot: '#d3869b' },
   { id: 'midnight', label: 'Midnight', dot: '#8b5cf6' },
@@ -26,6 +30,8 @@ const THEMES = [
   { id: 'everforest', label: 'Everforest', dot: '#a7c080' },
   { id: 'one-dark', label: 'One Dark', dot: '#61afef' },
   { id: 'kanagawa', label: 'Kanagawa', dot: '#7e9cd8' },
+  { id: 'light', label: null, dot: '#faf6ed' },
+  { id: 'auto', label: null, dot: '#1d2021', dot2: '#faf6ed', split: true },
 ];
 
 /**
@@ -201,22 +207,30 @@ export default function AppearancePanel() {
             role="radiogroup"
             aria-label={themeLabel}
           >
-            {THEMES.map((th) => (
-              <button
-                key={th.id}
-                type="button"
-                className={`appearance-panel__theme-dot ${theme === th.id ? 'is-active' : ''}`}
-                style={{ '--dot-color': th.dot }}
-                onClick={() => setTheme(th.id)}
-                onKeyDown={(e) => radioGroupKeyDown(e, themeIds, theme, setTheme)}
-                title={th.label}
-                aria-label={th.label}
-                aria-checked={theme === th.id}
-                role="radio"
-                tabIndex={radioTabIndex(themeIds, theme, th.id)}
-                data-radio-value={th.id}
-              />
-            ))}
+            {THEMES.map((th) => {
+              const label = th.label ?? t(`settings.theme_${th.id}`, { defaultValue: th.id });
+              return (
+                <button
+                  key={th.id}
+                  type="button"
+                  className={`appearance-panel__theme-dot ${th.split ? 'appearance-panel__theme-dot--split' : ''} ${theme === th.id ? 'is-active' : ''}`}
+                  style={
+                    th.split
+                      ? { '--dot-color': th.dot, '--dot-color-alt': th.dot2 }
+                      : { '--dot-color': th.dot }
+                  }
+                  onClick={() => setTheme(th.id)}
+                  onKeyDown={(e) => radioGroupKeyDown(e, themeIds, theme, setTheme)}
+                  title={label}
+                  aria-label={label}
+                  aria-checked={theme === th.id}
+                  role="radio"
+                  tabIndex={radioTabIndex(themeIds, theme, th.id)}
+                  data-radio-value={th.id}
+                  data-testid={`appearance-theme-${th.id}`}
+                />
+              );
+            })}
           </div>
         }
       />

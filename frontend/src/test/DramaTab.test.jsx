@@ -5,7 +5,7 @@ import { I18nextProvider } from 'react-i18next';
 import i18n from '../i18n';
 
 import DramaTab from '../pages/DramaTab';
-import { parseDrama, saveDramaProject, listDramaProjects, getDramaProject, deleteDramaProject } from '../api/drama';
+import { parseDrama, saveDramaProject, listDramaProjects } from '../api/drama';
 
 vi.mock('../api/drama', () => ({
   parseDrama: vi.fn(),
@@ -19,14 +19,26 @@ const SCRIPT = '林晚: 你走吧。\n老陈: 别这样。';
 
 const PARSE_RESULT = {
   cast: [
-    { name: '林晚', aliases: [], description: '女主', voice: { recipe_instruct: '女主' }, candidates: [] },
-    { name: '老陈', aliases: [], description: '男配', voice: { recipe_instruct: '男配' }, candidates: [] },
+    {
+      name: '林晚',
+      aliases: [],
+      description: '女主',
+      voice: { recipe_instruct: '女主' },
+      candidates: [],
+    },
+    {
+      name: '老陈',
+      aliases: [],
+      description: '男配',
+      voice: { recipe_instruct: '男配' },
+      candidates: [],
+    },
   ],
   lines: [
     { speaker: '林晚', text: '你走吧。', emotion: 'sad', intensity: 0.8, stage: '' },
     { speaker: '老陈', text: '别这样。', emotion: 'calm', intensity: 0.4, stage: '' },
   ],
-  script_text: '# Drama\n[voice:林晚][slow]你走吧。[/slow] [pause 400]',
+  script_text: '# Drama\n[voice:林晚][slow]你走吧。[/slow] [pause 607]',
   voice_map: {},
 };
 
@@ -61,6 +73,7 @@ describe('DramaTab', () => {
     expect(sadSelect.value).toBe('sad');
     // Compiled audiobook script shown.
     expect(screen.getByDisplayValue(/\[voice:林晚\]/)).toBeInTheDocument();
+    expect(screen.getByDisplayValue(/\[pause 607\]/)).toBeInTheDocument();
   });
 
   it('saves the project through the API', async () => {
@@ -69,7 +82,7 @@ describe('DramaTab', () => {
       target: { value: SCRIPT },
     });
     fireEvent.click(screen.getByRole('button', { name: /Auto-direct/ }));
-    await waitFor(() => expect((screen.getAllByText('林晚')).length).toBeGreaterThan(0));
+    await waitFor(() => expect(screen.getAllByText('林晚').length).toBeGreaterThan(0));
 
     fireEvent.change(screen.getByPlaceholderText(/Project name/), {
       target: { value: '测试剧' },

@@ -151,12 +151,19 @@ function App() {
   // itself produces, which is the other half of the first-run oscillation
   // fixed in UiScaleSetup.jsx — see the long comment there. A live read also
   // can't be the "startup" suggestion by definition.
-  const [startupSuggestedScale] = useState(() =>
-    suggestUiScale({
+  const [startupSuggestedScale] = useState(() => {
+    const suggested = suggestUiScale({
       width: typeof window === 'undefined' ? 1440 : window.innerWidth,
       height: typeof window === 'undefined' ? 900 : window.innerHeight,
-    }),
-  );
+    });
+    // zh-UX pass 1: floor the suggestion at 1.1× on a Chinese-language OS.
+    // CJK glyphs read comfortably one notch larger, and the compact default
+    // density was tuned for Inter. Only affects users who never pick a scale
+    // themselves — resolveUiScale ignores the suggestion once configured.
+    const zhOs =
+      typeof navigator !== 'undefined' && (navigator.language || '').toLowerCase().startsWith('zh');
+    return zhOs ? Math.max(suggested, 1.1) : suggested;
+  });
   const effectiveUiScale = resolveUiScale({
     configured: uiScaleConfigured,
     previewed: uiScalePreviewed,
@@ -1462,347 +1469,346 @@ function App() {
             wrapper replays the subtle .page-transition fade from index.css.
             Reduced-motion users get no animation. */}
         <div key={mode} className="page-transition">
-        {/* ═══ LAUNCHPAD TAB ═══ */}
-        {mode === 'settings' ? (
-          <ErrorBoundary name="settings">
-            <Suspense fallback={<LazyFallback />}>
-              <Settings />
-            </Suspense>
-          </ErrorBoundary>
-        ) : mode === 'voice' ? (
-          <ErrorBoundary name="voice-profile">
-            <Suspense fallback={<LazyFallback />}>
-              <VoiceProfile
-                voiceId={activeVoiceId}
-                onBack={closeVoiceProfile}
-                onOpenProject={(id) => {
-                  loadProject(id);
-                }}
-                onDeleted={() => {
-                  loadProfiles();
-                  closeVoiceProfile();
-                }}
-              />
-            </Suspense>
-          </ErrorBoundary>
-        ) : mode === 'queue' ? (
-          <ErrorBoundary name="batch-queue">
-            <Suspense fallback={<LazyFallback />}>
-              {/* Top-level destination now (nav rail / title tabs), so no Back
-                  button — same as gallery, catalogue and the other workspaces. */}
-              <BatchQueue />
-            </Suspense>
-          </ErrorBoundary>
-        ) : mode === 'tools' ? (
-          <ErrorBoundary name="tools">
-            <Suspense fallback={<LazyFallback />}>
-              <ToolsPage onBack={() => setMode('launchpad')} />
-            </Suspense>
-          </ErrorBoundary>
-        ) : mode === 'projects' ? (
-          <ErrorBoundary name="projects">
-            <Suspense fallback={<LazyFallback />}>
-              <ProjectsPage
-                studioProjects={studioProjects}
-                profiles={profiles}
-                history={history}
-                exportHistory={exportHistory}
-                storyProjects={storyProjects}
-                onOpenDub={(id) => {
-                  loadProject(id);
-                  setMode('dub');
-                }}
-                onOpenProfile={(id) => {
-                  openVoiceProfile(id);
-                }}
-                onOpenStory={(id) => {
-                  loadStoryProject(id);
-                  setMode('stories');
-                }}
-                onRevealExport={(path) => {
-                  exportReveal({ path }).catch(() => {});
-                }}
-              />
-            </Suspense>
-          </ErrorBoundary>
-        ) : mode === 'gallery' ? (
-          <ErrorBoundary name="gallery">
-            <Suspense fallback={<LazyFallback />}>
-              <VoiceGallery clearSelectedProfile={clearSelectedProfile} />
-            </Suspense>
-          </ErrorBoundary>
-        ) : mode === 'transcriptions' ? (
-          <ErrorBoundary name="transcriptions">
-            <Suspense fallback={<LazyFallback />}>
-              <TranscriptionsPage />
-            </Suspense>
-          </ErrorBoundary>
-        ) : mode === 'catalogue' ? (
-          <ErrorBoundary name="catalogue">
-            <Suspense fallback={<LazyFallback />}>
-              <ModelCataloguePage />
-            </Suspense>
-          </ErrorBoundary>
-        ) : mode === 'stories' ? (
-          <ErrorBoundary name="stories">
-            <Suspense fallback={<LazyFallback />}>
-              <StoriesEditor profiles={profiles} />
-            </Suspense>
-          </ErrorBoundary>
-        ) : mode === 'audiobook' ? (
-          <ErrorBoundary name="audiobook">
-            <Suspense fallback={<LazyFallback />}>
-              <AudiobookTab profiles={profiles} />
-            </Suspense>
-          </ErrorBoundary>
-        ) : mode === 'drama' ? (
-          <ErrorBoundary name="drama">
-            <Suspense fallback={<LazyFallback />}>
-              <DramaTab profiles={profiles} />
-            </Suspense>
-          </ErrorBoundary>
-        ) : mode === 'donate' ? (
-          <ErrorBoundary name="donate">
-            <Suspense fallback={<LazyFallback />}>
-              <SupportPage initialView="support" onBack={() => setMode('launchpad')} />
-            </Suspense>
-          </ErrorBoundary>
-        ) : mode === 'enterprise' ? (
-          <ErrorBoundary name="enterprise">
-            <Suspense fallback={<LazyFallback />}>
-              <SupportPage initialView="license" onBack={() => setMode('launchpad')} />
-            </Suspense>
-          </ErrorBoundary>
-        ) : mode === 'contact' ? (
-          <ErrorBoundary name="contact">
-            <Suspense fallback={<LazyFallback />}>
-              {/* Same page as donate / enterprise — it scrolls to the contact
-                  section. Three routes, one destination. */}
-              <SupportPage initialView="contact" onBack={() => setMode('launchpad')} />
-            </Suspense>
-          </ErrorBoundary>
-        ) : mode === 'launchpad' ? (
-          <ErrorBoundary name="launchpad">
-            <Suspense fallback={<LazyFallback />}>
-              <Launchpad
-                profiles={profiles}
-                studioProjects={studioProjects}
-                dubHistory={dubHistory}
-                exportHistory={exportHistory}
-                setMode={setMode}
-                setIsCompareModalOpen={setIsCompareModalOpen}
-                handleSelectProfile={handleSelectProfile}
-                loadProject={loadProject}
-              />
-            </Suspense>
-          </ErrorBoundary>
-        ) : mode === 'dub' ? (
-          <div
-            className={`studio-with-history ${dubStep === 'idle' ? '' : 'studio-with-history--editing'}`}
-          >
-            {dubStep === 'idle' && (
-              <div className="studio-projects">
-                <WorkspaceProjects
-                  projects={studioProjects}
-                  activeProjectId={activeProjectId}
-                  canSave={false}
-                  saveProject={saveProject}
-                  loadProject={loadProject}
-                  deleteProject={deleteProject}
-                  renameProject={renameProject}
+          {/* ═══ LAUNCHPAD TAB ═══ */}
+          {mode === 'settings' ? (
+            <ErrorBoundary name="settings">
+              <Suspense fallback={<LazyFallback />}>
+                <Settings />
+              </Suspense>
+            </ErrorBoundary>
+          ) : mode === 'voice' ? (
+            <ErrorBoundary name="voice-profile">
+              <Suspense fallback={<LazyFallback />}>
+                <VoiceProfile
+                  voiceId={activeVoiceId}
+                  onBack={closeVoiceProfile}
+                  onOpenProject={(id) => {
+                    loadProject(id);
+                  }}
+                  onDeleted={() => {
+                    loadProfiles();
+                    closeVoiceProfile();
+                  }}
                 />
-              </div>
-            )}
-            <div className="studio-with-history__main">
-              <ErrorBoundary name="dub">
-                <Suspense fallback={<LazyFallback />}>
-                  <DubTab
-                    // Non-serialisable / local state only — all pipeline fields now
-                    // flow through the Zustand store.
-                    dubVideoFile={dubVideoFile}
-                    dubLocalBlobUrl={dubLocalBlobUrl}
-                    transcribeElapsed={transcribeElapsed}
-                    transcribeProgress={transcribeProgress}
-                    asrInstall={asrInstall}
-                    translateProvider={translateProvider}
-                    setTranslateProvider={setTranslateProvider}
-                    onGlossaryChange={setGlossaryTerms}
-                    showTranscript={showTranscript}
-                    setShowTranscript={setShowTranscript}
-                    profiles={profiles}
-                    segmentPreviewLoading={segmentPreviewLoading}
-                    selectedSegIds={selectedSegIds}
-                    setDubVideoFile={setDubVideoFile}
-                    setDubLocalBlobUrl={setDubLocalBlobUrl}
-                    // Handlers — close over App.jsx scope so stay prop-threaded.
-                    handleDubAbort={handleDubAbort}
-                    handleDubUpload={handleDubUpload}
-                    handleDubIngestUrl={handleDubIngestUrl}
-                    handleDubRetryTranscribe={handleDubRetryTranscribe}
-                    handleInstallMissingAsr={handleInstallMissingAsr}
-                    handleDubImportSrt={handleDubImportSrt}
-                    availableSubs={availableSubs}
-                    subtitleChoicePending={subtitleChoicePending}
-                    handleDubUseSubtitles={handleDubUseSubtitles}
-                    handleDubUseLocalAsr={handleDubUseLocalAsr}
-                    handleDubStop={handleDubStop}
-                    handleDubGenerate={handleDubGenerate}
-                    handleDubDownload={handleDubDownload}
-                    handleDubAudioDownload={handleDubAudioDownload}
-                    handleAudioExport={handleAudioExport}
-                    speakerClones={speakerClones}
-                    handleSegmentPreview={handleSegmentPreview}
-                    onDirectSegment={openDirection}
-                    incrementalPlan={incrementalPlan}
-                    handleTranslateAll={handleTranslateAll}
-                    handleRetryFailedTranslations={handleRetryFailedTranslations}
-                    handleCleanupSegments={handleCleanupSegments}
-                    handleDubImportSrt={handleDubImportSrt}
-                    triggerDownload={triggerDownload}
-                    fileToMediaUrl={fileToMediaUrl}
-                    editSegments={editSegments}
+              </Suspense>
+            </ErrorBoundary>
+          ) : mode === 'queue' ? (
+            <ErrorBoundary name="batch-queue">
+              <Suspense fallback={<LazyFallback />}>
+                {/* Top-level destination now (nav rail / title tabs), so no Back
+                  button — same as gallery, catalogue and the other workspaces. */}
+                <BatchQueue />
+              </Suspense>
+            </ErrorBoundary>
+          ) : mode === 'tools' ? (
+            <ErrorBoundary name="tools">
+              <Suspense fallback={<LazyFallback />}>
+                <ToolsPage onBack={() => setMode('launchpad')} />
+              </Suspense>
+            </ErrorBoundary>
+          ) : mode === 'projects' ? (
+            <ErrorBoundary name="projects">
+              <Suspense fallback={<LazyFallback />}>
+                <ProjectsPage
+                  studioProjects={studioProjects}
+                  profiles={profiles}
+                  history={history}
+                  exportHistory={exportHistory}
+                  storyProjects={storyProjects}
+                  onOpenDub={(id) => {
+                    loadProject(id);
+                    setMode('dub');
+                  }}
+                  onOpenProfile={(id) => {
+                    openVoiceProfile(id);
+                  }}
+                  onOpenStory={(id) => {
+                    loadStoryProject(id);
+                    setMode('stories');
+                  }}
+                  onRevealExport={(path) => {
+                    exportReveal({ path }).catch(() => {});
+                  }}
+                />
+              </Suspense>
+            </ErrorBoundary>
+          ) : mode === 'gallery' ? (
+            <ErrorBoundary name="gallery">
+              <Suspense fallback={<LazyFallback />}>
+                <VoiceGallery clearSelectedProfile={clearSelectedProfile} />
+              </Suspense>
+            </ErrorBoundary>
+          ) : mode === 'transcriptions' ? (
+            <ErrorBoundary name="transcriptions">
+              <Suspense fallback={<LazyFallback />}>
+                <TranscriptionsPage />
+              </Suspense>
+            </ErrorBoundary>
+          ) : mode === 'catalogue' ? (
+            <ErrorBoundary name="catalogue">
+              <Suspense fallback={<LazyFallback />}>
+                <ModelCataloguePage />
+              </Suspense>
+            </ErrorBoundary>
+          ) : mode === 'stories' ? (
+            <ErrorBoundary name="stories">
+              <Suspense fallback={<LazyFallback />}>
+                <StoriesEditor profiles={profiles} />
+              </Suspense>
+            </ErrorBoundary>
+          ) : mode === 'audiobook' ? (
+            <ErrorBoundary name="audiobook">
+              <Suspense fallback={<LazyFallback />}>
+                <AudiobookTab profiles={profiles} />
+              </Suspense>
+            </ErrorBoundary>
+          ) : mode === 'drama' ? (
+            <ErrorBoundary name="drama">
+              <Suspense fallback={<LazyFallback />}>
+                <DramaTab profiles={profiles} />
+              </Suspense>
+            </ErrorBoundary>
+          ) : mode === 'donate' ? (
+            <ErrorBoundary name="donate">
+              <Suspense fallback={<LazyFallback />}>
+                <SupportPage initialView="support" onBack={() => setMode('launchpad')} />
+              </Suspense>
+            </ErrorBoundary>
+          ) : mode === 'enterprise' ? (
+            <ErrorBoundary name="enterprise">
+              <Suspense fallback={<LazyFallback />}>
+                <SupportPage initialView="license" onBack={() => setMode('launchpad')} />
+              </Suspense>
+            </ErrorBoundary>
+          ) : mode === 'contact' ? (
+            <ErrorBoundary name="contact">
+              <Suspense fallback={<LazyFallback />}>
+                {/* Same page as donate / enterprise — it scrolls to the contact
+                  section. Three routes, one destination. */}
+                <SupportPage initialView="contact" onBack={() => setMode('launchpad')} />
+              </Suspense>
+            </ErrorBoundary>
+          ) : mode === 'launchpad' ? (
+            <ErrorBoundary name="launchpad">
+              <Suspense fallback={<LazyFallback />}>
+                <Launchpad
+                  profiles={profiles}
+                  studioProjects={studioProjects}
+                  dubHistory={dubHistory}
+                  exportHistory={exportHistory}
+                  setMode={setMode}
+                  setIsCompareModalOpen={setIsCompareModalOpen}
+                  handleSelectProfile={handleSelectProfile}
+                  loadProject={loadProject}
+                />
+              </Suspense>
+            </ErrorBoundary>
+          ) : mode === 'dub' ? (
+            <div
+              className={`studio-with-history ${dubStep === 'idle' ? '' : 'studio-with-history--editing'}`}
+            >
+              {dubStep === 'idle' && (
+                <div className="studio-projects">
+                  <WorkspaceProjects
+                    projects={studioProjects}
+                    activeProjectId={activeProjectId}
+                    canSave={false}
                     saveProject={saveProject}
-                    resetDub={resetDub}
-                    segmentEditField={segmentEditField}
-                    segmentDelete={segmentDelete}
-                    segmentRestoreOriginal={segmentRestoreOriginal}
-                    pasteTranslations={pasteTranslations}
-                    segmentSplit={segmentSplit}
-                    segmentMerge={segmentMerge}
-                    segmentMoveResize={segmentMoveResize}
-                    timelineSelSegId={timelineSelSegId}
-                    setTimelineSelSegId={setTimelineSelSegId}
-                    toggleSegSelect={toggleSegSelect}
-                    selectAllSegs={selectAllSegs}
-                    clearSegSelection={clearSegSelection}
-                    bulkApplyToSelected={bulkApplyToSelected}
-                    bulkDeleteSelected={bulkDeleteSelected}
+                    loadProject={loadProject}
+                    deleteProject={deleteProject}
+                    renameProject={renameProject}
                   />
-                </Suspense>
-              </ErrorBoundary>
-            </div>
-            {/* Dub home: the Projects + History landing shows only when no project
+                </div>
+              )}
+              <div className="studio-with-history__main">
+                <ErrorBoundary name="dub">
+                  <Suspense fallback={<LazyFallback />}>
+                    <DubTab
+                      // Non-serialisable / local state only — all pipeline fields now
+                      // flow through the Zustand store.
+                      dubVideoFile={dubVideoFile}
+                      dubLocalBlobUrl={dubLocalBlobUrl}
+                      transcribeElapsed={transcribeElapsed}
+                      transcribeProgress={transcribeProgress}
+                      asrInstall={asrInstall}
+                      translateProvider={translateProvider}
+                      setTranslateProvider={setTranslateProvider}
+                      onGlossaryChange={setGlossaryTerms}
+                      showTranscript={showTranscript}
+                      setShowTranscript={setShowTranscript}
+                      profiles={profiles}
+                      segmentPreviewLoading={segmentPreviewLoading}
+                      selectedSegIds={selectedSegIds}
+                      setDubVideoFile={setDubVideoFile}
+                      setDubLocalBlobUrl={setDubLocalBlobUrl}
+                      // Handlers — close over App.jsx scope so stay prop-threaded.
+                      handleDubAbort={handleDubAbort}
+                      handleDubUpload={handleDubUpload}
+                      handleDubIngestUrl={handleDubIngestUrl}
+                      handleDubRetryTranscribe={handleDubRetryTranscribe}
+                      handleInstallMissingAsr={handleInstallMissingAsr}
+                      handleDubImportSrt={handleDubImportSrt}
+                      availableSubs={availableSubs}
+                      subtitleChoicePending={subtitleChoicePending}
+                      handleDubUseSubtitles={handleDubUseSubtitles}
+                      handleDubUseLocalAsr={handleDubUseLocalAsr}
+                      handleDubStop={handleDubStop}
+                      handleDubGenerate={handleDubGenerate}
+                      handleDubDownload={handleDubDownload}
+                      handleDubAudioDownload={handleDubAudioDownload}
+                      handleAudioExport={handleAudioExport}
+                      speakerClones={speakerClones}
+                      handleSegmentPreview={handleSegmentPreview}
+                      onDirectSegment={openDirection}
+                      incrementalPlan={incrementalPlan}
+                      handleTranslateAll={handleTranslateAll}
+                      handleRetryFailedTranslations={handleRetryFailedTranslations}
+                      handleCleanupSegments={handleCleanupSegments}
+                      triggerDownload={triggerDownload}
+                      fileToMediaUrl={fileToMediaUrl}
+                      editSegments={editSegments}
+                      saveProject={saveProject}
+                      resetDub={resetDub}
+                      segmentEditField={segmentEditField}
+                      segmentDelete={segmentDelete}
+                      segmentRestoreOriginal={segmentRestoreOriginal}
+                      pasteTranslations={pasteTranslations}
+                      segmentSplit={segmentSplit}
+                      segmentMerge={segmentMerge}
+                      segmentMoveResize={segmentMoveResize}
+                      timelineSelSegId={timelineSelSegId}
+                      setTimelineSelSegId={setTimelineSelSegId}
+                      toggleSegSelect={toggleSegSelect}
+                      selectAllSegs={selectAllSegs}
+                      clearSegSelection={clearSegSelection}
+                      bulkApplyToSelected={bulkApplyToSelected}
+                      bulkDeleteSelected={bulkDeleteSelected}
+                    />
+                  </Suspense>
+                </ErrorBoundary>
+              </div>
+              {/* Dub home: the Projects + History landing shows only when no project
               is being edited. Opening/creating one switches to the full-width
               editor (dubStep !== 'idle'). */}
-            {dubStep === 'idle' && (
-              <div className="studio-right">
-                <WorkspaceHistory
-                  variant="dub"
-                  dubHistory={dubHistory}
-                  restoreDubHistory={restoreDubHistory}
-                  deleteHistory={deleteHistory}
-                  clearHistory={() => clearWorkspaceHistory('dub')}
+              {dubStep === 'idle' && (
+                <div className="studio-right">
+                  <WorkspaceHistory
+                    variant="dub"
+                    dubHistory={dubHistory}
+                    restoreDubHistory={restoreDubHistory}
+                    deleteHistory={deleteHistory}
+                    clearHistory={() => clearWorkspaceHistory('dub')}
+                  />
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="studio-with-history">
+              <div className="studio-voices">
+                <WorkspaceVoices
+                  defineMethod={defineMethod}
+                  profiles={profiles}
+                  selectedProfile={selectedProfile}
+                  setSelectedProfile={setSelectedProfile}
+                  previewLoading={previewLoading}
+                  handleSelectProfile={handleSelectProfile}
+                  handleDeleteProfile={handleDeleteProfile}
+                  handlePreviewVoice={handlePreviewVoice}
+                  handleUnlockProfile={handleUnlockProfile}
+                  openVoiceProfile={openVoiceProfile}
+                  onOpenVoicePreview={(profileId) => {
+                    setVoicePreviewProfileId(profileId || '');
+                    setIsVoicePreviewOpen(true);
+                  }}
                 />
               </div>
-            )}
-          </div>
-        ) : (
-          <div className="studio-with-history">
-            <div className="studio-voices">
-              <WorkspaceVoices
-                defineMethod={defineMethod}
-                profiles={profiles}
-                selectedProfile={selectedProfile}
-                setSelectedProfile={setSelectedProfile}
-                previewLoading={previewLoading}
-                handleSelectProfile={handleSelectProfile}
-                handleDeleteProfile={handleDeleteProfile}
-                handlePreviewVoice={handlePreviewVoice}
-                handleUnlockProfile={handleUnlockProfile}
-                openVoiceProfile={openVoiceProfile}
-                onOpenVoicePreview={(profileId) => {
-                  setVoicePreviewProfileId(profileId || '');
-                  setIsVoicePreviewOpen(true);
-                }}
-              />
+              <div className="studio-with-history__main">
+                <ErrorBoundary name="clone-design">
+                  <Suspense fallback={<LazyFallback />}>
+                    <CloneDesignTab
+                      textAreaRef={textAreaRef}
+                      text={text}
+                      setText={setText}
+                      language={language}
+                      setLanguage={setLanguage}
+                      steps={steps}
+                      setSteps={setSteps}
+                      cfg={cfg}
+                      setCfg={setCfg}
+                      speed={speed}
+                      setSpeed={setSpeed}
+                      tShift={tShift}
+                      setTShift={setTShift}
+                      posTemp={posTemp}
+                      setPosTemp={setPosTemp}
+                      classTemp={classTemp}
+                      setClassTemp={setClassTemp}
+                      layerPenalty={layerPenalty}
+                      setLayerPenalty={setLayerPenalty}
+                      duration={duration}
+                      setDuration={setDuration}
+                      denoise={denoise}
+                      setDenoise={setDenoise}
+                      postprocess={postprocess}
+                      setPostprocess={setPostprocess}
+                      showOverrides={showOverrides}
+                      setShowOverrides={setShowOverrides}
+                      isSidebarCollapsed={isSidebarCollapsed}
+                      setIsSidebarCollapsed={setIsSidebarCollapsed}
+                      profiles={profiles}
+                      selectedProfile={selectedProfile}
+                      setSelectedProfile={setSelectedProfile}
+                      refAudio={refAudio}
+                      refText={refText}
+                      setRefText={setRefText}
+                      instruct={instruct}
+                      setInstruct={setInstruct}
+                      profileName={profileName}
+                      setProfileName={setProfileName}
+                      showSaveProfile={showSaveProfile}
+                      setShowSaveProfile={setShowSaveProfile}
+                      isRecording={isRecording}
+                      isCleaning={isCleaning}
+                      recordingTime={recordingTime}
+                      audioInputs={audioInputs}
+                      selectedAudioInputId={selectedAudioInputId}
+                      setSelectedAudioInputId={setSelectedAudioInputId}
+                      channelMode={channelMode}
+                      setChannelMode={setChannelMode}
+                      inputLevelStore={inputLevelStore}
+                      vdStates={vdStates}
+                      setVdStates={setVdStates}
+                      isGenerating={isGenerating}
+                      generationTime={generationTime}
+                      applyPreset={applyPreset}
+                      insertTag={insertTag}
+                      handleSelectProfile={handleSelectProfile}
+                      handleDeleteProfile={handleDeleteProfile}
+                      handleSaveProfile={handleSaveProfile}
+                      handleSaveDesignProfile={handleSaveDesignProfile}
+                      handleGenerate={handleGenerate}
+                      startRecording={startRecording}
+                      stopRecording={stopRecording}
+                      ingestRefAudio={ingestRefAudio}
+                    />
+                  </Suspense>
+                </ErrorBoundary>
+              </div>
+              <div className="studio-right">
+                <WorkspaceHistory
+                  history={history}
+                  handleSaveHistoryAsProfile={handleSaveHistoryAsProfile}
+                  handleLockProfile={handleLockProfile}
+                  handleNativeExport={handleNativeExport}
+                  restoreHistory={restoreHistory}
+                  deleteHistory={deleteHistory}
+                  clearHistory={() => clearWorkspaceHistory('synth')}
+                  toggleStarHistory={toggleStarHistory}
+                  playTakeAsOutput={playTakeAsOutput}
+                />
+              </div>
             </div>
-            <div className="studio-with-history__main">
-              <ErrorBoundary name="clone-design">
-                <Suspense fallback={<LazyFallback />}>
-                  <CloneDesignTab
-                    textAreaRef={textAreaRef}
-                    text={text}
-                    setText={setText}
-                    language={language}
-                    setLanguage={setLanguage}
-                    steps={steps}
-                    setSteps={setSteps}
-                    cfg={cfg}
-                    setCfg={setCfg}
-                    speed={speed}
-                    setSpeed={setSpeed}
-                    tShift={tShift}
-                    setTShift={setTShift}
-                    posTemp={posTemp}
-                    setPosTemp={setPosTemp}
-                    classTemp={classTemp}
-                    setClassTemp={setClassTemp}
-                    layerPenalty={layerPenalty}
-                    setLayerPenalty={setLayerPenalty}
-                    duration={duration}
-                    setDuration={setDuration}
-                    denoise={denoise}
-                    setDenoise={setDenoise}
-                    postprocess={postprocess}
-                    setPostprocess={setPostprocess}
-                    showOverrides={showOverrides}
-                    setShowOverrides={setShowOverrides}
-                    isSidebarCollapsed={isSidebarCollapsed}
-                    setIsSidebarCollapsed={setIsSidebarCollapsed}
-                    profiles={profiles}
-                    selectedProfile={selectedProfile}
-                    setSelectedProfile={setSelectedProfile}
-                    refAudio={refAudio}
-                    refText={refText}
-                    setRefText={setRefText}
-                    instruct={instruct}
-                    setInstruct={setInstruct}
-                    profileName={profileName}
-                    setProfileName={setProfileName}
-                    showSaveProfile={showSaveProfile}
-                    setShowSaveProfile={setShowSaveProfile}
-                    isRecording={isRecording}
-                    isCleaning={isCleaning}
-                    recordingTime={recordingTime}
-                    audioInputs={audioInputs}
-                    selectedAudioInputId={selectedAudioInputId}
-                    setSelectedAudioInputId={setSelectedAudioInputId}
-                    channelMode={channelMode}
-                    setChannelMode={setChannelMode}
-                    inputLevelStore={inputLevelStore}
-                    vdStates={vdStates}
-                    setVdStates={setVdStates}
-                    isGenerating={isGenerating}
-                    generationTime={generationTime}
-                    applyPreset={applyPreset}
-                    insertTag={insertTag}
-                    handleSelectProfile={handleSelectProfile}
-                    handleDeleteProfile={handleDeleteProfile}
-                    handleSaveProfile={handleSaveProfile}
-                    handleSaveDesignProfile={handleSaveDesignProfile}
-                    handleGenerate={handleGenerate}
-                    startRecording={startRecording}
-                    stopRecording={stopRecording}
-                    ingestRefAudio={ingestRefAudio}
-                  />
-                </Suspense>
-              </ErrorBoundary>
-            </div>
-            <div className="studio-right">
-              <WorkspaceHistory
-                history={history}
-                handleSaveHistoryAsProfile={handleSaveHistoryAsProfile}
-                handleLockProfile={handleLockProfile}
-                handleNativeExport={handleNativeExport}
-                restoreHistory={restoreHistory}
-                deleteHistory={deleteHistory}
-                clearHistory={() => clearWorkspaceHistory('synth')}
-                toggleStarHistory={toggleStarHistory}
-                playTakeAsOutput={playTakeAsOutput}
-              />
-            </div>
-          </div>
-        )}
+          )}
         </div>
       </div>
 

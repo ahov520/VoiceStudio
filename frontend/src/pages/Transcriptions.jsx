@@ -213,7 +213,9 @@ export default function TranscriptionsPage() {
                   ? t('transcriptions.empty_search_title')
                   : t('transcriptions.empty_title')
               }
-              description={normalizedSearch ? t('transcriptions.empty_search_desc') : emptyDescription}
+              description={
+                normalizedSearch ? t('transcriptions.empty_search_desc') : emptyDescription
+              }
               action={
                 !normalizedSearch
                   ? {

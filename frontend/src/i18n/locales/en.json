@@ -908,7 +908,9 @@
     "device_family_cpu": "CPU",
     "device_load_failed": "Failed to load device setting",
     "cloud_providers": "Cloud providers",
-    "separation": "Vocal separation"
+    "separation": "Vocal separation",
+    "theme_light": "Light",
+    "theme_auto": "Auto"
   },
   "about": {
     "app": "App",
@@ -3240,6 +3242,8 @@
     "emotion_shouting": "Shouting",
     "emotion_crying": "Crying",
     "emotion_sarcastic": "Sarcastic",
-    "emotion_tense": "Tense"
+    "emotion_tense": "Tense",
+    "sample_script": "Lin Wan: Just go. I never want to see you again.\nShe turns her back to the door, her voice trembling.\nLao Chen: Don't be like this. We had a deal.\nLin Wan: A deal about what? That you'd never lie to me?\nLao Chen: (bitter smile) Some things, I have no choice.",
+    "default_project_name": "{name}'s script"
   }
 }

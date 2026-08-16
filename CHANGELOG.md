@@ -22,7 +22,7 @@ the frozen-backend fallback mirror it for their toolchains.
 - Settings → Performance & Device gains a compute-device override (Auto / CUDA / ROCm / XPU / MPS / CPU, or `OMNIVOICE_DEVICE`) — pin the device when auto-detect picks wrong; only devices your machine actually has are offered (#1557)
 - URL video ingest now resolves first: paste any yt-dlp link (YouTube / Bilibili / Douyin / Vimeo) and get a preview card with title, uploader, duration, thumbnail and a quality picker before the background download — /dub/ingest-url/resolve + optional format_id on ingest. — thanks @ahov520!
 - Drama Director workspace: AI casts roles and tones every line (12 emotions), compiles to a voice/SSML-marker audiobook script, and saves .ovsdrama projects. — thanks @ahov520!
-- Dub ingest can seed segments from the video’s own subtitle track (Bilibili AI 字幕 / YouTube captions) and skip local ASR; Translate All always honours the chosen target language; a live translation log panel shows batch progress; Timing options are localized. — thanks @ahov520!
+- Dub ingest can seed segments from the video’s own subtitle track (Bilibili AI captions / YouTube captions) and skip local ASR; Translate All always honours the chosen target language; a live translation log panel shows batch progress; Timing options are localized. — thanks @ahov520!
 - New engine: Qwen3-TTS 1.7B (Apache-2.0) — subprocess sidecar with transformers and GGUF Q8 (llama-tts) paths, zero-shot voice cloning, 10 languages. — thanks @ahov520!
 
 ### Docs

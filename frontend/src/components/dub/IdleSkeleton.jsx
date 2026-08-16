@@ -149,7 +149,7 @@ export default function IdleSkeleton({
   };
   const srtInputRef = useRef(null);
   // ── Subtitle-first choice card ──────────────────────────────────────
-  // The video carries its own subtitle track (Bilibili AI 字幕 / YouTube
+  // The video carries its own subtitle track (Bilibili AI-generated captions / YouTube
   // captions): let the user take it (skips local ASR) or import their own
   // SRT, instead of forcing recognition.
   const renderSubtitleChoice = () => (
@@ -160,12 +160,7 @@ export default function IdleSkeleton({
       </div>
       <div className="flex flex-wrap gap-[8px] justify-center items-center">
         {availableSubs.map((lang) => (
-          <Button
-            key={lang}
-            variant="primary"
-            size="sm"
-            onClick={() => onUseSubtitles(lang)}
-          >
+          <Button key={lang} variant="primary" size="sm" onClick={() => onUseSubtitles(lang)}>
             <Captions size={13} /> {t('dub.use_video_subtitles', { lang })}
           </Button>
         ))}
