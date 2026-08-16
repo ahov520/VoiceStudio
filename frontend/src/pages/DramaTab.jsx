@@ -95,9 +95,7 @@ export default function DramaTab({ profiles = [] }) {
         ? Math.max(0, Math.min(1, ln.intensity))
         : 0.5;
       const text = ln.text || '';
-      const rendered = delivery.marker
-        ? `[${delivery.marker}]${text}[/${delivery.marker}]`
-        : text;
+      const rendered = delivery.marker ? `[${delivery.marker}]${text}[/${delivery.marker}]` : text;
       const pause = Math.round(delivery.pauseMs * (1 + 0.4 * intensity));
       out.push(`${rendered} [pause ${pause}]`);
     }
