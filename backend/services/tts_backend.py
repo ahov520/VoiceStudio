@@ -1994,6 +1994,11 @@ _LAZY_REGISTRY: dict[str, tuple[str, str]] = {
     "openai-compat-tts": ("services.tts_cloud", "OpenAICompatTTSBackend"),
     "elevenlabs-tts": ("services.tts_cloud", "ElevenLabsTTSBackend"),
     "dashscope-tts": ("services.tts_cloud", "DashScopeTTSBackend"),
+    # Qwen3-TTS 1.7B (Apache-2.0): subprocess-isolated sidecar; transformers
+    # path in a dedicated venv (torch + transformers) or GGUF Q8 via
+    # llama.cpp's llama-tts binary. Lazy for the import-cycle reason shared
+    # with IndexTTS2 (the class module imports services.subprocess_backend).
+    "qwen3-tts": ("engines.qwen3_tts", "Qwen3TTSBackend"),
 }
 
 
@@ -2118,6 +2123,14 @@ _INSTALL_HINTS: dict[str, str] = {
         "voice versions must match (cosyvoice-v2 → *_v2 voices). Text is "
         "sent to Alibaba Cloud."
     ),
+    "qwen3-tts": (
+        "No source clone needed. Transformers path: install uv, then let "
+        "VoiceStudio bootstrap engines/qwen3_tts/.venv (torch + transformers; "
+        "weights auto-download from HF on first use), or set "
+        "OMNIVOICE_QWEN3_TTS_DIR to your own venv. GGUF Q8 path: build "
+        "llama.cpp's llama-tts tool and set OMNIVOICE_QWEN3_GGUF_BIN (+ "
+        "optional OMNIVOICE_QWEN3_GGUF_MODEL for a local .gguf). Apache-2.0."
+    ),
 }
 
 
@@ -2135,6 +2148,7 @@ _SETUP_SNIPPETS: dict[str, str] = {
     "confucius4-tts": "export OMNIVOICE_CONFUCIUS4_TTS_DIR=/path/to/Confucius4-TTS",
     # #919: sherpa-onnx gates on a downloaded model dir (model.onnx + tokens.txt).
     "sherpa-onnx":    "export OMNIVOICE_SHERPA_MODEL=/path/to/sherpa-onnx-model",
+    "qwen3-tts":      "export OMNIVOICE_QWEN3_TTS_DIR=/path/to/qwen3-tts-venv   # or OMNIVOICE_QWEN3_GGUF_BIN=/path/to/llama-tts (GGUF Q8 mode)",
 }
 
 
