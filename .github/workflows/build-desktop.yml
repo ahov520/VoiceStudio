@@ -61,20 +61,20 @@ jobs:
             {"os":"windows-2022","arch":"x86_64-pc-windows-msvc","label":"Windows x64","rust_target":"x86_64-pc-windows-msvc","bundles":"msi","artifacts":"frontend/src-tauri/target/x86_64-pc-windows-msvc/release/bundle/msi/*.msi"},
             {"os":"ubuntu-24.04","arch":"x86_64-unknown-linux-gnu","label":"Linux x64","rust_target":"x86_64-unknown-linux-gnu","bundles":"appimage","artifacts":"frontend/src-tauri/target/x86_64-unknown-linux-gnu/release/bundle/appimage/*.AppImage"}
           ]'
-          WIN='[{"os":"windows-2022","arch":"x86_64-pc-windows-msvc","label":"Windows x64","rust_target":"x86_64-pc-windows-msvc","bundles":"msi","artifacts":"frontend/src-tauri/target/x86_64-pc-windows-msvc/release/bundle/msi/*.msi"}]'
+          # GITHUB_OUTPUT values can be multi-line only via the heredoc
+          # delimiter form (echo "key=$value" breaks on newlines).
+          emit() { printf 'matrix<<__MATRIX_EOF__\n%s\n__MATRIX_EOF__\n' "$1" >> "$GITHUB_OUTPUT"; }
           case "${{ github.event_name }}" in
             push)
-              echo "Push to main �?auto-building Windows x64 only."
-              echo "matrix=$WIN" >> "$GITHUB_OUTPUT"
+              echo "Push to main - auto-building Windows x64 only."
+              emit '[{"os":"windows-2022","arch":"x86_64-pc-windows-msvc","label":"Windows x64","rust_target":"x86_64-pc-windows-msvc","bundles":"msi","artifacts":"frontend/src-tauri/target/x86_64-pc-windows-msvc/release/bundle/msi/*.msi"}]'
               ;;
             workflow_dispatch)
               case "${{ inputs.platform }}" in
-                all)      echo "matrix=$ALL" >> "$GITHUB_OUTPUT" ;;
-                windows)  echo "matrix=$WIN" >> "$GITHUB_OUTPUT" ;;
-                macos)    echo "matrix=$ALL" | jq -c 'map(select(.os | startswith("macos")))' > /tmp/m.txt
-                          echo "matrix=$(cat /tmp/m.txt)" >> "$GITHUB_OUTPUT" ;;
-                linux)    echo "matrix=$ALL" | jq -c 'map(select(.os == "ubuntu-24.04"))' > /tmp/l.txt
-                          echo "matrix=$(cat /tmp/l.txt)" >> "$GITHUB_OUTPUT" ;;
+                all)      emit "$ALL" ;;
+                windows)  emit "$(printf '%s' "$ALL" | jq -c 'map(select(.os == "windows-2022"))')" ;;
+                macos)    emit "$(printf '%s' "$ALL" | jq -c 'map(select(.os | startswith("macos")))')" ;;
+                linux)    emit "$(printf '%s' "$ALL" | jq -c 'map(select(.os == "ubuntu-24.04"))')" ;;
                 *)        echo "::error::Unknown platform: ${{ inputs.platform }}"; exit 1 ;;
               esac
               ;;
