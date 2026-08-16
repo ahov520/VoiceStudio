@@ -148,7 +148,14 @@ describe('handleTranslateAll — batched requests with a progress pill', () => {
       dubSegments: [
         { id: '1', text: 'es:uno', text_original: 'one', start: 0, end: 1 },
         { id: '2', text: 'two', text_original: 'two', start: 1, end: 2, translate_error: 'boom' },
-        { id: '3', text: 'three', text_original: 'three', start: 2, end: 3, translate_error: 'boom' },
+        {
+          id: '3',
+          text: 'three',
+          text_original: 'three',
+          start: 2,
+          end: 3,
+          translate_error: 'boom',
+        },
       ],
     });
     dubApi.dubTranslate.mockImplementation(async ({ segments }) => ({

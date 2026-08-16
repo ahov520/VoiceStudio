@@ -93,7 +93,10 @@ export default function TtsOpenAICompatPanel({ onSaved = null }) {
   };
 
   const dirty =
-    baseUrl !== server.base_url || model !== server.model || voice !== server.voice || apiKey !== '';
+    baseUrl !== server.base_url ||
+    model !== server.model ||
+    voice !== server.voice ||
+    apiKey !== '';
 
   const testConnection = async () => {
     setTesting(true);

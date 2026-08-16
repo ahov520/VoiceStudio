@@ -173,7 +173,7 @@ export default function DubTab(props) {
   const clearTranslateLog = useCallback(() => setTranslateLog([]), []);
   const handleTranslateAllLogged = useCallback(
     (langOverride, options) =>
-      handleTranslateAll(langOverride, { ...(options || {}), onLog: pushTranslateLog }),
+      handleTranslateAll(langOverride, { ...options, onLog: pushTranslateLog }),
     [handleTranslateAll, pushTranslateLog],
   );
   useEffect(() => {
@@ -573,9 +573,7 @@ export default function DubTab(props) {
       const info = await resolveIngestUrl(clean, youtubeCookieFile || null);
       setResolvedVideo(info);
       // Keep the last quality pick if it still exists in the fresh format list.
-      setChosenFormatId((prev) =>
-        prev && info.formats.some((f) => f.id === prev) ? prev : null,
-      );
+      setChosenFormatId((prev) => (prev && info.formats.some((f) => f.id === prev) ? prev : null));
     } catch (err) {
       setResolveError(err?.message || String(err));
     } finally {

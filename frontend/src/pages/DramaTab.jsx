@@ -13,8 +13,18 @@ import {
 
 //: Emotion set mirrors backend/services/drama_director.py EMOTIONS.
 const EMOTIONS = [
-  'neutral', 'calm', 'happy', 'sad', 'angry', 'fearful',
-  'surprised', 'whispered', 'shouting', 'crying', 'sarcastic', 'tense',
+  'neutral',
+  'calm',
+  'happy',
+  'sad',
+  'angry',
+  'fearful',
+  'surprised',
+  'whispered',
+  'shouting',
+  'crying',
+  'sarcastic',
+  'tense',
 ];
 
 export default function DramaTab({ profiles = [] }) {
@@ -25,7 +35,7 @@ export default function DramaTab({ profiles = [] }) {
   const [cast, setCast] = useState([]);
   const [lines, setLines] = useState([]);
   const [scriptText, setScriptText] = useState('');
-  const [voiceMap, setVoiceMap] = useState({});
+  const [, setVoiceMap] = useState({});
   const [projectName, setProjectName] = useState('');
   const [projects, setProjects] = useState([]);
   const [saving, setSaving] = useState(false);
@@ -53,7 +63,10 @@ export default function DramaTab({ profiles = [] }) {
       setLines(res.lines);
       setScriptText(res.script_text);
       setVoiceMap(res.voice_map);
-      setProjectName((prev) => prev || (res.cast[0] ? t('drama.default_project_name', { name: res.cast[0].name }) : ''));
+      setProjectName(
+        (prev) =>
+          prev || (res.cast[0] ? t('drama.default_project_name', { name: res.cast[0].name }) : ''),
+      );
     } catch (err) {
       setParseError(err?.message || String(err));
     } finally {
@@ -84,10 +97,18 @@ export default function DramaTab({ profiles = [] }) {
         current = ln.speaker;
       }
       const emotion = EMOTIONS.includes(ln.emotion) ? ln.emotion : 'neutral';
-      const marker = emotion === 'happy' || emotion === 'angry' || emotion === 'shouting' ? 'fast'
-        : emotion === 'calm' || emotion === 'sad' || emotion === 'fearful' || emotion === 'whispered' || emotion === 'crying' ? 'slow'
-        : emotion === 'surprised' || emotion === 'sarcastic' || emotion === 'tense' ? 'emphasis'
-        : null;
+      const marker =
+        emotion === 'happy' || emotion === 'angry' || emotion === 'shouting'
+          ? 'fast'
+          : emotion === 'calm' ||
+              emotion === 'sad' ||
+              emotion === 'fearful' ||
+              emotion === 'whispered' ||
+              emotion === 'crying'
+            ? 'slow'
+            : emotion === 'surprised' || emotion === 'sarcastic' || emotion === 'tense'
+              ? 'emphasis'
+              : null;
       const text = ln.text || '';
       const rendered = marker ? `[${marker}]${text}[/${marker}]` : text;
       const pause = 180 + Math.round((ln.intensity || 0) * 200);
@@ -138,19 +159,19 @@ export default function DramaTab({ profiles = [] }) {
     }
   }, []);
 
-  const onDelete = useCallback(async (id) => {
-    try {
-      await deleteDramaProject(id);
-      refreshProjects();
-    } catch (err) {
-      toast.error(err?.message || String(err));
-    }
-  }, [refreshProjects]);
-
-  const castProfiles = useMemo(
-    () => profiles.filter((p) => p && p.id && p.name),
-    [profiles],
+  const onDelete = useCallback(
+    async (id) => {
+      try {
+        await deleteDramaProject(id);
+        refreshProjects();
+      } catch (err) {
+        toast.error(err?.message || String(err));
+      }
+    },
+    [refreshProjects],
   );
+
+  const castProfiles = useMemo(() => profiles.filter((p) => p && p.id && p.name), [profiles]);
 
   return (
     <div className="flex-1 flex flex-col min-h-0 px-[10px] py-[8px] gap-[8px]">
@@ -243,7 +264,9 @@ export default function DramaTab({ profiles = [] }) {
                   ))}
                 </div>
 
-                <span className="text-[0.7rem] text-fg-muted shrink-0">{t('drama.lines_label')}</span>
+                <span className="text-[0.7rem] text-fg-muted shrink-0">
+                  {t('drama.lines_label')}
+                </span>
                 <div className="flex-1 min-h-0 overflow-y-auto flex flex-col gap-[4px]">
                   {lines.map((ln, li) => (
                     <div
@@ -295,7 +318,12 @@ export default function DramaTab({ profiles = [] }) {
                   <Button variant="subtle" size="sm" onClick={onCopy} disabled={!scriptText.trim()}>
                     <Copy size={12} /> {t('drama.copy')}
                   </Button>
-                  <Button variant="primary" size="sm" onClick={onSave} disabled={!scriptText.trim() || saving}>
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    onClick={onSave}
+                    disabled={!scriptText.trim() || saving}
+                  >
                     {saving ? <Loader className="spinner" size={12} /> : <Save size={12} />}
                     {t('drama.save')}
                   </Button>

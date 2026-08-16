@@ -495,20 +495,21 @@ export default function DubLeftColumn({
                 ? t('dub.retranslate')
                 : t('dub.translate_all')}
           </Button>
-          {failedTranslationCount > 0 && !isTranslating && (
-            // Only the rows whose last translate attempt failed are re-sent —
-            // a couple of rate-limited rows shouldn't force a full re-translate.
-            <Button
-              variant="subtle"
-              size="sm"
-              onClick={handleRetryFailedTranslations}
-              disabled={isTranslating}
-              title={t('dub.retry_failed_title')}
-              leading={<Languages size={10} />}
-            >
-              {t('dub.retry_failed', { count: failedTranslationCount })}
-            </Button>
-          )}
+          {failedTranslationCount > 0 &&
+            !isTranslating && (
+              // Only the rows whose last translate attempt failed are re-sent —
+              // a couple of rate-limited rows shouldn't force a full re-translate.
+              <Button
+                variant="subtle"
+                size="sm"
+                onClick={handleRetryFailedTranslations}
+                disabled={isTranslating}
+                title={t('dub.retry_failed_title')}
+                leading={<Languages size={10} />}
+              >
+                {t('dub.retry_failed', { count: failedTranslationCount })}
+              </Button>
+            )}
           <Button
             variant="subtle"
             size="sm"

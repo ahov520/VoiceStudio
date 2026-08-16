@@ -135,10 +135,7 @@ export default function DubRightColumn({
             </select>
           </label>
         </div>
-        <div
-          className={OUT_ROW}
-          title={t('dub.timing_title')}
-        >
+        <div className={OUT_ROW} title={t('dub.timing_title')}>
           <span className={OUT_TITLE}>{t('dub.timing_label')}</span>
           <Segmented
             value={timingStrategy}
