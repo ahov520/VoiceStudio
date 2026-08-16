@@ -99,7 +99,11 @@ export default function SeparationPanel() {
         stack
         title={t('separation.engine')}
         control={
-          <div className="flex w-full flex-col gap-1.5" role="radiogroup" aria-label={t('separation.engine')}>
+          <div
+            className="flex w-full flex-col gap-1.5"
+            role="radiogroup"
+            aria-label={t('separation.engine')}
+          >
             {backends.map((b) => {
               const selected = state?.active === b.id;
               return (
@@ -124,7 +128,11 @@ export default function SeparationPanel() {
                     <span>
                       {b.display_name}{' '}
                       <span className="text-[length:var(--text-xs)] text-[color:var(--chrome-fg-dim)]">
-                        [{b.category === 'cloud' ? t('separation.cloudBadge') : t('separation.localBadge')}]
+                        [
+                        {b.category === 'cloud'
+                          ? t('separation.cloudBadge')
+                          : t('separation.localBadge')}
+                        ]
                       </span>
                     </span>
                     {!b.available && b.reason && (

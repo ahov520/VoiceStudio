@@ -160,12 +160,7 @@ export default function IdleSkeleton({
       </div>
       <div className="flex flex-wrap gap-[8px] justify-center items-center">
         {availableSubs.map((lang) => (
-          <Button
-            key={lang}
-            variant="primary"
-            size="sm"
-            onClick={() => onUseSubtitles(lang)}
-          >
+          <Button key={lang} variant="primary" size="sm" onClick={() => onUseSubtitles(lang)}>
             <Captions size={13} /> {t('dub.use_video_subtitles', { lang })}
           </Button>
         ))}

@@ -9,14 +9,7 @@
  *
  * Spec: docs/superpowers/specs/2026-05-30-stories-editor-studio-design.md
  */
-import React, {
-  useState,
-  useCallback,
-  useRef,
-  useEffect,
-  useLayoutEffect,
-  useMemo,
-} from "react";
+import React, { useState, useCallback, useRef, useEffect, useLayoutEffect, useMemo } from 'react';
 import {
   Plus,
   BookOpen,
@@ -34,51 +27,42 @@ import {
   Timer,
   ChartColumn,
   Hourglass,
-} from "lucide-react";
-import toast from "react-hot-toast";
-import { useTranslation } from "react-i18next";
-import { List } from "react-window";
-import { Button } from "../ui";
-import VoiceSelector from "./VoiceSelector";
-import StoryTrackRow, { isChapterText } from "./StoryTrackRow";
-import { useAppStore } from "../store";
-import { recordValueMoment } from "../utils/donationMoments";
+} from 'lucide-react';
+import toast from 'react-hot-toast';
+import { useTranslation } from 'react-i18next';
+import { List } from 'react-window';
+import { Button } from '../ui';
+import VoiceSelector from './VoiceSelector';
+import StoryTrackRow, { isChapterText } from './StoryTrackRow';
+import { useAppStore } from '../store';
+import { recordValueMoment } from '../utils/donationMoments';
 import {
   parseStoryText,
   hasStoryMarkers,
   applyInlineVoice,
   insertToken,
-} from "../utils/storyTokens";
-import { parseScript } from "../utils/parseScript";
-import { importToText } from "../utils/importStory";
-import { generateSpeech, audioUrl } from "../api/generate";
-import { playBlobAudio } from "../utils/media";
-import { downloadMedia } from "../utils/mediaDownload";
-import { encodeAudio } from "../api/stories";
-import { longformRender } from "../api/audiobook";
-import { exportStems } from "../utils/storyExport";
-import { storyToSpans } from "../utils/storyToSpans";
-import { consumeLongformStream } from "../utils/longformStream";
-import { reorder } from "../utils/storyReorder";
-import {
-  effectiveProfile,
-  effectiveSpeed,
-  castMember,
-  nextCastColor,
-} from "../utils/storyCast";
-import { askConfirm } from "../utils/dialog";
-import {
-  SAMPLE_STORY_CAST,
-  SAMPLE_STORY_LINES,
-  SAMPLE_STORY_NAME,
-} from "../data/sampleStory";
+} from '../utils/storyTokens';
+import { parseScript } from '../utils/parseScript';
+import { importToText } from '../utils/importStory';
+import { generateSpeech, audioUrl } from '../api/generate';
+import { playBlobAudio } from '../utils/media';
+import { downloadMedia } from '../utils/mediaDownload';
+import { encodeAudio } from '../api/stories';
+import { longformRender } from '../api/audiobook';
+import { exportStems } from '../utils/storyExport';
+import { storyToSpans } from '../utils/storyToSpans';
+import { consumeLongformStream } from '../utils/longformStream';
+import { reorder } from '../utils/storyReorder';
+import { effectiveProfile, effectiveSpeed, castMember, nextCastColor } from '../utils/storyCast';
+import { askConfirm } from '../utils/dialog';
+import { SAMPLE_STORY_CAST, SAMPLE_STORY_LINES, SAMPLE_STORY_NAME } from '../data/sampleStory';
 
 // ── Shared class strings (replacing the old stories-* BEM chrome) ─────────
 // The per-line chrome (SELECT_CHROME, TRACK_BTN, …) moved to StoryTrackRow.
 const NAME_INPUT =
-  "bg-bg-elev-2 border border-border rounded-sm text-fg [font-size:var(--text-xs)] px-[8px] py-[4px]";
+  'bg-bg-elev-2 border border-border rounded-sm text-fg [font-size:var(--text-xs)] px-[8px] py-[4px]';
 const DEL_BTN =
-  "bg-transparent text-fg-subtle cursor-pointer w-[26px] h-[26px] flex items-center justify-center rounded-md hover:enabled:text-danger hover:enabled:bg-white/[0.06] focus-visible:[box-shadow:var(--focus-ring)] disabled:opacity-35 disabled:cursor-not-allowed";
+  'bg-transparent text-fg-subtle cursor-pointer w-[26px] h-[26px] flex items-center justify-center rounded-md hover:enabled:text-danger hover:enabled:bg-white/[0.06] focus-visible:[box-shadow:var(--focus-ring)] disabled:opacity-35 disabled:cursor-not-allowed';
 
 // Above this many lines the track list switches from the plain flex list to a
 // react-window virtual list. An imported novel easily lands 2,000+ lines; the
@@ -89,7 +73,7 @@ const VIRTUALIZE_AFTER = 120;
 // Trigger a browser download for a Blob.
 function download(blob, filename) {
   const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
+  const a = document.createElement('a');
   a.href = url;
   a.download = filename;
   document.body.appendChild(a);
@@ -103,8 +87,8 @@ function download(blob, filename) {
 // `maxChars`. Falls back to whitespace, then to the hard cap.
 function splitIntoChunks(text, maxChars) {
   const out = [];
-  const clean = String(text || "")
-    .replace(/\r\n/g, "\n")
+  const clean = String(text || '')
+    .replace(/\r\n/g, '\n')
     .trim();
   if (!clean) return out;
   const max = Math.max(40, Math.min(2000, maxChars | 0));
@@ -139,7 +123,7 @@ function splitIntoChunks(text, maxChars) {
 }
 
 let _trackId = 0;
-function makeTrack(character = "narrator", text = "") {
+function makeTrack(character = 'narrator', text = '') {
   return {
     id: ++_trackId,
     character,
@@ -157,7 +141,7 @@ function genCastId() {
   return `c_${rnd}`;
 }
 
-const DEFAULT_SAMPLE_KEY = "ov_stories_default_sample_v2";
+const DEFAULT_SAMPLE_KEY = 'ov_stories_default_sample_v2';
 
 export default function StoriesEditor({ profiles = [] }) {
   const { t } = useTranslation();
@@ -181,7 +165,7 @@ export default function StoriesEditor({ profiles = [] }) {
   const setTracks = useCallback(
     (updater) => {
       const cur = useAppStore.getState().storyTracks;
-      setStoryTracks(typeof updater === "function" ? updater(cur) : updater);
+      setStoryTracks(typeof updater === 'function' ? updater(cur) : updater);
     },
     [setStoryTracks],
   );
@@ -195,18 +179,15 @@ export default function StoriesEditor({ profiles = [] }) {
 
   const [castOpen, setCastOpen] = useState(true);
   const [splitOpen, setSplitOpen] = useState(false);
-  const [splitText, setSplitText] = useState("");
+  const [splitText, setSplitText] = useState('');
   const [splitMax, setSplitMax] = useState(180);
   const [exporting, setExporting] = useState(false);
   const [exportPct, setExportPct] = useState(0);
   const [expandedLine, setExpandedLine] = useState(null);
   const [projectsOpen, setProjectsOpen] = useState(false);
-  const [projectName, setProjectName] = useState("");
-  const [exportFormat, setExportFormat] = useState("m4b");
-  const toggleProjects = useCallback(
-    () => setProjectsOpen((open) => !open),
-    [],
-  );
+  const [projectName, setProjectName] = useState('');
+  const [exportFormat, setExportFormat] = useState('m4b');
+  const toggleProjects = useCallback(() => setProjectsOpen((open) => !open), []);
   const toggleCast = useCallback(() => setCastOpen((open) => !open), []);
   const toggleSplit = useCallback(() => setSplitOpen((open) => !open), []);
   // Global reading speed (#415): one speed for every line without its own
@@ -214,7 +195,7 @@ export default function StoriesEditor({ profiles = [] }) {
   // restarts; not part of the project state, so no slice migration).
   const [globalSpeed, setGlobalSpeedState] = useState(() => {
     try {
-      const v = parseFloat(localStorage.getItem("ov_stories_global_speed"));
+      const v = parseFloat(localStorage.getItem('ov_stories_global_speed'));
       return Number.isFinite(v) && v >= 0.5 && v <= 2 ? v : 1;
     } catch {
       return 1;
@@ -223,7 +204,7 @@ export default function StoriesEditor({ profiles = [] }) {
   const setGlobalSpeed = useCallback((v) => {
     setGlobalSpeedState(v);
     try {
-      localStorage.setItem("ov_stories_global_speed", String(v));
+      localStorage.setItem('ov_stories_global_speed', String(v));
     } catch {
       /* noop */
     }
@@ -247,14 +228,8 @@ export default function StoriesEditor({ profiles = [] }) {
   const onRowDragStart = useCallback((id) => {
     dragId.current = id;
   }, []);
-  const onRowDragOver = useCallback(
-    (id) => setDragOver((d) => (d === id ? d : id)),
-    [],
-  );
-  const onRowDragLeave = useCallback(
-    (id) => setDragOver((d) => (d === id ? null : d)),
-    [],
-  );
+  const onRowDragOver = useCallback((id) => setDragOver((d) => (d === id ? d : id)), []);
+  const onRowDragLeave = useCallback((id) => setDragOver((d) => (d === id ? null : d)), []);
   const onRowDrop = useCallback(
     (id) => {
       if (dragId.current != null && dragId.current !== id) {
@@ -271,7 +246,7 @@ export default function StoriesEditor({ profiles = [] }) {
     const n = cast.length;
     upsertCastMember({
       id: genCastId(),
-      name: `${t("stories.character")} ${n}`,
+      name: `${t('stories.character')} ${n}`,
       color: nextCastColor(cast),
       profileId: null,
     });
@@ -280,12 +255,10 @@ export default function StoriesEditor({ profiles = [] }) {
 
   const deleteCharacter = useCallback(
     (id) => {
-      if (id === "narrator") return; // keep at least the narrator
+      if (id === 'narrator') return; // keep at least the narrator
       // Reassign any lines using this character back to the narrator.
       setTracks((prev) =>
-        prev.map((tk) =>
-          tk.character === id ? { ...tk, character: "narrator" } : tk,
-        ),
+        prev.map((tk) => (tk.character === id ? { ...tk, character: 'narrator' } : tk)),
       );
       removeCastMember(id);
     },
@@ -296,23 +269,22 @@ export default function StoriesEditor({ profiles = [] }) {
   const slug = (name) =>
     name
       .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/^-|-$/g, "") || "char";
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-|-$/g, '') || 'char';
 
   const autoCast = useCallback(() => {
     const parsed = parseScript(splitText);
     if (!parsed.length) {
-      toast.error(t("stories.autocastEmpty"));
+      toast.error(t('stories.autocastEmpty'));
       return;
     }
     const speakers = [...new Set(parsed.map((p) => p.speaker))];
     const newCast = cast.map((c) => ({ ...c }));
     const idFor = {};
     let voiceIdx = 0;
-    const assignVoice = () =>
-      profiles.length ? profiles[voiceIdx++ % profiles.length].id : null;
+    const assignVoice = () => (profiles.length ? profiles[voiceIdx++ % profiles.length].id : null);
     for (const sp of speakers) {
-      const id = sp.toLowerCase() === "narrator" ? "narrator" : slug(sp);
+      const id = sp.toLowerCase() === 'narrator' ? 'narrator' : slug(sp);
       idFor[sp] = id;
       const existing = newCast.find((c) => c.id === id);
       if (!existing) {
@@ -329,11 +301,11 @@ export default function StoriesEditor({ profiles = [] }) {
     setCast(newCast);
     const newTracks = parsed.map((p) => makeTrack(idFor[p.speaker], p.text));
     setTracks((prev) => [...prev, ...newTracks]);
-    setSplitText("");
+    setSplitText('');
     setSplitOpen(false);
     setCastOpen(true);
     toast.success(
-      t("stories.autocastDone", {
+      t('stories.autocastDone', {
         lines: newTracks.length,
         voices: speakers.length,
       }),
@@ -343,35 +315,34 @@ export default function StoriesEditor({ profiles = [] }) {
   const onImportFile = useCallback(
     async (e) => {
       const file = e.target.files && e.target.files[0];
-      e.target.value = "";
+      e.target.value = '';
       if (!file) return;
       try {
         const text = importToText(file.name, await file.text());
         setSplitText(text);
         setSplitOpen(true);
       } catch (err) {
-        console.warn("Story import failed:", err);
-        toast.error(t("stories.importFailed"));
+        console.warn('Story import failed:', err);
+        toast.error(t('stories.importFailed'));
       }
     },
     [t],
   );
 
   // ── Named projects ──────────────────────────────────────────────────────
-  const currentProject =
-    storyProjects.find((p) => p.id === currentProjectId) || null;
+  const currentProject = storyProjects.find((p) => p.id === currentProjectId) || null;
   useEffect(() => {
-    setProjectName(currentProject ? currentProject.name : "");
+    setProjectName(currentProject ? currentProject.name : '');
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentProjectId]);
 
   const saveCurrent = useCallback(() => {
-    saveProject(projectName.trim() || t("stories.untitled"));
-    toast.success(t("stories.projectSaved"));
+    saveProject(projectName.trim() || t('stories.untitled'));
+    toast.success(t('stories.projectSaved'));
   }, [projectName, saveProject, t]);
   const newStory = useCallback(() => {
     newProject();
-    setProjectName("");
+    setProjectName('');
   }, [newProject]);
   const createSampleStory = useCallback(() => {
     newProject();
@@ -379,14 +350,10 @@ export default function StoriesEditor({ profiles = [] }) {
     setCast(
       SAMPLE_STORY_CAST.map((member, index) => ({
         ...member,
-        profileId: profiles.length
-          ? profiles[index % profiles.length].id
-          : null,
+        profileId: profiles.length ? profiles[index % profiles.length].id : null,
       })),
     );
-    setStoryTracks(
-      SAMPLE_STORY_LINES.map((line) => makeTrack(line.character, line.text)),
-    );
+    setStoryTracks(SAMPLE_STORY_LINES.map((line) => makeTrack(line.character, line.text)));
     setProjectName(SAMPLE_STORY_NAME);
     saveProject(SAMPLE_STORY_NAME);
     setProjectsOpen(false);
@@ -396,30 +363,23 @@ export default function StoriesEditor({ profiles = [] }) {
   const loadSampleStory = useCallback(async () => {
     if (
       tracks.some((track) => track.text.trim()) &&
-      !(await askConfirm(
-        t("audiobook.load_sample_confirm"),
-        t("audiobook.load_sample"),
-      ))
+      !(await askConfirm(t('audiobook.load_sample_confirm'), t('audiobook.load_sample')))
     ) {
       return;
     }
 
     createSampleStory();
-    toast.success(t("stories.projectSaved"));
+    toast.success(t('stories.projectSaved'));
   }, [createSampleStory, t, tracks]);
 
   useEffect(() => {
     if (sampleBootstrapRef.current) return;
-    if (
-      currentProjectId ||
-      storyProjects.length ||
-      tracks.some((track) => track.text.trim())
-    )
+    if (currentProjectId || storyProjects.length || tracks.some((track) => track.text.trim()))
       return;
     sampleBootstrapRef.current = true;
     try {
       if (localStorage.getItem(DEFAULT_SAMPLE_KEY)) return;
-      localStorage.setItem(DEFAULT_SAMPLE_KEY, "1");
+      localStorage.setItem(DEFAULT_SAMPLE_KEY, '1');
     } catch {
       // Storage can be unavailable in privacy modes; the pristine-state guard
       // still prevents duplicate projects during this mounted session.
@@ -452,12 +412,7 @@ export default function StoriesEditor({ profiles = [] }) {
   );
   const confirmDeleteProject = useCallback(
     async (id) => {
-      if (
-        await askConfirm(
-          t("stories.deleteProjectConfirm"),
-          t("stories.deleteProject"),
-        )
-      ) {
+      if (await askConfirm(t('stories.deleteProjectConfirm'), t('stories.deleteProject'))) {
         deleteProject(id);
       }
     },
@@ -466,21 +421,15 @@ export default function StoriesEditor({ profiles = [] }) {
 
   const addChapter = useCallback(() => {
     const n = tracks.filter((tk) => isChapterText(tk.text)).length + 1;
-    setTracks((prev) => [
-      ...prev,
-      makeTrack("narrator", `# ${t("stories.chapterN", { n })}`),
-    ]);
+    setTracks((prev) => [...prev, makeTrack('narrator', `# ${t('stories.chapterN', { n })}`)]);
   }, [tracks, setTracks, t]);
 
   // ── Paste & auto-split ───────────────────────────────────────────────────
   const applySplit = useCallback(() => {
     const chunks = splitIntoChunks(splitText, splitMax);
     if (!chunks.length) return;
-    setTracks((prev) => [
-      ...prev,
-      ...chunks.map((tx) => makeTrack("narrator", tx)),
-    ]);
-    setSplitText("");
+    setTracks((prev) => [...prev, ...chunks.map((tx) => makeTrack('narrator', tx))]);
+    setSplitText('');
     setSplitOpen(false);
   }, [splitText, splitMax, setTracks]);
 
@@ -510,23 +459,18 @@ export default function StoriesEditor({ profiles = [] }) {
       const caret = el ? el.selectionStart : null;
       setTracks((prev) =>
         prev.map((tk) =>
-          tk.id === trackId
-            ? { ...tk, text: insertToken(tk.text, caret, token) }
-            : tk,
+          tk.id === trackId ? { ...tk, text: insertToken(tk.text, caret, token) } : tk,
         ),
       );
     },
     [setTracks],
   );
   const insertPauseInto = useCallback(
-    (trackId) => insertTokenInto(trackId, "[pause 0.5s]"),
+    (trackId) => insertTokenInto(trackId, '[pause 0.5s]'),
     [insertTokenInto],
   );
 
-  const addTrack = useCallback(
-    () => setTracks((prev) => [...prev, makeTrack()]),
-    [setTracks],
-  );
+  const addTrack = useCallback(() => setTracks((prev) => [...prev, makeTrack()]), [setTracks]);
   const removeTrack = useCallback(
     (id) =>
       setTracks((prev) =>
@@ -539,9 +483,7 @@ export default function StoriesEditor({ profiles = [] }) {
   );
   const updateTrack = useCallback(
     (id, field, value) => {
-      setTracks((prev) =>
-        prev.map((tk) => (tk.id === id ? { ...tk, [field]: value } : tk)),
-      );
+      setTracks((prev) => prev.map((tk) => (tk.id === id ? { ...tk, [field]: value } : tk)));
     },
     [setTracks],
   );
@@ -549,23 +491,21 @@ export default function StoriesEditor({ profiles = [] }) {
   // ── Synthesis (preview + export share one fetch) ─────────────────────────
   const fetchChunkBlob = useCallback(async (text, profileId, speed = 1.0) => {
     const fd = new FormData();
-    fd.append("text", text);
-    fd.append("speed", String(speed || 1.0));
-    if (profileId) fd.append("profile_id", profileId);
+    fd.append('text', text);
+    fd.append('speed', String(speed || 1.0));
+    if (profileId) fd.append('profile_id', profileId);
     const res = await generateSpeech(fd); // apiFetch: same-origin + PIN-aware
     return res.blob();
   }, []);
 
   const previewTrack = useCallback(
     async (track) => {
-      const raw = (track.text || "").trim();
+      const raw = (track.text || '').trim();
       if (!raw) return;
       const pid = effectiveProfile(track, cast);
       const spd = effectiveSpeed(track, globalSpeed);
       setTracks((prev) =>
-        prev.map((tk) =>
-          tk.id === track.id ? { ...tk, generating: true } : tk,
-        ),
+        prev.map((tk) => (tk.id === track.id ? { ...tk, generating: true } : tk)),
       );
 
       if (!hasStoryMarkers(raw)) {
@@ -574,9 +514,7 @@ export default function StoriesEditor({ profiles = [] }) {
           const url = URL.createObjectURL(blob);
           setTracks((prev) =>
             prev.map((tk) =>
-              tk.id === track.id
-                ? { ...tk, audioUrl: url, generating: false }
-                : tk,
+              tk.id === track.id ? { ...tk, audioUrl: url, generating: false } : tk,
             ),
           );
           // Shared playback path (labelled with the line text): registers with
@@ -585,11 +523,9 @@ export default function StoriesEditor({ profiles = [] }) {
           // WebKit, where blob: URLs are dead in media elements.
           playBlobAudio(blob, { label: raw }).catch(() => {});
         } catch (err) {
-          console.warn("Stories preview failed:", err);
+          console.warn('Stories preview failed:', err);
           setTracks((prev) =>
-            prev.map((tk) =>
-              tk.id === track.id ? { ...tk, generating: false } : tk,
-            ),
+            prev.map((tk) => (tk.id === track.id ? { ...tk, generating: false } : tk)),
           );
         }
         return;
@@ -599,7 +535,7 @@ export default function StoriesEditor({ profiles = [] }) {
       try {
         const chunkBlobs = await Promise.all(
           parsed.map((seg) =>
-            seg.type === "chunk"
+            seg.type === 'chunk'
               ? fetchChunkBlob(seg.text, seg.profileId, spd)
               : Promise.resolve(null),
           ),
@@ -608,9 +544,7 @@ export default function StoriesEditor({ profiles = [] }) {
         const finish = () => {
           setTracks((prev) =>
             prev.map((tk) =>
-              tk.id === track.id
-                ? { ...tk, generating: false, audioUrl: null }
-                : tk,
+              tk.id === track.id ? { ...tk, generating: false, audioUrl: null } : tk,
             ),
           );
         };
@@ -619,18 +553,18 @@ export default function StoriesEditor({ profiles = [] }) {
             const seg = parsed[cursor];
             const blob = chunkBlobs[cursor];
             cursor++;
-            if (seg.type === "pause") {
+            if (seg.type === 'pause') {
               setTimeout(step, seg.seconds * 1000);
               return;
             }
-            if (seg.type === "chunk" && blob) {
+            if (seg.type === 'chunk' && blob) {
               // Chained through the shared playback path: each chunk claims
               // the global manager (mini-player shows the line), a natural
               // end (or a broken chunk) advances the chain, and stopping from
               // the player/another claim cancels the rest of the chain.
               playBlobAudio(blob, {
                 label: raw,
-                onDone: (reason) => (reason === "stopped" ? finish() : step()),
+                onDone: (reason) => (reason === 'stopped' ? finish() : step()),
               }).catch(() => step());
               return;
             }
@@ -639,11 +573,9 @@ export default function StoriesEditor({ profiles = [] }) {
         };
         step();
       } catch (err) {
-        console.warn("Stories chained preview failed:", err);
+        console.warn('Stories chained preview failed:', err);
         setTracks((prev) =>
-          prev.map((tk) =>
-            tk.id === track.id ? { ...tk, generating: false } : tk,
-          ),
+          prev.map((tk) => (tk.id === track.id ? { ...tk, generating: false } : tk)),
         );
       }
     },
@@ -654,13 +586,13 @@ export default function StoriesEditor({ profiles = [] }) {
   // ffmpeg endpoint; if that fails (e.g. no ffmpeg), fall back to the raw WAV.
   const deliver = useCallback(
     async (wavBlob, baseName) => {
-      if (exportFormat === "mp3") {
+      if (exportFormat === 'mp3') {
         try {
-          download(await encodeAudio(wavBlob, "mp3"), `${baseName}.mp3`);
+          download(await encodeAudio(wavBlob, 'mp3'), `${baseName}.mp3`);
           return;
         } catch (err) {
-          console.warn("MP3 encode failed; falling back to WAV:", err);
-          toast(t("stories.mp3Fallback"), { icon: "⚠️" });
+          console.warn('MP3 encode failed; falling back to WAV:', err);
+          toast(t('stories.mp3Fallback'), { icon: '⚠️' });
         }
       }
       download(wavBlob, `${baseName}.wav`);
@@ -674,11 +606,11 @@ export default function StoriesEditor({ profiles = [] }) {
   // (via the audiobook controls) loudness/metadata. Single-line preview stays
   // client-side for latency. Stems remain a client export below.
   const generateAll = useCallback(async () => {
-    const usable = tracks.filter((tk) => (tk.text || "").trim());
+    const usable = tracks.filter((tk) => (tk.text || '').trim());
     if (!usable.length || exporting) return;
     const chapters = storyToSpans(usable, cast, globalSpeed);
     if (!chapters.length) {
-      toast.error(t("stories.exportFailed"));
+      toast.error(t('stories.exportFailed'));
       return;
     }
     setExporting(true);
@@ -686,43 +618,43 @@ export default function StoriesEditor({ profiles = [] }) {
     try {
       const res = await longformRender({
         chapters,
-        format: exportFormat === "mp3" ? "mp3" : "m4b",
+        format: exportFormat === 'mp3' ? 'mp3' : 'm4b',
       });
       let total = 0;
-      let output = "";
+      let output = '';
       let streamErr = null;
       await consumeLongformStream(res, (evt) => {
-        if (evt.type === "started") total = evt.chapters;
-        else if (evt.type === "chapter" || evt.type === "chapter_error") {
+        if (evt.type === 'started') total = evt.chapters;
+        else if (evt.type === 'chapter' || evt.type === 'chapter_error') {
           setExportPct(total ? Math.round(((evt.index + 1) / total) * 100) : 0);
-        } else if (evt.type === "done") output = evt.output;
-        else if (evt.type === "error") streamErr = evt.error || "render failed";
+        } else if (evt.type === 'done') output = evt.output;
+        else if (evt.type === 'error') streamErr = evt.error || 'render failed';
       });
       if (streamErr) throw new Error(streamErr);
-      if (!output) throw new Error("no output produced");
+      if (!output) throw new Error('no output produced');
       // Route through the shared save util (#1218): the story mix is a file in
       // OUTPUTS_DIR served at /audio/<output>, so a raw `<a href download>`
       // navigates the Tauri webview to the m4b and hijacks the app. Pass
       // `sourceFilename` so the Tauri copy uses the /export server-side copy.
-      const mixName = output.split("/").pop();
+      const mixName = output.split('/').pop();
       // downloadMedia owns all user-facing toasts (loading → saved/error) and
       // fires onValueMoment only on a real save — so no success toast here (it
       // would fire even when the native save dialog is cancelled) and the
       // donation moment goes through the callback instead of unconditionally.
       await downloadMedia(audioUrl(output), mixName, {
         sourceFilename: mixName,
-        onValueMoment: () => recordValueMoment("audiobook"),
+        onValueMoment: () => recordValueMoment('audiobook'),
       });
     } catch (err) {
-      console.warn("Story render failed:", err);
-      toast.error(t("stories.exportFailed"));
+      console.warn('Story render failed:', err);
+      toast.error(t('stories.exportFailed'));
     } finally {
       setExporting(false);
     }
   }, [tracks, cast, exporting, exportFormat, globalSpeed, t]);
 
   const exportStemsAll = useCallback(async () => {
-    const usable = tracks.filter((tk) => (tk.text || "").trim());
+    const usable = tracks.filter((tk) => (tk.text || '').trim());
     if (!usable.length || exporting) return;
     setExporting(true);
     setExportPct(0);
@@ -737,15 +669,16 @@ export default function StoriesEditor({ profiles = [] }) {
         (d, total) => setExportPct(total ? Math.round((d / total) * 100) : 0),
       );
       for (const s of stems) {
-        const name = (
-          (castMember(cast, s.character) || {}).name || s.character
-        ).replace(/[^\w-]+/g, "_");
+        const name = ((castMember(cast, s.character) || {}).name || s.character).replace(
+          /[^\w-]+/g,
+          '_',
+        );
         await deliver(s.blob, `story-${name}`);
       }
-      toast.success(t("stories.stemsDone", { count: stems.length }));
+      toast.success(t('stories.stemsDone', { count: stems.length }));
     } catch (err) {
-      console.warn("Stems export failed:", err);
-      toast.error(t("stories.exportFailed"));
+      console.warn('Stems export failed:', err);
+      toast.error(t('stories.exportFailed'));
     } finally {
       setExporting(false);
     }
@@ -862,14 +795,7 @@ export default function StoriesEditor({ profiles = [] }) {
   );
 
   const VirtualRow = useCallback(
-    ({
-      index,
-      style,
-      tracks: tks,
-      dragOver: over,
-      expandedLine: expanded,
-      ...rest
-    }) => {
+    ({ index, style, tracks: tks, dragOver: over, expandedLine: expanded, ...rest }) => {
       const track = tks[index];
       if (!track) return null;
       return (
@@ -891,7 +817,7 @@ export default function StoriesEditor({ profiles = [] }) {
     <div
       className="stories-editor flex flex-col h-full w-full min-h-0 font-sans"
       role="region"
-      aria-label={t("stories.title")}
+      aria-label={t('stories.title')}
     >
       {/* Production header */}
       <header className="stories-header flex items-center justify-between gap-[12px]">
@@ -900,41 +826,37 @@ export default function StoriesEditor({ profiles = [] }) {
             <BookOpen size={15} />
           </span>
           <div className="min-w-0">
-            <span className="stories-kicker">{t("stories.title")}</span>
+            <span className="stories-kicker">{t('stories.title')}</span>
             <h1 className="stories-title font-serif text-fg m-0 truncate text-balance">
-              {currentProject ? currentProject.name : t("stories.untitled")}
+              {currentProject ? currentProject.name : t('stories.untitled')}
             </h1>
           </div>
         </div>
         <div className="stories-header-output flex items-center gap-[5px]">
           <span className="stories-header-stat">
-            {t("stories.lines", { count: tracks.length })} ·{" "}
-            {t("stories.minutes", { count: estMinutes })}
+            {t('stories.lines', { count: tracks.length })} ·{' '}
+            {t('stories.minutes', { count: estMinutes })}
           </span>
           <select
             className="input-base w-auto [font-size:var(--text-xs)] px-[6px] py-[3px]"
             value={exportFormat}
             onChange={(e) => setExportFormat(e.target.value)}
-            aria-label={t("stories.format")}
-            title={t("stories.format")}
+            aria-label={t('stories.format')}
+            title={t('stories.format')}
             name="story-export-format"
           >
             <option value="m4b">M4B</option>
             <option value="mp3">MP3</option>
           </select>
-          <Button
-            size="sm"
-            onClick={generateAll}
-            disabled={tracks.length === 0 || exporting}
-          >
-            <Download size={13} aria-hidden="true" />{" "}
-            {exporting ? `${exportPct}%` : t("stories.generateAll")}
+          <Button size="sm" onClick={generateAll} disabled={tracks.length === 0 || exporting}>
+            <Download size={13} aria-hidden="true" />{' '}
+            {exporting ? `${exportPct}%` : t('stories.generateAll')}
           </Button>
         </div>
       </header>
 
       <div className="stories-workspace min-h-0 flex-1">
-        <aside className="stories-sidebar" aria-label={t("stories.title")}>
+        <aside className="stories-sidebar" aria-label={t('stories.title')}>
           <section className="stories-rail-section">
             <div className="stories-rail-heading">
               <button
@@ -944,18 +866,16 @@ export default function StoriesEditor({ profiles = [] }) {
                 aria-expanded={projectsOpen}
               >
                 <Folder size={13} aria-hidden="true" />
-                <span>{t("stories.projects")}</span>
-                <span className="stories-section-count">
-                  {storyProjects.length}
-                </span>
+                <span>{t('stories.projects')}</span>
+                <span className="stories-section-count">{storyProjects.length}</span>
               </button>
               <div className="flex items-center gap-[2px]">
                 <Button
                   variant="icon"
                   iconSize="sm"
                   onClick={loadSampleStory}
-                  title={t("audiobook.load_sample_hint")}
-                  aria-label={t("audiobook.load_sample")}
+                  title={t('audiobook.load_sample_hint')}
+                  aria-label={t('audiobook.load_sample')}
                 >
                   <Sparkles size={12} aria-hidden="true" />
                 </Button>
@@ -963,8 +883,8 @@ export default function StoriesEditor({ profiles = [] }) {
                   variant="icon"
                   iconSize="sm"
                   onClick={newStory}
-                  title={t("stories.newStory")}
-                  aria-label={t("stories.newStory")}
+                  title={t('stories.newStory')}
+                  aria-label={t('stories.newStory')}
                 >
                   <Plus size={12} aria-hidden="true" />
                 </Button>
@@ -975,13 +895,13 @@ export default function StoriesEditor({ profiles = [] }) {
                 className={`${NAME_INPUT} min-w-0 flex-1`}
                 value={projectName}
                 onChange={(e) => setProjectName(e.target.value)}
-                placeholder={t("stories.untitled")}
-                aria-label={t("stories.projectName")}
+                placeholder={t('stories.untitled')}
+                aria-label={t('stories.projectName')}
                 name="story-project-name"
                 autoComplete="off"
               />
               <Button size="sm" onClick={saveCurrent}>
-                {t("stories.save")}
+                {t('stories.save')}
               </Button>
             </div>
             {projectsOpen && (
@@ -989,19 +909,16 @@ export default function StoriesEditor({ profiles = [] }) {
                 {storyProjects.map((project) => (
                   <div
                     key={project.id}
-                    className={`stories-project-row ${project.id === currentProjectId ? "stories-project-row--active" : ""}`}
+                    className={`stories-project-row ${project.id === currentProjectId ? 'stories-project-row--active' : ''}`}
                   >
-                    <button
-                      type="button"
-                      onClick={() => openProject(project.id)}
-                    >
+                    <button type="button" onClick={() => openProject(project.id)}>
                       <span className="truncate">{project.name}</span>
                     </button>
                     <button
                       type="button"
                       className={DEL_BTN}
                       onClick={() => confirmDeleteProject(project.id)}
-                      aria-label={t("stories.deleteProject")}
+                      aria-label={t('stories.deleteProject')}
                     >
                       <X size={12} aria-hidden="true" />
                     </button>
@@ -1020,15 +937,15 @@ export default function StoriesEditor({ profiles = [] }) {
                 aria-expanded={castOpen}
               >
                 <Users size={13} aria-hidden="true" />
-                <span>{t("stories.cast")}</span>
+                <span>{t('stories.cast')}</span>
                 <span className="stories-section-count">{cast.length}</span>
               </button>
               <Button
                 variant="icon"
                 iconSize="sm"
                 onClick={addCharacter}
-                title={t("stories.addCharacter")}
-                aria-label={t("stories.addCharacter")}
+                title={t('stories.addCharacter')}
+                aria-label={t('stories.addCharacter')}
               >
                 <Plus size={12} aria-hidden="true" />
               </Button>
@@ -1045,36 +962,32 @@ export default function StoriesEditor({ profiles = [] }) {
                     <input
                       className={NAME_INPUT}
                       value={member.name}
-                      onChange={(e) =>
-                        upsertCastMember({ ...member, name: e.target.value })
-                      }
-                      aria-label={t("stories.characterName")}
+                      onChange={(e) => upsertCastMember({ ...member, name: e.target.value })}
+                      aria-label={t('stories.characterName')}
                       name={`story-character-${member.id}`}
                       autoComplete="off"
                     />
                     <span className="min-w-0">
                       <VoiceSelector
-                        value={member.profileId || ""}
-                        onChange={(value) =>
-                          setCharacterVoice(member.id, value || null)
-                        }
+                        value={member.profileId || ''}
+                        onChange={(value) => setCharacterVoice(member.id, value || null)}
                         profiles={profiles}
                         size="sm"
                         menuPortal
-                        defaultLabel={t("stories.defaultVoice")}
+                        defaultLabel={t('stories.defaultVoice')}
                       />
                     </span>
                     <button
                       type="button"
                       className={DEL_BTN}
                       onClick={() => deleteCharacter(member.id)}
-                      disabled={member.id === "narrator"}
+                      disabled={member.id === 'narrator'}
                       title={
-                        member.id === "narrator"
-                          ? t("stories.narratorLocked")
-                          : t("stories.removeCharacter")
+                        member.id === 'narrator'
+                          ? t('stories.narratorLocked')
+                          : t('stories.removeCharacter')
                       }
-                      aria-label={t("stories.removeCharacter")}
+                      aria-label={t('stories.removeCharacter')}
                     >
                       <X size={12} aria-hidden="true" />
                     </button>
@@ -1087,10 +1000,8 @@ export default function StoriesEditor({ profiles = [] }) {
           <section className="stories-rail-section stories-output-rail">
             <div className="stories-rail-label">
               <Timer size={12} aria-hidden="true" />
-              <span>{t("stories.global_speed")}</span>
-              <span className="stories-speed-value">
-                {globalSpeed.toFixed(1)}×
-              </span>
+              <span>{t('stories.global_speed')}</span>
+              <span className="stories-speed-value">{globalSpeed.toFixed(1)}×</span>
             </div>
             <input
               type="range"
@@ -1099,7 +1010,7 @@ export default function StoriesEditor({ profiles = [] }) {
               step="0.05"
               value={globalSpeed}
               onChange={(e) => setGlobalSpeed(parseFloat(e.target.value))}
-              aria-label={t("stories.global_speed")}
+              aria-label={t('stories.global_speed')}
               name="story-global-speed"
               className="w-full"
             />
@@ -1109,7 +1020,7 @@ export default function StoriesEditor({ profiles = [] }) {
               onClick={exportStemsAll}
               disabled={tracks.length === 0 || exporting}
             >
-              <Layers size={13} aria-hidden="true" /> {t("stories.stems")}
+              <Layers size={13} aria-hidden="true" /> {t('stories.stems')}
             </Button>
           </section>
         </aside>
@@ -1118,7 +1029,7 @@ export default function StoriesEditor({ profiles = [] }) {
           <div className="stories-manuscript-toolbar">
             <div className="stories-manuscript-heading">
               <FileText size={14} aria-hidden="true" />
-              <span>{t("audiobook.script")}</span>
+              <span>{t('audiobook.script')}</span>
             </div>
             <div className="flex items-center gap-[4px]">
               <input
@@ -1126,29 +1037,26 @@ export default function StoriesEditor({ profiles = [] }) {
                 type="file"
                 accept=".txt,.srt,text/plain"
                 onChange={onImportFile}
-                aria-label={t("stories.import")}
+                aria-label={t('stories.import')}
                 name="story-import-file"
                 hidden
               />
               <Button
                 size="sm"
                 variant="ghost"
-                onClick={() =>
-                  fileInputRef.current && fileInputRef.current.click()
-                }
+                onClick={() => fileInputRef.current && fileInputRef.current.click()}
               >
-                <Upload size={13} aria-hidden="true" /> {t("stories.import")}
+                <Upload size={13} aria-hidden="true" /> {t('stories.import')}
               </Button>
               <Button size="sm" variant="ghost" onClick={toggleSplit}>
-                <Scissors size={13} aria-hidden="true" />{" "}
-                {t("stories.pasteSplit")}
+                <Scissors size={13} aria-hidden="true" /> {t('stories.pasteSplit')}
               </Button>
               <Button
                 variant="icon"
                 iconSize="md"
                 onClick={addTrack}
-                aria-label={t("stories.addLine")}
-                title={t("stories.addLine")}
+                aria-label={t('stories.addLine')}
+                title={t('stories.addLine')}
               >
                 <Plus size={14} aria-hidden="true" />
               </Button>
@@ -1156,8 +1064,8 @@ export default function StoriesEditor({ profiles = [] }) {
                 variant="icon"
                 iconSize="md"
                 onClick={addChapter}
-                aria-label={t("stories.addChapter")}
-                title={t("stories.addChapter")}
+                aria-label={t('stories.addChapter')}
+                title={t('stories.addChapter')}
               >
                 <Bookmark size={13} aria-hidden="true" />
               </Button>
@@ -1169,30 +1077,28 @@ export default function StoriesEditor({ profiles = [] }) {
             <div
               className="stories-panel stories-split-panel flex flex-col gap-[10px]"
               role="region"
-              aria-label={t("stories.pasteSplit")}
+              aria-label={t('stories.pasteSplit')}
             >
               <textarea
                 className="w-full min-h-[96px] px-[10px] py-[8px] bg-bg-elev-2 border border-border rounded-sm text-fg [font-family:var(--font-sans)] [font-size:var(--text-sm)] resize-y"
-                placeholder={t("stories.splitPlaceholder")}
+                placeholder={t('stories.splitPlaceholder')}
                 value={splitText}
                 onChange={(e) => setSplitText(e.target.value)}
                 rows={6}
-                aria-label={t("stories.splitPlaceholder")}
+                aria-label={t('stories.splitPlaceholder')}
                 name="story-import-text"
                 autoComplete="off"
               />
               <div className="flex items-center gap-[12px] flex-wrap">
                 <label className="flex items-center gap-[6px] [font-size:var(--text-xs)] text-fg-muted">
-                  {t("stories.maxChars")}
+                  {t('stories.maxChars')}
                   <input
                     type="number"
                     min={60}
                     max={1000}
                     step={10}
                     value={splitMax}
-                    onChange={(e) =>
-                      setSplitMax(parseInt(e.target.value, 10) || 180)
-                    }
+                    onChange={(e) => setSplitMax(parseInt(e.target.value, 10) || 180)}
                     name="story-segment-length"
                     inputMode="numeric"
                     className="w-[64px] px-[6px] py-[4px] bg-bg-elev-2 border border-border rounded-sm text-fg [font-family:var(--font-mono)] [font-size:var(--text-xs)]"
@@ -1200,37 +1106,32 @@ export default function StoriesEditor({ profiles = [] }) {
                 </label>
                 <span className="flex-1 [font-size:var(--text-xs)] text-fg-subtle">
                   {splitText
-                    ? t("stories.segmentsHint", {
+                    ? t('stories.segmentsHint', {
                         count: splitPreviewCount,
                         max: splitMax,
                       })
-                    : t("stories.pasteAbove")}
+                    : t('stories.pasteAbove')}
                 </span>
                 <Button
                   size="sm"
                   variant="ghost"
                   onClick={() => {
-                    setSplitText("");
+                    setSplitText('');
                     setSplitOpen(false);
                   }}
                 >
-                  {t("stories.cancel")}
+                  {t('stories.cancel')}
                 </Button>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={applySplit}
-                  disabled={!splitText.trim()}
-                >
-                  <Scissors size={13} /> {t("stories.splitIntoTracks")}
+                <Button size="sm" variant="ghost" onClick={applySplit} disabled={!splitText.trim()}>
+                  <Scissors size={13} /> {t('stories.splitIntoTracks')}
                 </Button>
                 <Button
                   size="sm"
                   onClick={autoCast}
                   disabled={!splitText.trim()}
-                  title={t("stories.autocastHint")}
+                  title={t('stories.autocastHint')}
                 >
-                  <Sparkles size={13} /> {t("stories.autocast")}
+                  <Sparkles size={13} /> {t('stories.autocast')}
                 </Button>
               </div>
             </div>
@@ -1243,19 +1144,14 @@ export default function StoriesEditor({ profiles = [] }) {
                 <BookOpen size={26} />
               </span>
               <p className="[font-size:var(--text-sm)] max-w-[360px] leading-[1.55] text-pretty">
-                {t("stories.emptyText")}
+                {t('stories.emptyText')}
               </p>
               <div className="flex items-center gap-[6px]">
-                <Button
-                  size="sm"
-                  onClick={loadSampleStory}
-                  title={t("audiobook.load_sample_hint")}
-                >
-                  <Sparkles size={13} aria-hidden="true" />{" "}
-                  {t("audiobook.load_sample")}
+                <Button size="sm" onClick={loadSampleStory} title={t('audiobook.load_sample_hint')}>
+                  <Sparkles size={13} aria-hidden="true" /> {t('audiobook.load_sample')}
                 </Button>
                 <Button size="sm" variant="ghost" onClick={addTrack}>
-                  <Plus size={13} aria-hidden="true" /> {t("stories.addFirst")}
+                  <Plus size={13} aria-hidden="true" /> {t('stories.addFirst')}
                 </Button>
               </div>
             </div>
@@ -1276,7 +1172,7 @@ export default function StoriesEditor({ profiles = [] }) {
                   rowComponent={VirtualRow}
                   rowProps={rowProps}
                   overscanCount={8}
-                  style={{ height: listSize.height, width: "100%" }}
+                  style={{ height: listSize.height, width: '100%' }}
                 />
               )}
             </div>
@@ -1317,26 +1213,23 @@ export default function StoriesEditor({ profiles = [] }) {
             <footer className="stories-statusbar flex items-center justify-between">
               <div className="[font-size:var(--text-xs)] text-fg-subtle flex flex-wrap gap-[14px]">
                 <span className="flex items-center gap-[4px]">
-                  <FileText size={12} aria-hidden="true" />{" "}
-                  {t("stories.lines", { count: tracks.length })}
+                  <FileText size={12} aria-hidden="true" />{' '}
+                  {t('stories.lines', { count: tracks.length })}
                 </span>
                 <span className="flex items-center gap-[4px]">
-                  <Drama size={12} aria-hidden="true" />{" "}
-                  {t("stories.characters", { count: usedCharacters })}
+                  <Drama size={12} aria-hidden="true" />{' '}
+                  {t('stories.characters', { count: usedCharacters })}
                 </span>
                 <span className="flex items-center gap-[4px]">
-                  <Timer size={12} aria-hidden="true" />{" "}
-                  {t("stories.minutes", { count: estMinutes })}
+                  <Timer size={12} aria-hidden="true" />{' '}
+                  {t('stories.minutes', { count: estMinutes })}
                 </span>
                 <span className="flex items-center gap-[4px]">
-                  <ChartColumn size={12} aria-hidden="true" />{" "}
-                  {t("stories.chars", { count: totalChars })}
+                  <ChartColumn size={12} aria-hidden="true" />{' '}
+                  {t('stories.chars', { count: totalChars })}
                 </span>
                 {exporting && (
-                  <span
-                    className="flex items-center gap-[4px] text-accent"
-                    aria-live="polite"
-                  >
+                  <span className="flex items-center gap-[4px] text-accent" aria-live="polite">
                     <Hourglass size={12} aria-hidden="true" /> {exportPct}%
                   </span>
                 )}

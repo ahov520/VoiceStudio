@@ -37,12 +37,7 @@ export default function EmptyState({
       {...rest}
     >
       {Icon && (
-        <Icon
-          size={sm ? 20 : 28}
-          strokeWidth={1.5}
-          aria-hidden="true"
-          className="text-fg-subtle"
-        />
+        <Icon size={sm ? 20 : 28} strokeWidth={1.5} aria-hidden="true" className="text-fg-subtle" />
       )}
       <div
         className={`font-semibold text-fg ${sm ? 'text-[var(--text-sm)]' : 'text-[var(--text-md)]'}`}

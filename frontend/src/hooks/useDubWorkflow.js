@@ -601,15 +601,7 @@ export default function useDubWorkflow({
         dubAbortCtrlRef.current = null;
       }
     },
-    [
-      dubJobId,
-      startTranscribe,
-      setDubError,
-      setDubStep,
-      setDubPrepStage,
-      _resetStaleDubSession,
-      t,
-    ],
+    [dubJobId, startTranscribe, setDubError, setDubStep, setDubPrepStage, _resetStaleDubSession, t],
   );
 
   // User declined the subtitle track: run normal local ASR.
@@ -635,7 +627,15 @@ export default function useDubWorkflow({
     } finally {
       dubAbortCtrlRef.current = null;
     }
-  }, [dubJobId, startTranscribe, setDubError, setDubStep, setDubPrepStage, _resetStaleDubSession, t]);
+  }, [
+    dubJobId,
+    startTranscribe,
+    setDubError,
+    setDubStep,
+    setDubPrepStage,
+    _resetStaleDubSession,
+    t,
+  ]);
 
   const handleDubUpload = useCallback(
     async (dubVideoFile) => {
@@ -1031,10 +1031,7 @@ export default function useDubWorkflow({
       // Live translation log (optional onLog callback): the Dub tab renders
       // a real-time panel from these lines so a long LLM run shows what is
       // happening instead of a bare progress pill.
-      const onLog =
-        options && typeof options.onLog === 'function'
-          ? options.onLog
-          : () => {};
+      const onLog = options && typeof options.onLog === 'function' ? options.onLog : () => {};
       onLog(t('dub_workflow.translate_log_start', { lang: targetLang, total: segs.length }));
 
       try {
@@ -1077,7 +1074,9 @@ export default function useDubWorkflow({
             // everything already applied — retrying continues from the
             // failed rows instead of starting over.
             hardError = err;
-            onLog(t('dub_workflow.translate_log_batch_error', { error: err?.message || String(err) }));
+            onLog(
+              t('dub_workflow.translate_log_batch_error', { error: err?.message || String(err) }),
+            );
             break;
           }
           if (meta === null) meta = data;
@@ -1106,9 +1105,7 @@ export default function useDubWorkflow({
                 // `text` stays the currently-shown language (legacy single-slot
                 // contract); switching the target language swaps from this map
                 // instead of destroying the previous language's work.
-                ...(gotText
-                  ? { translations: { ...s.translations, [targetLang]: hit.text } }
-                  : {}),
+                ...(gotText ? { translations: { ...s.translations, [targetLang]: hit.text } } : {}),
                 translate_error: hit.error || undefined,
                 translate_degraded: hit.degraded || undefined,
                 translate_literal: hit.literal || undefined,
