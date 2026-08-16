@@ -24,7 +24,8 @@
     "flip_rail": "Зворотна сторона рейки",
     "voice": "Голос",
     "audiobook": "Аудіокнига",
-    "workspaces": "Робочі простори"
+    "workspaces": "Робочі простори",
+    "drama": "Драма"
   },
   "catalogue": {
     "title": "Каталог моделей",
@@ -2684,5 +2685,41 @@
     "noBackground": "Лише голосова доріжка — з цим рушієм експорт дубляжу не зберігає фонову музику.",
     "mvsepSepType": "ID алгоритму MVSEP",
     "mvsepSepTypeHint": "Числовий sep_type із документації API MVSEP. Типово 40 = BS Roformer (вокал + інструментал)."
+  },
+  "drama": {
+    "title": "Режисер драми",
+    "subtitle": "ШІ призначає ролі та тонує кожен рядок",
+    "sample": "Приклад сценарію",
+    "script_label": "Сценарій",
+    "auto_direct": "Авторежисура",
+    "directing": "Режисура…",
+    "script_placeholder": "Вставте сценарій…",
+    "empty_hint": "Вставте сценарій і натисніть «Авторежисура».",
+    "cast_label": "Актори",
+    "lines_label": "Рядки",
+    "voice_auto": "Авто-голос",
+    "voice_recipe": "рецепт",
+    "emotion": "Емоція",
+    "intensity": "Інтенсивність",
+    "output_label": "Сценарій аудіокниги",
+    "project_name": "Назва проєкту",
+    "copy": "Копіювати",
+    "copied": "Скопійовано в буфер обміну",
+    "copy_failed": "Не вдалося скопіювати",
+    "save": "Зберегти",
+    "saved": "Проєкт збережено",
+    "delete": "Видалити",
+    "emotion_neutral": "Нейтрально",
+    "emotion_calm": "Спокійно",
+    "emotion_happy": "Радість",
+    "emotion_sad": "Сум",
+    "emotion_angry": "Злість",
+    "emotion_fearful": "Страх",
+    "emotion_surprised": "Здивування",
+    "emotion_whispered": "Шепіт",
+    "emotion_shouting": "Крик",
+    "emotion_crying": "Плач",
+    "emotion_sarcastic": "Сарказм",
+    "emotion_tense": "Напруга"
   }
 }

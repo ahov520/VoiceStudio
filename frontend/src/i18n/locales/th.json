@@ -24,7 +24,8 @@
     "flip_rail": "รางพลิกด้านข้าง",
     "voice": "เสียง",
     "audiobook": "หนังสือเสียง",
-    "workspaces": "พื้นที่ทำงาน"
+    "workspaces": "พื้นที่ทำงาน",
+    "drama": "ละคร"
   },
   "catalogue": {
     "title": "แค็ตตาล็อกโมเดล",
@@ -2684,5 +2685,41 @@
     "noBackground": "ได้เฉพาะแทร็กเสียงพูด — การส่งออกงานพากย์จะไม่เก็บดนตรีพื้นหลังเมื่อใช้เอนจินนี้",
     "mvsepSepType": "รหัสอัลกอริทึม MVSEP",
     "mvsepSepTypeHint": "sep_type แบบตัวเลขจากเอกสาร API ของ MVSEP ค่าเริ่มต้น 40 = BS Roformer (เสียงร้อง + ดนตรี)"
+  },
+  "drama": {
+    "title": "ผู้กำกับละคร",
+    "subtitle": "AI แบ่งบทบาทและเพิ่มอารมณ์ให้ทุกบรรทัด",
+    "sample": "บทตัวอย่าง",
+    "script_label": "บท",
+    "auto_direct": "กำกับอัตโนมัติ",
+    "directing": "กำลังกำกับ…",
+    "script_placeholder": "วางบท…",
+    "empty_hint": "วางบทแล้วกดกำกับอัตโนมัติ",
+    "cast_label": "นักแสดง",
+    "lines_label": "บรรทัด",
+    "voice_auto": "เสียงอัตโนมัติ",
+    "voice_recipe": "สูตร",
+    "emotion": "อารมณ์",
+    "intensity": "ความเข้ม",
+    "output_label": "บทหนังสือเสียง",
+    "project_name": "ชื่อโปรเจกต์",
+    "copy": "คัดลอก",
+    "copied": "คัดลอกแล้ว",
+    "copy_failed": "คัดลอกไม่สำเร็จ",
+    "save": "บันทึก",
+    "saved": "บันทึกโปรเจกต์แล้ว",
+    "delete": "ลบ",
+    "emotion_neutral": "เป็นกลาง",
+    "emotion_calm": "สงบ",
+    "emotion_happy": "มีความสุข",
+    "emotion_sad": "เศร้า",
+    "emotion_angry": "โกรธ",
+    "emotion_fearful": "กลัว",
+    "emotion_surprised": "ประหลาดใจ",
+    "emotion_whispered": "กระซิบ",
+    "emotion_shouting": "ตะโกน",
+    "emotion_crying": "ร้องไห้",
+    "emotion_sarcastic": "เสียดสี",
+    "emotion_tense": "เคร่งเครียด"
   }
 }

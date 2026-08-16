@@ -24,7 +24,8 @@
     "flip_rail": "Balik sisi rel",
     "voice": "Suara",
     "audiobook": "Buku Audio",
-    "workspaces": "Ruang kerja"
+    "workspaces": "Ruang kerja",
+    "drama": "Drama"
   },
   "catalogue": {
     "title": "Katalog model",
@@ -2684,5 +2685,41 @@
     "noBackground": "Hanya trek suara — ekspor sulih suara tidak mempertahankan musik latar dengan mesin ini.",
     "mvsepSepType": "ID algoritme MVSEP",
     "mvsepSepTypeHint": "sep_type numerik dari dokumentasi API MVSEP. Bawaan 40 = BS Roformer (vokal + instrumental)."
+  },
+  "drama": {
+    "title": "Sutradara Drama",
+    "subtitle": "AI membagikan peran dan memberi nada tiap baris",
+    "sample": "Contoh naskah",
+    "script_label": "Naskah",
+    "auto_direct": "Sutradara otomatis",
+    "directing": "Menyutradarai…",
+    "script_placeholder": "Tempel naskah…",
+    "empty_hint": "Tempel naskah lalu tekan Sutradara otomatis.",
+    "cast_label": "Pemeran",
+    "lines_label": "Baris",
+    "voice_auto": "Suara otomatis",
+    "voice_recipe": "resep",
+    "emotion": "Emosi",
+    "intensity": "Intensitas",
+    "output_label": "Naskah audiobook",
+    "project_name": "Nama proyek",
+    "copy": "Salin",
+    "copied": "Disalin ke clipboard",
+    "copy_failed": "Gagal menyalin",
+    "save": "Simpan",
+    "saved": "Proyek disimpan",
+    "delete": "Hapus",
+    "emotion_neutral": "Netral",
+    "emotion_calm": "Tenang",
+    "emotion_happy": "Senang",
+    "emotion_sad": "Sedih",
+    "emotion_angry": "Marah",
+    "emotion_fearful": "Takut",
+    "emotion_surprised": "Terkejut",
+    "emotion_whispered": "Berbisik",
+    "emotion_shouting": "Berteriak",
+    "emotion_crying": "Menangis",
+    "emotion_sarcastic": "Sarkastis",
+    "emotion_tense": "Tegang"
   }
 }

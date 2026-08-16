@@ -24,7 +24,8 @@
     "flip_rail": "Ray tarafını çevir",
     "voice": "Ses",
     "audiobook": "Sesli kitap",
-    "workspaces": "Çalışma alanları"
+    "workspaces": "Çalışma alanları",
+    "drama": "Dram"
   },
   "catalogue": {
     "title": "Model kataloğu",
@@ -2684,5 +2685,41 @@
     "noBackground": "Yalnızca ses parçası — bu motorla dublaj dışa aktarmaları arka plan müziğini korumaz.",
     "mvsepSepType": "MVSEP algoritma kimliği",
     "mvsepSepTypeHint": "MVSEP API belgelerindeki sayısal sep_type. Varsayılan 40 = BS Roformer (vokal + enstrümantal)."
+  },
+  "drama": {
+    "title": "Dram Yönetmeni",
+    "subtitle": "AI roller atar ve her satıra ton verir",
+    "sample": "Örnek senaryo",
+    "script_label": "Senaryo",
+    "auto_direct": "Otomatik yönet",
+    "directing": "Yönetiliyor…",
+    "script_placeholder": "Senaryoyu yapıştırın…",
+    "empty_hint": "Senaryoyu yapıştırıp Otomatik yönet deyin.",
+    "cast_label": "Kadro",
+    "lines_label": "Satırlar",
+    "voice_auto": "Otomatik ses",
+    "voice_recipe": "tarif",
+    "emotion": "Duygu",
+    "intensity": "Yoğunluk",
+    "output_label": "Sesli kitap senaryosu",
+    "project_name": "Proje adı",
+    "copy": "Kopyala",
+    "copied": "Panoya kopyalandı",
+    "copy_failed": "Kopyalama başarısız",
+    "save": "Kaydet",
+    "saved": "Proje kaydedildi",
+    "delete": "Sil",
+    "emotion_neutral": "Nötr",
+    "emotion_calm": "Sakin",
+    "emotion_happy": "Mutlu",
+    "emotion_sad": "Üzgün",
+    "emotion_angry": "Kızgın",
+    "emotion_fearful": "Korkmuş",
+    "emotion_surprised": "Şaşkın",
+    "emotion_whispered": "Fısıltı",
+    "emotion_shouting": "Bağırma",
+    "emotion_crying": "Ağlama",
+    "emotion_sarcastic": "Alaycı",
+    "emotion_tense": "Gergin"
   }
 }

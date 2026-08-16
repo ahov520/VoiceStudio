@@ -21,6 +21,7 @@ import {
   FileText,
   BookOpen,
   BookMarked,
+  Clapperboard,
   Boxes,
 } from 'lucide-react';
 
@@ -34,6 +35,9 @@ export const NAV_ITEMS = [
   { id: 'queue', Icon: ListVideo, tKey: 'batch_queue', accent: '#fb4934' },
   { id: 'stories', Icon: BookOpen, tKey: 'stories', accent: '#fabd2f' },
   { id: 'audiobook', Icon: BookMarked, tKey: 'audiobook', accent: '#8ec07c' },
+  // Drama Director: AI role assignment + emotion annotation, feeding the
+  // audiobook pipeline a ready-to-render script with voice/SSML markers.
+  { id: 'drama', Icon: Clapperboard, tKey: 'drama', accent: '#d3869b' },
   { id: 'gallery', Icon: Library, tKey: 'gallery', accent: '#b8bb26' },
   { id: 'transcriptions', Icon: FileText, tKey: 'transcripts', accent: '#d3869b' },
   { id: 'projects', Icon: FolderOpen, tKey: 'omnidrive', accent: '#83a598' },

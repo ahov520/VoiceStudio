@@ -24,7 +24,8 @@
     "flip_rail": "Odwróć stronę szyny",
     "voice": "Głos",
     "audiobook": "Książka audio",
-    "workspaces": "Obszary robocze"
+    "workspaces": "Obszary robocze",
+    "drama": "Dramat"
   },
   "catalogue": {
     "title": "Katalog modeli",
@@ -2684,5 +2685,41 @@
     "noBackground": "Tylko ścieżka głosu — eksporty dubbingu nie zachowają muzyki w tle z tym silnikiem.",
     "mvsepSepType": "ID algorytmu MVSEP",
     "mvsepSepTypeHint": "Liczbowy sep_type z dokumentacji API MVSEP. Domyślnie 40 = BS Roformer (wokal + instrumental)."
+  },
+  "drama": {
+    "title": "Reżyser dramatu",
+    "subtitle": "AI przydziela role i nadaje ton każdej kwestii",
+    "sample": "Przykładowy scenariusz",
+    "script_label": "Scenariusz",
+    "auto_direct": "Auto-reżyseria",
+    "directing": "Reżyserowanie…",
+    "script_placeholder": "Wklej scenariusz…",
+    "empty_hint": "Wklej scenariusz i naciśnij Auto-reżyseria.",
+    "cast_label": "Obsada",
+    "lines_label": "Kwestie",
+    "voice_auto": "Auto-głos",
+    "voice_recipe": "przepis",
+    "emotion": "Emocja",
+    "intensity": "Intensywność",
+    "output_label": "Scenariusz audiobooka",
+    "project_name": "Nazwa projektu",
+    "copy": "Kopiuj",
+    "copied": "Skopiowano do schowka",
+    "copy_failed": "Nie udało się skopiować",
+    "save": "Zapisz",
+    "saved": "Projekt zapisany",
+    "delete": "Usuń",
+    "emotion_neutral": "Neutralny",
+    "emotion_calm": "Spokojny",
+    "emotion_happy": "Szczęśliwy",
+    "emotion_sad": "Smutny",
+    "emotion_angry": "Zły",
+    "emotion_fearful": "Przestraszony",
+    "emotion_surprised": "Zaskoczony",
+    "emotion_whispered": "Szept",
+    "emotion_shouting": "Krzyk",
+    "emotion_crying": "Płacz",
+    "emotion_sarcastic": "Sarkastyczny",
+    "emotion_tense": "Napięty"
   }
 }

@@ -135,7 +135,8 @@
     "flip_rail": "切换轨道侧",
     "voice": "语音",
     "audiobook": "有声读物",
-    "workspaces": "工作区"
+    "workspaces": "工作区",
+    "drama": "有声剧"
   },
   "catalogue": {
     "title": "模型库",
@@ -2691,5 +2692,41 @@
     "noBackground": "仅返回人声轨——使用该引擎时,配音导出不会保留背景音乐。",
     "mvsepSepType": "MVSEP 算法 ID",
     "mvsepSepTypeHint": "MVSEP API 文档中的数字 sep_type。默认 40 = BS Roformer(人声 + 伴奏)。"
+  },
+  "drama": {
+    "title": "有声剧导演",
+    "subtitle": "AI 自动分配角色，逐句标注语气腔调",
+    "sample": "示例剧本",
+    "script_label": "剧本",
+    "auto_direct": "自动导演",
+    "directing": "导演中…",
+    "script_placeholder": "粘贴剧本…\n\n林晚: 你走吧。\n老陈: 别这样。",
+    "empty_hint": "粘贴剧本并点击自动导演 —— AI 分配角色并标注每句的语气。",
+    "cast_label": "角色表",
+    "lines_label": "台词",
+    "voice_auto": "自动选声",
+    "voice_recipe": "配方",
+    "emotion": "情绪",
+    "intensity": "强度",
+    "output_label": "有声书脚本",
+    "project_name": "项目名",
+    "copy": "复制",
+    "copied": "已复制到剪贴板",
+    "copy_failed": "复制失败",
+    "save": "保存",
+    "saved": "项目已保存",
+    "delete": "删除",
+    "emotion_neutral": "中性",
+    "emotion_calm": "平静",
+    "emotion_happy": "开心",
+    "emotion_sad": "悲伤",
+    "emotion_angry": "愤怒",
+    "emotion_fearful": "恐惧",
+    "emotion_surprised": "惊讶",
+    "emotion_whispered": "耳语",
+    "emotion_shouting": "大喊",
+    "emotion_crying": "哭泣",
+    "emotion_sarcastic": "讽刺",
+    "emotion_tense": "紧张"
   }
 }

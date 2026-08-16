@@ -24,7 +24,8 @@
     "flip_rail": "रेल की ओर पलटें",
     "voice": "आवाज",
     "audiobook": "ऑडियोबुक",
-    "workspaces": "वर्कस्पेस"
+    "workspaces": "वर्कस्पेस",
+    "drama": "नाटक"
   },
   "catalogue": {
     "title": "मॉडल कैटलॉग",
@@ -2684,5 +2685,41 @@
     "noBackground": "केवल आवाज़ ट्रैक — इस इंजन से डब निर्यात में पृष्ठभूमि संगीत नहीं रहेगा।",
     "mvsepSepType": "MVSEP एल्गोरिथम ID",
     "mvsepSepTypeHint": "MVSEP API दस्तावेज़ का संख्यात्मक sep_type। डिफ़ॉल्ट 40 = BS Roformer (वोकल + वाद्य)।"
+  },
+  "drama": {
+    "title": "नाटक निर्देशक",
+    "subtitle": "AI भूमिकाएँ देता है और हर पंक्ति में भाव जोड़ता है",
+    "sample": "नमूना पटकथा",
+    "script_label": "पटकथा",
+    "auto_direct": "स्वतः निर्देशन",
+    "directing": "निर्देशन हो रहा है…",
+    "script_placeholder": "पटकथा पेस्ट करें…",
+    "empty_hint": "पटकथा पेस्ट करें और स्वतः निर्देशन दबाएँ।",
+    "cast_label": "कलाकार",
+    "lines_label": "पंक्तियाँ",
+    "voice_auto": "स्वतः आवाज़",
+    "voice_recipe": "रेसिपी",
+    "emotion": "भावना",
+    "intensity": "तीव्रता",
+    "output_label": "ऑडियोबुक पटकथा",
+    "project_name": "प्रोजेक्ट नाम",
+    "copy": "कॉपी करें",
+    "copied": "क्लिपबोर्ड पर कॉपी हो गया",
+    "copy_failed": "कॉपी विफल",
+    "save": "सहेजें",
+    "saved": "प्रोजेक्ट सहेजा गया",
+    "delete": "हटाएँ",
+    "emotion_neutral": "तटस्थ",
+    "emotion_calm": "शांत",
+    "emotion_happy": "खुश",
+    "emotion_sad": "उदास",
+    "emotion_angry": "गुस्सा",
+    "emotion_fearful": "डरा हुआ",
+    "emotion_surprised": "हैरान",
+    "emotion_whispered": "फुसफुसाहट",
+    "emotion_shouting": "चिल्लाना",
+    "emotion_crying": "रोना",
+    "emotion_sarcastic": "व्यंग्य",
+    "emotion_tense": "तनाव"
   }
 }

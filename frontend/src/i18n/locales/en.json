@@ -160,7 +160,8 @@
     "move_rail_right": "Move rail to the right",
     "move_rail_left": "Move rail to the left",
     "flip_rail": "Flip rail side",
-    "workspaces": "Workspaces"
+    "workspaces": "Workspaces",
+    "drama": "Drama"
   },
   "catalogue": {
     "title": "Model Catalogue",
@@ -3186,5 +3187,41 @@
     "noBackground": "Voice track only — dub exports keep no background music with this engine.",
     "mvsepSepType": "MVSEP algorithm ID",
     "mvsepSepTypeHint": "Numeric sep_type from the MVSEP API docs. Default 40 = BS Roformer (vocals + instrumental)."
+  },
+  "drama": {
+    "title": "Drama Director",
+    "subtitle": "AI assigns roles and tones each line",
+    "sample": "Sample script",
+    "script_label": "Script",
+    "auto_direct": "Auto-direct",
+    "directing": "Directing…",
+    "script_placeholder": "Paste a script…\n\n林晚: 你走吧。\n老陈: 别这样。",
+    "empty_hint": "Paste a script and press Auto-direct — the AI casts the roles and tones every line.",
+    "cast_label": "Cast",
+    "lines_label": "Lines",
+    "voice_auto": "Auto voice",
+    "voice_recipe": "recipe",
+    "emotion": "Emotion",
+    "intensity": "Intensity",
+    "output_label": "Audiobook script",
+    "project_name": "Project name",
+    "copy": "Copy",
+    "copied": "Copied to clipboard",
+    "copy_failed": "Copy failed",
+    "save": "Save",
+    "saved": "Project saved",
+    "delete": "Delete",
+    "emotion_neutral": "Neutral",
+    "emotion_calm": "Calm",
+    "emotion_happy": "Happy",
+    "emotion_sad": "Sad",
+    "emotion_angry": "Angry",
+    "emotion_fearful": "Fearful",
+    "emotion_surprised": "Surprised",
+    "emotion_whispered": "Whispered",
+    "emotion_shouting": "Shouting",
+    "emotion_crying": "Crying",
+    "emotion_sarcastic": "Sarcastic",
+    "emotion_tense": "Tense"
   }
 }

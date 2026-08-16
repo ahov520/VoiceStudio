@@ -24,7 +24,8 @@
     "flip_rail": "レール側を反転",
     "voice": "声",
     "audiobook": "オーディオブック",
-    "workspaces": "ワークスペース"
+    "workspaces": "ワークスペース",
+    "drama": "ドラマ"
   },
   "catalogue": {
     "title": "モデルカタログ",
@@ -2684,5 +2685,41 @@
     "noBackground": "ボーカルトラックのみを返します——このエンジンでは吹き替え書き出しに背景音楽が残りません。",
     "mvsepSepType": "MVSEP アルゴリズム ID",
     "mvsepSepTypeHint": "MVSEP API ドキュメントの数値 sep_type。既定の 40 = BS Roformer(ボーカル + 伴奏)。"
+  },
+  "drama": {
+    "title": "ドラマディレクター",
+    "subtitle": "AIが役を割り当て、各行に感情を付けます",
+    "sample": "サンプル脚本",
+    "script_label": "脚本",
+    "auto_direct": "自動演出",
+    "directing": "演出中…",
+    "script_placeholder": "脚本を貼り付け…",
+    "empty_hint": "脚本を貼り付けて自動演出を押すと、AIが役を割り当てて各行に感情を付けます。",
+    "cast_label": "配役",
+    "lines_label": "台詞",
+    "voice_auto": "自動ボイス",
+    "voice_recipe": "レシピ",
+    "emotion": "感情",
+    "intensity": "強さ",
+    "output_label": "オーディオブック脚本",
+    "project_name": "プロジェクト名",
+    "copy": "コピー",
+    "copied": "クリップボードにコピーしました",
+    "copy_failed": "コピー失敗",
+    "save": "保存",
+    "saved": "保存しました",
+    "delete": "削除",
+    "emotion_neutral": "中立",
+    "emotion_calm": "落ち着いた",
+    "emotion_happy": "嬉しい",
+    "emotion_sad": "悲しい",
+    "emotion_angry": "怒り",
+    "emotion_fearful": "怖がる",
+    "emotion_surprised": "驚き",
+    "emotion_whispered": "ささやき",
+    "emotion_shouting": "叫び",
+    "emotion_crying": "泣き",
+    "emotion_sarcastic": "皮肉",
+    "emotion_tense": "緊張"
   }
 }

@@ -24,7 +24,8 @@
     "flip_rail": "Vire o lado do trilho",
     "voice": "Voz",
     "audiobook": "Audiolivro",
-    "workspaces": "Áreas de trabalho"
+    "workspaces": "Áreas de trabalho",
+    "drama": "Drama"
   },
   "catalogue": {
     "title": "Catálogo de modelos",
@@ -2684,5 +2685,41 @@
     "noBackground": "Apenas a faixa de voz — com este mecanismo as exportações de dublagem não mantêm música de fundo.",
     "mvsepSepType": "ID do algoritmo MVSEP",
     "mvsepSepTypeHint": "sep_type numérico da documentação da API do MVSEP. Padrão 40 = BS Roformer (voz + instrumental)."
+  },
+  "drama": {
+    "title": "Diretor de drama",
+    "subtitle": "A IA atribui papéis e dá tom a cada linha",
+    "sample": "Roteiro de exemplo",
+    "script_label": "Roteiro",
+    "auto_direct": "Dirigir automaticamente",
+    "directing": "A dirigir…",
+    "script_placeholder": "Cole um roteiro…",
+    "empty_hint": "Cole um roteiro e pressione Dirigir automaticamente.",
+    "cast_label": "Elenco",
+    "lines_label": "Falas",
+    "voice_auto": "Voz automática",
+    "voice_recipe": "receita",
+    "emotion": "Emoção",
+    "intensity": "Intensidade",
+    "output_label": "Roteiro de audiolivro",
+    "project_name": "Nome do projeto",
+    "copy": "Copiar",
+    "copied": "Copiado para a área de transferência",
+    "copy_failed": "Falha ao copiar",
+    "save": "Salvar",
+    "saved": "Projeto salvo",
+    "delete": "Excluir",
+    "emotion_neutral": "Neutro",
+    "emotion_calm": "Calmo",
+    "emotion_happy": "Feliz",
+    "emotion_sad": "Triste",
+    "emotion_angry": "Bravo",
+    "emotion_fearful": "Assustado",
+    "emotion_surprised": "Surpreso",
+    "emotion_whispered": "Sussurrado",
+    "emotion_shouting": "Gritando",
+    "emotion_crying": "Chorando",
+    "emotion_sarcastic": "Sarcástico",
+    "emotion_tense": "Tenso"
   }
 }

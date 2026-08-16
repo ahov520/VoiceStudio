@@ -24,7 +24,8 @@
     "flip_rail": "레일 측면 뒤집기",
     "voice": "음성",
     "audiobook": "Audiobook",
-    "workspaces": "작업 공간"
+    "workspaces": "작업 공간",
+    "drama": "드라마"
   },
   "catalogue": {
     "title": "모델 카탈로그",
@@ -2684,5 +2685,41 @@
     "noBackground": "보컬 트랙만 반환합니다 — 이 엔진에서는 더빙 내보내기에 배경 음악이 남지 않습니다.",
     "mvsepSepType": "MVSEP 알고리즘 ID",
     "mvsepSepTypeHint": "MVSEP API 문서의 숫자 sep_type. 기본값 40 = BS Roformer (보컬 + 반주)."
+  },
+  "drama": {
+    "title": "드라마 감독",
+    "subtitle": "AI가 역할을 배정하고 문장마다 감정을 붙입니다",
+    "sample": "예시 대본",
+    "script_label": "대본",
+    "auto_direct": "자동 연출",
+    "directing": "연출 중…",
+    "script_placeholder": "대본을 붙여넣으세요…",
+    "empty_hint": "대본을 붙여넣고 자동 연출을 누르면 AI가 역할을 배정하고 감정을 붙입니다.",
+    "cast_label": "출연진",
+    "lines_label": "대사",
+    "voice_auto": "자동 음성",
+    "voice_recipe": "레시피",
+    "emotion": "감정",
+    "intensity": "강도",
+    "output_label": "오디오북 대본",
+    "project_name": "프로젝트 이름",
+    "copy": "복사",
+    "copied": "클립보드에 복사됨",
+    "copy_failed": "복사 실패",
+    "save": "저장",
+    "saved": "저장됨",
+    "delete": "삭제",
+    "emotion_neutral": "중립",
+    "emotion_calm": "차분함",
+    "emotion_happy": "기쁨",
+    "emotion_sad": "슬픔",
+    "emotion_angry": "분노",
+    "emotion_fearful": "두려움",
+    "emotion_surprised": "놀람",
+    "emotion_whispered": "속삭임",
+    "emotion_shouting": "외침",
+    "emotion_crying": "울음",
+    "emotion_sarcastic": "비꼼",
+    "emotion_tense": "긴장"
   }
 }

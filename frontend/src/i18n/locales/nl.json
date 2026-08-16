@@ -24,7 +24,8 @@
     "flip_rail": "Draai de railzijde om",
     "voice": "Stem",
     "audiobook": "Audioboek",
-    "workspaces": "Werkruimtes"
+    "workspaces": "Werkruimtes",
+    "drama": "Drama"
   },
   "catalogue": {
     "title": "Modelcatalogus",
@@ -2684,5 +2685,41 @@
     "noBackground": "Alleen het stemspoor — dub-exports behouden met deze engine geen achtergrondmuziek.",
     "mvsepSepType": "MVSEP-algoritme-ID",
     "mvsepSepTypeHint": "Numerieke sep_type uit de MVSEP-API-documentatie. Standaard 40 = BS Roformer (zang + instrumentaal)."
+  },
+  "drama": {
+    "title": "Dramaregisseur",
+    "subtitle": "AI wijst rollen toe en kleurt elke regel",
+    "sample": "Voorbeeldscript",
+    "script_label": "Script",
+    "auto_direct": "Auto-regie",
+    "directing": "Regie loopt…",
+    "script_placeholder": "Plak een script…",
+    "empty_hint": "Plak een script en druk op Auto-regie.",
+    "cast_label": "Cast",
+    "lines_label": "Regels",
+    "voice_auto": "Auto-stem",
+    "voice_recipe": "recept",
+    "emotion": "Emotie",
+    "intensity": "Intensiteit",
+    "output_label": "Luisterboekscript",
+    "project_name": "Projectnaam",
+    "copy": "Kopiëren",
+    "copied": "Gekopieerd naar klembord",
+    "copy_failed": "Kopiëren mislukt",
+    "save": "Opslaan",
+    "saved": "Project opgeslagen",
+    "delete": "Verwijderen",
+    "emotion_neutral": "Neutraal",
+    "emotion_calm": "Kalm",
+    "emotion_happy": "Blij",
+    "emotion_sad": "Verdrietig",
+    "emotion_angry": "Boos",
+    "emotion_fearful": "Angstig",
+    "emotion_surprised": "Verrast",
+    "emotion_whispered": "Gefluisterd",
+    "emotion_shouting": "Schreeuwen",
+    "emotion_crying": "Huilen",
+    "emotion_sarcastic": "Sarcastisch",
+    "emotion_tense": "Gespannen"
   }
 }

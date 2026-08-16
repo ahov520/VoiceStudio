@@ -24,7 +24,8 @@
     "flip_rail": "Schienenseite umdrehen",
     "voice": "Stimme",
     "audiobook": "Hörbuch",
-    "workspaces": "Arbeitsbereiche"
+    "workspaces": "Arbeitsbereiche",
+    "drama": "Hörspiel"
   },
   "catalogue": {
     "title": "Modellkatalog",
@@ -2684,5 +2685,41 @@
     "noBackground": "Nur Stimmspur — Dub-Exporte behalten mit dieser Engine keine Hintergrundmusik.",
     "mvsepSepType": "MVSEP-Algorithmus-ID",
     "mvsepSepTypeHint": "Numerischer sep_type aus der MVSEP-API-Doku. Standard 40 = BS Roformer (Gesang + Instrumental)."
+  },
+  "drama": {
+    "title": "Hörspiel-Regie",
+    "subtitle": "KI weist Rollen zu und färbt jede Zeile",
+    "sample": "Beispielskript",
+    "script_label": "Skript",
+    "auto_direct": "Auto-Regie",
+    "directing": "Regie läuft…",
+    "script_placeholder": "Skript einfügen…",
+    "empty_hint": "Skript einfügen und Auto-Regie drücken.",
+    "cast_label": "Besetzung",
+    "lines_label": "Zeilen",
+    "voice_auto": "Auto-Stimme",
+    "voice_recipe": "Rezept",
+    "emotion": "Emotion",
+    "intensity": "Intensität",
+    "output_label": "Hörbuch-Skript",
+    "project_name": "Projektname",
+    "copy": "Kopieren",
+    "copied": "In die Zwischenablage kopiert",
+    "copy_failed": "Kopieren fehlgeschlagen",
+    "save": "Speichern",
+    "saved": "Projekt gespeichert",
+    "delete": "Löschen",
+    "emotion_neutral": "Neutral",
+    "emotion_calm": "Ruhig",
+    "emotion_happy": "Fröhlich",
+    "emotion_sad": "Traurig",
+    "emotion_angry": "Wütend",
+    "emotion_fearful": "Ängstlich",
+    "emotion_surprised": "Überrascht",
+    "emotion_whispered": "Geflüstert",
+    "emotion_shouting": "Schreien",
+    "emotion_crying": "Weinen",
+    "emotion_sarcastic": "Sarkastisch",
+    "emotion_tense": "Angespannt"
   }
 }

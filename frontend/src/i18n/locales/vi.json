@@ -24,7 +24,8 @@
     "flip_rail": "Mặt đường ray lật",
     "voice": "Giọng nói",
     "audiobook": "Sách nói",
-    "workspaces": "Không gian làm việc"
+    "workspaces": "Không gian làm việc",
+    "drama": "Kịch"
   },
   "catalogue": {
     "title": "Danh mục mô hình",
@@ -2684,5 +2685,41 @@
     "noBackground": "Chỉ trả về track giọng — xuất lồng tiếng sẽ không giữ nhạc nền với công cụ này.",
     "mvsepSepType": "ID thuật toán MVSEP",
     "mvsepSepTypeHint": "sep_type dạng số trong tài liệu API MVSEP. Mặc định 40 = BS Roformer (giọng + nhạc nền)."
+  },
+  "drama": {
+    "title": "Đạo diễn kịch",
+    "subtitle": "AI phân vai và tô cảm xúc cho từng dòng",
+    "sample": "Kịch bản mẫu",
+    "script_label": "Kịch bản",
+    "auto_direct": "Tự đạo diễn",
+    "directing": "Đang đạo diễn…",
+    "script_placeholder": "Dán kịch bản…",
+    "empty_hint": "Dán kịch bản rồi nhấn Tự đạo diễn.",
+    "cast_label": "Dàn diễn viên",
+    "lines_label": "Lời thoại",
+    "voice_auto": "Giọng tự động",
+    "voice_recipe": "công thức",
+    "emotion": "Cảm xúc",
+    "intensity": "Cường độ",
+    "output_label": "Kịch bản sách nói",
+    "project_name": "Tên dự án",
+    "copy": "Sao chép",
+    "copied": "Đã sao chép",
+    "copy_failed": "Sao chép thất bại",
+    "save": "Lưu",
+    "saved": "Đã lưu dự án",
+    "delete": "Xóa",
+    "emotion_neutral": "Trung lập",
+    "emotion_calm": "Bình tĩnh",
+    "emotion_happy": "Vui",
+    "emotion_sad": "Buồn",
+    "emotion_angry": "Giận",
+    "emotion_fearful": "Sợ hãi",
+    "emotion_surprised": "Ngạc nhiên",
+    "emotion_whispered": "Thì thầm",
+    "emotion_shouting": "Hét",
+    "emotion_crying": "Khóc",
+    "emotion_sarcastic": "Châm biếm",
+    "emotion_tense": "Căng thẳng"
   }
 }

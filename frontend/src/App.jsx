@@ -35,6 +35,7 @@ const SupportPage = lazy(() => import('./pages/SupportPage'));
 const TranscriptionsPage = lazy(() => import('./pages/Transcriptions'));
 const StoriesEditor = lazy(() => import('./components/StoriesEditor'));
 const AudiobookTab = lazy(() => import('./pages/AudiobookTab'));
+const DramaTab = lazy(() => import('./pages/DramaTab'));
 const ModelCataloguePage = lazy(() => import('./pages/ModelCatalogue'));
 
 import Header from './components/Header';
@@ -318,6 +319,7 @@ function App() {
     mode === 'catalogue' ||
     mode === 'stories' ||
     mode === 'audiobook' ||
+    mode === 'drama' ||
     // Voice (studio) and Dub workspaces moved their saved voices /
     // projects + history into workspace rails; global sidebar dissolved.
     mode === 'studio' ||
@@ -1547,6 +1549,12 @@ function App() {
           <ErrorBoundary name="audiobook">
             <Suspense fallback={<LazyFallback />}>
               <AudiobookTab profiles={profiles} />
+            </Suspense>
+          </ErrorBoundary>
+        ) : mode === 'drama' ? (
+          <ErrorBoundary name="drama">
+            <Suspense fallback={<LazyFallback />}>
+              <DramaTab profiles={profiles} />
             </Suspense>
           </ErrorBoundary>
         ) : mode === 'donate' ? (

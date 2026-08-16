@@ -24,7 +24,8 @@
     "flip_rail": "الوجه الجانب السكك الحديدية",
     "voice": "صوت",
     "audiobook": "كتاب مسموع",
-    "workspaces": "مساحات العمل"
+    "workspaces": "مساحات العمل",
+    "drama": "دراما"
   },
   "catalogue": {
     "title": "كتالوج النماذج",
@@ -2684,5 +2685,41 @@
     "noBackground": "مسار الصوت فقط — لن تحتفظ صادرات الدبلجة بموسيقى الخلفية مع هذا المحرك.",
     "mvsepSepType": "معرّف خوارزمية MVSEP",
     "mvsepSepTypeHint": "sep_type رقمي من وثائق MVSEP API. الافتراضي 40 = BS Roformer (غناء + موسيقى)."
+  },
+  "drama": {
+    "title": "مخرج الدراما",
+    "subtitle": "الذكاء الاصطناعي يوزع الأدوار ويضبط نبرة كل سطر",
+    "sample": "نص تجريبي",
+    "script_label": "النص",
+    "auto_direct": "إخراج تلقائي",
+    "directing": "جارٍ الإخراج…",
+    "script_placeholder": "الصق النص…",
+    "empty_hint": "الصق النص واضغط الإخراج التلقائي.",
+    "cast_label": "طاقم التمثيل",
+    "lines_label": "الأسطر",
+    "voice_auto": "صوت تلقائي",
+    "voice_recipe": "وصفة",
+    "emotion": "المشاعر",
+    "intensity": "الشدة",
+    "output_label": "نص الكتاب الصوتي",
+    "project_name": "اسم المشروع",
+    "copy": "نسخ",
+    "copied": "تم النسخ إلى الحافظة",
+    "copy_failed": "فشل النسخ",
+    "save": "حفظ",
+    "saved": "تم حفظ المشروع",
+    "delete": "حذف",
+    "emotion_neutral": "محايد",
+    "emotion_calm": "هادئ",
+    "emotion_happy": "سعيد",
+    "emotion_sad": "حزين",
+    "emotion_angry": "غاضب",
+    "emotion_fearful": "خائف",
+    "emotion_surprised": "متفاجئ",
+    "emotion_whispered": "همس",
+    "emotion_shouting": "صراخ",
+    "emotion_crying": "بكاء",
+    "emotion_sarcastic": "ساخر",
+    "emotion_tense": "متوتر"
   }
 }

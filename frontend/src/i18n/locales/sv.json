@@ -24,7 +24,8 @@
     "flip_rail": "Flip rail sida",
     "voice": "Röst",
     "audiobook": "Ljudbok",
-    "workspaces": "Arbetsytor"
+    "workspaces": "Arbetsytor",
+    "drama": "Drama"
   },
   "catalogue": {
     "title": "Modellkatalog",
@@ -2684,5 +2685,41 @@
     "noBackground": "Endast röstspår — dubbexporter behåller ingen bakgrundsmusik med den här motorn.",
     "mvsepSepType": "MVSEP-algoritm-ID",
     "mvsepSepTypeHint": "Numerisk sep_type från MVSEP:s API-dokumentation. Standard 40 = BS Roformer (sång + instrumental)."
+  },
+  "drama": {
+    "title": "Dramaregissör",
+    "subtitle": "AI tilldelar roller och tonar varje rad",
+    "sample": "Exempelmanus",
+    "script_label": "Manus",
+    "auto_direct": "Auto-regi",
+    "directing": "Regisserar…",
+    "script_placeholder": "Klistra in ett manus…",
+    "empty_hint": "Klistra in ett manus och tryck på Auto-regi.",
+    "cast_label": "Rollista",
+    "lines_label": "Rader",
+    "voice_auto": "Auto-röst",
+    "voice_recipe": "recept",
+    "emotion": "Känsla",
+    "intensity": "Intensitet",
+    "output_label": "Ljudboksmanus",
+    "project_name": "Projektnamn",
+    "copy": "Kopiera",
+    "copied": "Kopierat till urklipp",
+    "copy_failed": "Kopiering misslyckades",
+    "save": "Spara",
+    "saved": "Projekt sparat",
+    "delete": "Ta bort",
+    "emotion_neutral": "Neutral",
+    "emotion_calm": "Lugn",
+    "emotion_happy": "Glad",
+    "emotion_sad": "Ledsen",
+    "emotion_angry": "Arg",
+    "emotion_fearful": "Rädd",
+    "emotion_surprised": "Förvånad",
+    "emotion_whispered": "Viskad",
+    "emotion_shouting": "Ropande",
+    "emotion_crying": "Gråtande",
+    "emotion_sarcastic": "Sarkastisk",
+    "emotion_tense": "Spänd"
   }
 }

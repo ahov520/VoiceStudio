@@ -16,6 +16,8 @@ The six consumption points today:
     glossary_extract      — api/routers/glossary.py auto-extract
     direction_parse       — services/director.py (natural-language direction →
                             taxonomy tokens; /tools/direction + dub generate)
+    drama_director        — services/drama_director.py (script → cast + per-line
+                            emotion annotation; /drama/parse)
     dictation_refinement  — services/refinement.py (dictation transcript
                             cleanup on finals)
 
