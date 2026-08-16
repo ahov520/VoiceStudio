@@ -58,14 +58,30 @@ def normalize_lexicon(lexicon: Optional[dict]) -> dict[str, str]:
     return out
 
 
+# Han ideographs + kana: "unsegmented" scripts written without spaces. Python's
+# ``\b`` never fires between two CJK chars (both are ``\w``), so a ``\b`` guard
+# on a CJK-edged key makes mid-sentence matches impossible — a two-char
+# Chinese bank word only ever matched next to punctuation/spaces, silently
+# breaking the dictionary for Chinese. Keys edged with these scripts get NO
+# boundary guard; longest-first alternation ordering is the overlap
+# protection instead (a hit inside a longer compound still substitutes the
+# right reading).
+_CJK_EDGE = re.compile(r"[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff]")
+
+
 def _boundary_prefix(key: str) -> str:
     """``\\b`` only if the key starts with a word char (else the boundary would
-    never match — e.g. a key opening with punctuation)."""
+    never match — e.g. a key opening with punctuation), and NEVER for CJK-edged
+    keys (see ``_CJK_EDGE``)."""
+    if not key or _CJK_EDGE.match(key[:1]):
+        return ""
     return r"\b" if key[:1].isalnum() or key[:1] == "_" else ""
 
 
 def _boundary_suffix(key: str) -> str:
-    """``\\b`` only if the key ends with a word char."""
+    """``\\b`` only if the key ends with a word char; CJK edges get no guard."""
+    if not key or _CJK_EDGE.match(key[-1:]):
+        return ""
     return r"\b" if key[-1:].isalnum() or key[-1:] == "_" else ""
 
 

@@ -39,7 +39,8 @@ def test_subtitle_seed_matches_lang_hint():
     job = "subseed01"
     _write_job_vtt(job, "original.zh.vtt", VTT_ZH)
     _write_job_vtt(job, "original.en.vtt", VTT_EN)
-    segs = dub_core._segments_from_job_subtitles(job, "zh")
+    segs, lang = dub_core._segments_from_job_subtitles(job, "zh")
+    assert lang == "zh"
     assert len(segs) == 2
     assert segs[0]["text"] == "你好世界"
     assert segs[0]["start"] == 1.0
@@ -50,7 +51,12 @@ def test_subtitle_seed_matches_lang_hint():
 def test_subtitle_seed_falls_back_to_first_vtt():
     job = "subseed02"
     _write_job_vtt(job, "original.en.vtt", VTT_EN)
-    segs = dub_core._segments_from_job_subtitles(job, "zh")  # hint misses
+    segs, lang = dub_core._segments_from_job_subtitles(job, "zh")  # hint misses
+    # The label must follow the file ACTUALLY used: an auto-translated track
+    # is often not downloadable (yt-dlp skips it), the original-language VTT
+    # is what landed, and a "zh" label on English text would aim the
+    # Translate step the wrong way.
+    assert lang == "en"
     assert len(segs) == 1
     assert segs[0]["text"] == "Hello world"
 
@@ -58,4 +64,4 @@ def test_subtitle_seed_falls_back_to_first_vtt():
 def test_subtitle_seed_returns_empty_without_vtt():
     job = "subseed03"
     os.makedirs(dub_pipeline.safe_job_dir(job), exist_ok=True)
-    assert dub_core._segments_from_job_subtitles(job, "zh") == []
+    assert dub_core._segments_from_job_subtitles(job, "zh") == ([], None)

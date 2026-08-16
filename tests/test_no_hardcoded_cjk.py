@@ -61,6 +61,10 @@ _ALLOWED_FILES = {
     "frontend/src/components/DubSegmentRow.jsx",
     "frontend/src/components/StoriesEditor.jsx",
     "frontend/src/utils/voiceInstruct.js",
+    # Chinese polyphone table (char -> readings + homophone respellings +
+    # disambiguating collocations): the CJK IS the data the scanner matches
+    # against user text — English rewording would disable the check.
+    "frontend/src/utils/zhSpeechCheck.js",
     # Drama-director emotion keyword table: English + Chinese synonyms are the
     # matching vocabulary for tagging emotion cues in Chinese scripts (drama
     # feature) — rewording to English-only would silently stop matching.
