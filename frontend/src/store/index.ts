@@ -15,9 +15,10 @@
  * your quality/dual-subs/glossary-visibility choice.
  */
 import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
+import { persist } from 'zustand/middleware';
 
-import { createDebouncedStorage } from './debouncedStorage';
+import { createZustandJsonStorage } from '../utils/coalescedJsonStorage';
+
 import type { PrefsSlice } from './prefsSlice';
 import { createPrefsSlice, FONT_OPTIONS, FONT_STACKS } from './prefsSlice';
 
@@ -56,6 +57,8 @@ export type AppStore = PrefsSlice &
   ReleasesSlice &
   DonationSlice;
 
+export const APP_STORE_KEY = 'omnivoice.app';
+
 /**
  * `useAppStore` — single root store. Don't create siblings. Slices compose here.
  *
@@ -79,16 +82,8 @@ export const useAppStore = create<AppStore>()(
       ...createDonationSlice(set, get, api),
     }),
     {
-      name: 'omnivoice.app',
-      // Write-behind localStorage: persist fires on every set(), and with a
-      // whole book in storyTracks/script the synchronous stringify+write per
-      // keystroke made the entire app stutter. The wrapper batches writes
-      // (~300ms) and flushes on pagehide/beforeunload/tab-hide, so nothing
-      // is lost on close. See ./debouncedStorage.
-      storage: (() => {
-        const json = createJSONStorage(() => localStorage);
-        return json ? createDebouncedStorage(json) : undefined;
-      })(),
+      name: APP_STORE_KEY,
+      storage: createZustandJsonStorage(),
       // Only persist user prefs + glossary. Pipeline / transient state is opt-out.
       partialize: (s) => ({
         translateQuality: s.translateQuality,

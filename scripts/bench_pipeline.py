@@ -75,8 +75,13 @@ def stage(name: str):
     """Run a stage only if there's room, and always leave the machine clean."""
     release_everything()
     have = free_gb()
-    if have < FLOOR_GB:
-        print(f"\n=== {name}: SKIPPED — only {have:.1f} GB free (floor {FLOOR_GB} GB)", flush=True)
+    # `not (have >= FLOOR_GB)` instead of `have < FLOOR_GB`: NaN (RAM
+    # unmeasurable) fails every comparison, and an unmeasurable machine should
+    # refuse the stage rather than risk the OOM the floor exists to prevent.
+    # OMNIVOICE_BENCH_FLOOR_GB=0 disables the guard entirely.
+    if FLOOR_GB > 0 and not (have >= FLOOR_GB):
+        print(f"\n=== {name}: SKIPPED — only {have:.1f} GB free (floor {FLOOR_GB} GB; "
+              f"OMNIVOICE_BENCH_FLOOR_GB=0 to force)", flush=True)
         RESULTS.append((name, "skipped", 0.0, f"only {have:.1f} GB free"))
         yield None
         return
@@ -111,18 +116,102 @@ LONG = (
 )
 
 
+def _cuda_vram_tracking_start() -> None:
+    try:
+        import torch
+
+        if torch.cuda.is_available():
+            torch.cuda.reset_peak_memory_stats()
+    except Exception:
+        # No torch / broken CUDA runtime: VRAM tracking is a bonus metric,
+        # never a reason to abort the timing run.
+        pass
+
+
+def _cuda_vram_peak_gb() -> "float | None":
+    """CUDA only. MPS is unified memory (the free-RAM lines already show it)
+    and exposes no peak counter; CPU has no VRAM. Returning None keeps the
+    report honest instead of printing a made-up zero."""
+    try:
+        import torch
+
+        if torch.cuda.is_available():
+            # Reserved, not allocated: the allocator holds more from the
+            # device than live tensors occupy, and reserved is the capacity
+            # a card actually needs to run the engine.
+            return torch.cuda.max_memory_reserved() / 1e9
+    except Exception:
+        # Same as tracking start: an unreadable counter degrades to "no VRAM
+        # row", it must not fail the stage.
+        pass
+    return None
+
+
+def _engine_runs_out_of_process(backend) -> bool:
+    """Duck-typed on purpose: `isinstance(SubprocessBackend)` misses engines
+    that spawn a binary per generate (omnivoice-gguf inherits TTSBackend
+    directly), and class identity breaks under test-fixture module purges.
+    The backends declare `runs_out_of_process` themselves."""
+    return bool(getattr(backend, "runs_out_of_process", False))
+
+
 def bench_tts():
-    """Synthesis alone — no cloning, no reference. The floor for any dub."""
+    """Synthesis alone — no cloning, no reference. The floor for any dub.
+    Warm measurements also report RTF (compute seconds per second of generated
+    audio — the number docs/benchmarks.md collects; < 1 is faster than real
+    time), and on CUDA the stage's peak VRAM."""
     import asyncio
 
-    from services.tts_backend import resolve_generation_backend
+    from services.tts_backend import active_backend_id, resolve_generation_backend
 
+    # Tracking starts BEFORE resolution so any allocation the resolver makes
+    # is inside the peak, and the engine is printed so a benchmarks.md row
+    # can never attribute numbers to the wrong backend.
+    _cuda_vram_tracking_start()
     b = asyncio.run(resolve_generation_backend(require_cloning=False))
-    gen = lambda t: b.generate(text=t, language="en", denoise=True, postprocess_output=True)
+    # Adapter engines host several very different models behind one backend
+    # id — name the model too, or rows are unattributable. The backends
+    # report it themselves (TTSBackend.model_identity), so this never needs
+    # per-engine attribute knowledge again.
+    try:
+        model_id = b.model_identity()
+    except Exception:
+        model_id = None
+    print(
+        f"    engine: {active_backend_id()}"
+        + (f" [{model_id}]" if model_id else "")
+        + f" ({type(b).__name__})",
+        flush=True,
+    )
+    sr = getattr(b, "sample_rate", 0) or 0
+    last: dict = {}
+
+    def gen(t):
+        last["wav"] = b.generate(text=t, language="en", denoise=True, postprocess_output=True)
+
+    def rtf_note(secs: float) -> str:
+        wav = last.get("wav")
+        n = getattr(wav, "shape", [0])[-1] if wav is not None else 0
+        if not (sr and n):
+            return ""
+        audio_s = n / sr
+        return f"RTF {secs / audio_s:.2f} ({audio_s:.1f}s of audio)"
 
     record("tts", "model load + first synth (cold)", timed(gen, SHORT))
-    record("tts", "short line (warm)", timed(gen, SHORT))
-    record("tts", "long line (warm)", timed(gen, LONG), "~2.5x the text")
+    secs = timed(gen, SHORT)
+    record("tts", "short line (warm)", secs, rtf_note(secs))
+    secs = timed(gen, LONG)
+    record("tts", "long line (warm)", secs, rtf_note(secs) or "~2.5x the text")
+    if _engine_runs_out_of_process(b):
+        # Subprocess-isolated engines (IndexTTS2, MOSS, PocketTTS, …) allocate
+        # in their own process — the parent's CUDA counters read ~0, which
+        # would publish a convincing lie. Say n/a instead.
+        print("    peak VRAM: n/a — engine runs in a subprocess, invisible to "
+              "the parent's CUDA counters", flush=True)
+    else:
+        peak = _cuda_vram_peak_gb()
+        if peak is not None:
+            record("tts", "peak VRAM (GB)", peak, "CUDA only — value column is GB")
 
 
 def bench_clone():
@@ -211,7 +300,7 @@ def main() -> None:
                 fn()
 
     print("\n" + "=" * 68)
-    print(f"{'stage':<8} {'measurement':<40} {'seconds':>8}")
+    print(f"{'stage':<8} {'measurement':<40} {'value':>8}")
     print("-" * 68)
     for st, what, secs, note in RESULTS:
         print(f"{st:<8} {what:<40} {secs:>8.2f}  {note}")

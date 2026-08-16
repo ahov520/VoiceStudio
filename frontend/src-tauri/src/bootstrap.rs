@@ -293,14 +293,20 @@ pub fn respawn_backend(
 /// the venv — is removed and the bootstrap re-runs once, recreating it through
 /// the normal `CreatingVenv` / `InstallingDeps` setup path instead of
 /// surfacing the same dead-end failure on every retry.
-pub fn spawn_backend_and_wait(app: &tauri::AppHandle, stage_handle: &Arc<Mutex<BootstrapStage>>) {
+pub fn spawn_backend_and_wait<R: tauri::Runtime>(app: &tauri::AppHandle<R>, stage_handle: &Arc<Mutex<BootstrapStage>>) {
     let mut venv_heal_attempted = false;
     'bootstrap: loop {
         let child = crate::backend::spawn_backend(app, Some(stage_handle));
         track_backend_child(app, child);
         let start = std::time::Instant::now();
-        while start.elapsed() < Duration::from_secs(300) {
-            if crate::backend::backend_healthy(backend_port()) {
+        // Early-bind narration: the backend answers /startup/progress within
+        // ~1s of spawn, long before it is Ready — surface each step change
+        // as a log line so the splash shows "Loading ML runtime (PyTorch)…"
+        // instead of a silent 300s wait. An old backend (no endpoint) yields
+        // None and the wait looks exactly as it did before.
+        let mut last_step = String::new();
+        while start.elapsed() < startup_budget() {
+            if crate::backend::backend_ready(backend_port()) {
                 set_stage(stage_handle, BootstrapStage::Ready);
                 // #567/#570/#571: once Ready, keep watching the backend child
                 // and respawn it if it dies mid-session, so a crash self-heals
@@ -338,7 +344,7 @@ pub fn spawn_backend_and_wait(app: &tauri::AppHandle, stage_handle: &Arc<Mutex<B
                     None
                 };
             if let Some((exit_info, real_exit)) = process_dead {
-                let err_tail = crate::backend::read_error_log_tail(30);
+                let err_tail = crate::backend::read_error_log_tail_for_run(30);
                 // #941: persist the forensics for every true process death —
                 // startup crashes included — unless the app is shutting down
                 // or a retry flow deliberately killed the child.
@@ -347,7 +353,7 @@ pub fn spawn_backend_and_wait(app: &tauri::AppHandle, stage_handle: &Arc<Mutex<B
                         crate::crash::record_crash(crate::crash::marker_now(
                             exit,
                             backend_uptime_s(app),
-                            crate::backend::read_error_log_tail(CRASH_STDERR_TAIL_LINES),
+                            crate::backend::read_error_log_tail_for_run(CRASH_STDERR_TAIL_LINES),
                         ));
                     }
                 }
@@ -441,13 +447,25 @@ pub fn spawn_backend_and_wait(app: &tauri::AppHandle, stage_handle: &Arc<Mutex<B
                 set_stage(stage_handle, BootstrapStage::Failed { message: msg });
                 return;
             }
+            if let Some((status, step, label)) =
+                crate::backend::startup_progress(backend_port())
+            {
+                if status == "starting" && !step.is_empty() && step != last_step {
+                    last_step = step;
+                    emit_log(app, "starting_backend", &format!("Startup: {label}"));
+                }
+            }
             std::thread::sleep(Duration::from_millis(500));
         }
-        let err_tail = crate::backend::read_error_log_tail(20);
+        let err_tail = crate::backend::read_error_log_tail_for_run(20);
         let msg = if err_tail.is_empty() {
-            "Backend did not respond within 300 s".to_string()
+            format!("Backend did not respond within {} s", startup_budget().as_secs())
         } else {
-            format!("Backend did not respond within 300 s. Last stderr output:\n{}", err_tail)
+            format!(
+                "Backend did not respond within {} s. Last stderr output:\n{}",
+                startup_budget().as_secs(),
+                err_tail
+            )
         };
         set_stage(stage_handle, BootstrapStage::Failed { message: msg });
         return;
@@ -476,6 +494,15 @@ static SUPERVISOR_ACTIVE: AtomicBool = AtomicBool::new(false);
 /// moment a fresh child is spawned and tracked (`track_backend_child`).
 static BACKEND_KILL_INTENDED: AtomicBool = AtomicBool::new(false);
 
+/// Bumped every time `track_backend_child` installs a new child. The
+/// supervisor snapshots it when it observes a death; a change during its
+/// backoff pause means ANOTHER flow (Retry / Clean & Retry) spawned and
+/// tracked a replacement — ownership has transferred, whether or not that
+/// replacement is still alive when sampled (the flag and a liveness check
+/// can both be missed inside one 500ms window; the generation cannot).
+static BACKEND_SPAWN_GENERATION: std::sync::atomic::AtomicU64 =
+    std::sync::atomic::AtomicU64::new(0);
+
 pub fn set_backend_kill_intended(value: bool) {
     BACKEND_KILL_INTENDED.store(value, Ordering::SeqCst);
 }
@@ -499,7 +526,7 @@ const CRASH_STDERR_TAIL_LINES: usize = 40;
 const MAX_RESTARTS: usize = 3;
 const RESTART_WINDOW: Duration = Duration::from_secs(600);
 
-fn app_is_quitting(app: &tauri::AppHandle) -> bool {
+fn app_is_quitting<R: tauri::Runtime>(app: &tauri::AppHandle<R>) -> bool {
     app.try_state::<AppFlags>()
         .map(|f| f.quitting.load(Ordering::SeqCst))
         .unwrap_or(false)
@@ -508,7 +535,7 @@ fn app_is_quitting(app: &tauri::AppHandle) -> bool {
 /// Store the freshly spawned backend child (and its spawn time, for the crash
 /// marker's `uptime_s`), and re-arm the death watchers: any deliberate-kill
 /// window ends the moment a new child is tracked.
-fn track_backend_child(app: &tauri::AppHandle, child: Option<std::process::Child>) {
+fn track_backend_child<R: tauri::Runtime>(app: &tauri::AppHandle<R>, child: Option<std::process::Child>) {
     let state = app.state::<BackendState>();
     if let Ok(mut guard) = state.process.lock() {
         *guard = child;
@@ -516,11 +543,12 @@ fn track_backend_child(app: &tauri::AppHandle, child: Option<std::process::Child
     if let Ok(mut spawned) = state.spawned_at.lock() {
         *spawned = Some(Instant::now());
     }
+    BACKEND_SPAWN_GENERATION.fetch_add(1, Ordering::SeqCst);
     set_backend_kill_intended(false);
 }
 
 /// Seconds since the tracked backend child was spawned (0 when unknown).
-fn backend_uptime_s(app: &tauri::AppHandle) -> u64 {
+fn backend_uptime_s<R: tauri::Runtime>(app: &tauri::AppHandle<R>) -> u64 {
     app.try_state::<BackendState>()
         .and_then(|s| s.spawned_at.lock().ok().and_then(|g| *g))
         .map(|t| t.elapsed().as_secs())
@@ -530,7 +558,7 @@ fn backend_uptime_s(app: &tauri::AppHandle) -> u64 {
 /// Returns `Some(BackendExit)` if the tracked backend child has exited,
 /// `None` if it is still running (or none is tracked — which we never treat as
 /// a death to respawn, to avoid fighting a deliberate teardown).
-fn backend_child_exit(app: &tauri::AppHandle) -> Option<BackendExit> {
+fn backend_child_exit<R: tauri::Runtime>(app: &tauri::AppHandle<R>) -> Option<BackendExit> {
     let state = app.try_state::<BackendState>()?;
     let mut guard = state.process.lock().ok()?;
     match guard.as_mut() {
@@ -543,6 +571,30 @@ fn backend_child_exit(app: &tauri::AppHandle) -> Option<BackendExit> {
     }
 }
 
+/// How long the launch poll waits for the backend to become Ready before
+/// declaring Failed. 300s in production; `OMNIVOICE_STARTUP_BUDGET_S`
+/// exists for the fault-injection harness (a slow-start scenario must not
+/// sleep five minutes in CI) and for support triage on pathological disks.
+fn startup_budget() -> Duration {
+    std::env::var("OMNIVOICE_STARTUP_BUDGET_S")
+        .ok()
+        .and_then(|v| v.trim().parse::<u64>().ok())
+        .filter(|&s| s > 0)
+        .map(Duration::from_secs)
+        .unwrap_or(Duration::from_secs(300))
+}
+
+/// The supervisor's death-detection poll interval. 2s in production;
+/// `OMNIVOICE_SUPERVISOR_POLL_MS` shrinks it for the harness only.
+fn supervisor_poll() -> Duration {
+    std::env::var("OMNIVOICE_SUPERVISOR_POLL_MS")
+        .ok()
+        .and_then(|v| v.trim().parse::<u64>().ok())
+        .filter(|&ms| ms > 0)
+        .map(Duration::from_millis)
+        .unwrap_or(Duration::from_secs(2))
+}
+
 /// Drop restart timestamps older than `RESTART_WINDOW` and report whether the
 /// remaining count has hit the cap. Pure so the backoff policy is unit-tested
 /// without spawning real processes.
@@ -551,19 +603,40 @@ fn restart_budget_exhausted(times: &mut Vec<Instant>, now: Instant) -> bool {
     times.len() >= MAX_RESTARTS
 }
 
+/// Escalating pause before a respawn, keyed on how many restarts already
+/// happened inside `RESTART_WINDOW`. The FIRST respawn stays immediate (a
+/// one-off crash should self-heal fast); repeat deaths get breathing room so
+/// a tight crash loop doesn't burn the whole 3-in-600s budget in seconds —
+/// back-to-back torch-import storms are exactly what pushes a
+/// memory-pressured machine over the edge again. Pure for unit testing.
+fn restart_backoff_delay(recent_restarts: usize) -> Duration {
+    match recent_restarts {
+        0 => Duration::ZERO,
+        1 => Duration::from_secs(5),
+        _ => Duration::from_secs(15),
+    }
+}
+
 /// After the backend is Ready, watch its process and respawn it on an
 /// unexpected exit. Runs on the (otherwise-returning) bootstrap thread and
 /// stops the instant the app is quitting so it never resurrects the backend
 /// during shutdown. Death is detected only via a *confirmed process exit*
 /// (`try_wait`), never a slow health probe, so a busy-but-alive backend is
 /// never killed.
-fn supervise_backend(app: &tauri::AppHandle, stage_handle: &Arc<Mutex<BootstrapStage>>) {
+fn supervise_backend<R: tauri::Runtime>(app: &tauri::AppHandle<R>, stage_handle: &Arc<Mutex<BootstrapStage>>) {
     let mut restart_times: Vec<Instant> = Vec::new();
     loop {
-        std::thread::sleep(Duration::from_secs(2));
+        std::thread::sleep(supervisor_poll());
         if app_is_quitting(app) {
             return;
         }
+        // Snapshot the spawn generation BEFORE observing the exit: sampled
+        // after, a replacement tracked in the gap between `try_wait` and the
+        // load would be baked into the snapshot and the transfer missed
+        // (third-pass review find). Sampled before, any tracking that
+        // happens from here on — even one whose child we are about to see
+        // exit — reads as a generation change and yields.
+        let observed_generation = BACKEND_SPAWN_GENERATION.load(Ordering::SeqCst);
         let exit = match backend_child_exit(app) {
             Some(exit) => exit,
             None => continue, // still running
@@ -587,10 +660,10 @@ fn supervise_backend(app: &tauri::AppHandle, stage_handle: &Arc<Mutex<BootstrapS
         crate::crash::record_crash(crate::crash::marker_now(
             &exit,
             uptime_s,
-            crate::backend::read_error_log_tail(CRASH_STDERR_TAIL_LINES),
+            crate::backend::read_error_log_tail_for_run(CRASH_STDERR_TAIL_LINES),
         ));
         if restart_budget_exhausted(&mut restart_times, Instant::now()) {
-            let tail = crate::backend::read_error_log_tail(30);
+            let tail = crate::backend::read_error_log_tail_for_run(30);
             let msg = format!(
                 "The backend kept crashing ({} times in {} min; last death: {}) and couldn't \
                  be kept running. Use Clean & Retry, or check Settings → Logs → Backend.{}",
@@ -604,6 +677,10 @@ fn supervise_backend(app: &tauri::AppHandle, stage_handle: &Arc<Mutex<BootstrapS
             set_stage(stage_handle, BootstrapStage::Failed { message: msg });
             return;
         }
+        // Backoff BEFORE this restart is recorded: `restart_times` was just
+        // pruned to the window, so its length is the number of recent
+        // respawns already attempted.
+        let backoff = restart_backoff_delay(restart_times.len());
         restart_times.push(Instant::now());
         log::warn!("Backend process exited unexpectedly ({exit_info}) — restarting it (#567)");
         emit_log(app, "starting_backend", "Backend stopped unexpectedly — restarting it automatically");
@@ -611,6 +688,51 @@ fn supervise_backend(app: &tauri::AppHandle, stage_handle: &Arc<Mutex<BootstrapS
         // poll has already stopped post-Ready, so the stage alone won't show).
         let _ = app.emit("backend-restarting", exit_info.clone());
         set_stage(stage_handle, BootstrapStage::StartingBackend);
+        // The banner is already up, so the pause reads as "reconnecting", not
+        // as a hang. Chunked so quitting (or a deliberate retry-flow kill,
+        // which owns the respawn) is honored within 500 ms.
+        if !backoff.is_zero() {
+            log::info!(
+                "Backend died {} time(s) in the last {} min — waiting {}s before respawning",
+                restart_times.len(),
+                RESTART_WINDOW.as_secs() / 60,
+                backoff.as_secs()
+            );
+            let waited = Instant::now();
+            while waited.elapsed() < backoff {
+                if app_is_quitting(app) {
+                    return;
+                }
+                if backend_kill_intended() {
+                    log::info!("Deliberate replace during restart backoff — supervisor yielding");
+                    return;
+                }
+                // A completed Retry/Clean&Retry sets the deliberate-kill flag
+                // and then `track_backend_child` CLEARS it — possibly both
+                // between two of these samples, so the flag alone can be
+                // missed. The durable tell is the spawn GENERATION: it bumps
+                // when a replacement is tracked and never un-bumps, so it is
+                // observed even if the replacement has itself already exited
+                // by the time we sample. Yield promptly (not at backoff end)
+                // so the retry's own spawn_backend_and_wait can claim the
+                // supervisor slot at Ready — and so we never free_port() a
+                // replacement out from under the flow that owns it.
+                if BACKEND_SPAWN_GENERATION.load(Ordering::SeqCst) != observed_generation {
+                    log::info!(
+                        "A replacement backend was tracked during restart backoff — supervisor yielding"
+                    );
+                    return;
+                }
+                std::thread::sleep(Duration::from_millis(500));
+            }
+        }
+        // Last look before touching the port — covers the zero-backoff first
+        // respawn (which never enters the pause loop) and the tail of the
+        // pause itself. After this point we own the respawn.
+        if BACKEND_SPAWN_GENERATION.load(Ordering::SeqCst) != observed_generation {
+            log::info!("A replacement backend was tracked — supervisor yielding to its flow");
+            return;
+        }
         // Clear any orphan still holding the port before the respawn. #1223:
         // if it can't be cleared, respawning just reproduces the bind failure
         // — stop and say so rather than burning a restart attempt.
@@ -642,11 +764,12 @@ fn supervise_backend(app: &tauri::AppHandle, stage_handle: &Arc<Mutex<BootstrapS
         // Wait (bounded) for the respawn to become healthy. If it dies again
         // immediately, bail early so the next loop counts it toward the cap.
         let start = Instant::now();
+        let mut last_step = String::new();
         while start.elapsed() < Duration::from_secs(120) {
             if app_is_quitting(app) {
                 return;
             }
-            if crate::backend::backend_healthy(backend_port()) {
+            if crate::backend::backend_ready(backend_port()) {
                 set_stage(stage_handle, BootstrapStage::Ready);
                 let _ = app.emit("backend-restored", ());
                 log::info!("Backend restarted and healthy again");
@@ -654,6 +777,16 @@ fn supervise_backend(app: &tauri::AppHandle, stage_handle: &Arc<Mutex<BootstrapS
             }
             if backend_child_exit(app).is_some() {
                 break;
+            }
+            // Same early-bind narration as the launch poll: name the startup
+            // step in the reconnecting window instead of a silent wait.
+            if let Some((status, step, label)) =
+                crate::backend::startup_progress(backend_port())
+            {
+                if status == "starting" && !step.is_empty() && step != last_step {
+                    last_step = step;
+                    emit_log(app, "starting_backend", &format!("Startup: {label}"));
+                }
             }
             std::thread::sleep(Duration::from_millis(500));
         }
@@ -2022,6 +2155,46 @@ mod tests {
             "deaths older than the window must be pruned, not counted"
         );
         assert!(aged.is_empty(), "stale timestamps should have been dropped");
+    }
+
+    /// Env-mutating tests in THIS module serialize on their own lock (cargo
+    /// runs tests in threads; the harness binary has its own).
+    static ENV_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
+
+    #[test]
+    fn timing_overrides_default_to_production_values() {
+        // The env overrides exist for the fault-injection harness only —
+        // production timing must not drift when they are unset.
+        let _g = ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner());
+        std::env::remove_var("OMNIVOICE_STARTUP_BUDGET_S");
+        std::env::remove_var("OMNIVOICE_SUPERVISOR_POLL_MS");
+        assert_eq!(startup_budget(), Duration::from_secs(300));
+        assert_eq!(supervisor_poll(), Duration::from_secs(2));
+        // Zero/garbage never yields a degenerate loop.
+        std::env::set_var("OMNIVOICE_STARTUP_BUDGET_S", "0");
+        std::env::set_var("OMNIVOICE_SUPERVISOR_POLL_MS", "abc");
+        assert_eq!(startup_budget(), Duration::from_secs(300));
+        assert_eq!(supervisor_poll(), Duration::from_secs(2));
+        std::env::set_var("OMNIVOICE_STARTUP_BUDGET_S", "6");
+        assert_eq!(startup_budget(), Duration::from_secs(6));
+        std::env::remove_var("OMNIVOICE_STARTUP_BUDGET_S");
+        std::env::remove_var("OMNIVOICE_SUPERVISOR_POLL_MS");
+    }
+
+    #[test]
+    fn restart_backoff_escalates_but_first_respawn_is_immediate() {
+        // A one-off crash self-heals with zero added latency; repeat deaths
+        // inside the window get an escalating pause so a tight crash loop
+        // can't burn the whole 3-in-600s budget in seconds.
+        assert_eq!(restart_backoff_delay(0), Duration::ZERO);
+        assert_eq!(restart_backoff_delay(1), Duration::from_secs(5));
+        assert_eq!(restart_backoff_delay(2), Duration::from_secs(15));
+        // Monotonic, and capped rather than unbounded — the budget check is
+        // what ends a hopeless loop, not an ever-growing sleep.
+        assert_eq!(restart_backoff_delay(50), Duration::from_secs(15));
+        for n in 0..10 {
+            assert!(restart_backoff_delay(n) <= restart_backoff_delay(n + 1));
+        }
     }
 
     #[test]

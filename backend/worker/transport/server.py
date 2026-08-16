@@ -57,6 +57,10 @@ REQUIRED_FEATURES = frozenset({
     "task_progress_v1",
     "task_inputs_v1",
     "remote_model_download_v1",
+    # A generic backend.generate() call accepts the same wire shape but drops
+    # profile conditioning controls. Require the canonical worker render path
+    # so an older peer cannot successfully return a different voice.
+    "remote_tts_render_v1",
 })
 
 

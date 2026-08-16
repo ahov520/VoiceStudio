@@ -78,7 +78,7 @@ def test_registration_declares_semantic_features(proto):
 
 @pytest.mark.asyncio
 async def test_old_worker_is_visibly_refused_before_running_wrong_audio():
-    """An old peer can share v1's protobuf shape while missing inputs/progress.
+    """An old peer can share v1's protobuf shape while missing render parity.
 
     Registration must fail by name, before authentication or task dispatch,
     instead of allowing a clone with no reference audio to report SUCCESS.
@@ -93,6 +93,11 @@ async def test_old_worker_is_visibly_refused_before_running_wrong_audio():
     assert "task_inputs_v1" in response.error.message
     assert "no task was run" in response.error.message
     assert REQUIRED_FEATURES
+
+
+def test_remote_tts_render_parity_is_a_required_worker_feature():
+    """Do not let an old worker silently bypass the canonical TTS pipeline."""
+    assert "remote_tts_render_v1" in REQUIRED_FEATURES
 
 
 # ── Control / data plane separation ────────────────────────────────────────

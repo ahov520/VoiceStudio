@@ -460,30 +460,55 @@ class TaskExecutor:
 
     @staticmethod
     def _synthesize(backend, text: str, params: dict):
-        """Call the engine through the same serial GPU gate local jobs use.
+        """Render through the same seeded pipeline as local ``/generate``.
 
         Held against the idle sweep for the duration: a long generation touches
         the instance cache once, at the start, so on elapsed time alone it is
         indistinguishable from a model nobody wants any more.
+
+        Do not reduce this to ``backend.generate()``.  The control plane sends
+        a complete render contract (pinned gallery seed, synthetic reference,
+        quality controls, chunking, effects); calling the adapter directly
+        silently turns a selected gallery voice into a fresh random take.
         """
         from services import tts_backend  # noqa: PLC0415
+        from api.routers.generation import _run_backend_inference, _run_inference  # noqa: PLC0415
 
-        kwargs = {
-            key: params[key]
-            for key in (
-                "ref_audio",
-                "ref_text",
-                "instruct",
-                "language",
-                "duration",
-                "description",
-                "speed",
-            )
-            if params.get(key) is not None
-        }
+        language = params.get("language")
+        ref_audio = params.get("ref_audio")
+        ref_text = params.get("ref_text")
+        instruct = params.get("instruct")
+        duration = params.get("duration")
+        num_step = params.get("num_step", 16)
+        guidance_scale = params.get("guidance_scale", 2.0)
+        speed = params.get("speed", 1.0)
+        denoise = params.get("denoise", True)
+        postprocess_output = params.get("postprocess_output", True)
+        used_seed = params.get("seed")
+        effect_preset = params.get("effect_preset", "broadcast")
+        max_chunk_chars = params.get("max_chunk_chars")
+        crossfade_ms = params.get("crossfade_ms")
         try:
             with tts_backend.engine_in_use(backend):
-                return backend.generate(text, **kwargs)
+                if isinstance(backend, tts_backend.OmniVoiceBackend):
+                    # The OSS default engine has an extended native surface;
+                    # preserving it is required for a gallery preview and a
+                    # GPU-worker take to share the same voice identity.
+                    return _run_inference(
+                        backend._model, text, language, ref_audio, ref_text,
+                        instruct, duration, num_step, guidance_scale, speed,
+                        params.get("t_shift"), denoise, postprocess_output,
+                        params.get("layer_penalty_factor"),
+                        params.get("position_temperature"),
+                        params.get("class_temperature"), used_seed,
+                        effect_preset, max_chunk_chars, crossfade_ms,
+                    )
+                return _run_backend_inference(
+                    backend, text, language, ref_audio, ref_text, instruct,
+                    duration, num_step, guidance_scale, speed, denoise,
+                    postprocess_output, used_seed, effect_preset,
+                    max_chunk_chars, crossfade_ms,
+                )
         except Exception as exc:
             from worker import errors as worker_errors  # noqa: PLC0415
 

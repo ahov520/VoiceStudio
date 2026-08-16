@@ -1,11 +1,17 @@
 # Remote GPU workers
 
-Run OmniVoice on this machine, but hand individual jobs to GPUs on your other
+Run VoiceStudio on this machine, but hand individual jobs to GPUs on your other
 machines. Results come back here.
 
 This is **opt-in and off by default**. Until you turn it on and approve a
 worker, nothing leaves your computer, no port is opened, and the app behaves
 exactly as it did before.
+
+Worker management is an admin surface. In Docker/server mode, viewing status
+works during bare bootstrap, but joining, enabling, approving, issuing keys,
+disconnecting, or removing machines remotely requires `OMNIVOICE_API_KEY`.
+The share PIN and trusted-network exemptions authorize playback, not worker
+administration.
 
 > **Not the same as [Remote backend](remote-gpu.md).** That points this app at
 > a backend running somewhere else, so the whole app — your projects, your
@@ -17,7 +23,7 @@ exactly as it did before.
 
 ## What you need
 
-* OmniVoice on both machines, on versions no more than two releases apart.
+* VoiceStudio on both machines, on versions no more than two releases apart.
 * The worker machine must be able to **reach** this one over the network. Same
   LAN is enough at home; across networks, a VPN such as
   [Tailscale](https://tailscale.com/) is the reliable answer. The worker dials
@@ -147,6 +153,15 @@ fallback is reported once. ASR, diarization and translation also remain local. D
 runs here, deliberately and permanently, because there latency *is* the
 feature. The remaining operations are being ported one at a time.
 
+### Voice identity parity
+
+For TTS, the worker receives the complete local rendering contract: the voice
+profile's reference audio and transcript, its pinned seed, model quality
+controls, text chunking/crossfade settings, and output effect preset. The
+worker runs the same native or generic rendering pipeline as local
+`/generate`; selecting a gallery voice therefore does not turn it into a new
+random voice merely because it was rendered on another GPU.
+
 The picker knows this. It resolves against the surface you are on, so a chosen
 worker reads **Local** on a tab whose work has no remote path yet and names the
 reason, instead of showing a green dot next to a GPU that receives nothing. The
@@ -157,10 +172,11 @@ The Dictation surface states that it always uses this machine without showing
 the generic "not ported yet" notice.
 
 For protocol development, a task can also be placed by hand with
-`POST /workers/tasks` — a **development-only** endpoint. It is loopback-only,
+`POST /workers/tasks` — a **development-only** endpoint. It is admin-gated,
 sits behind the same opt-in as everything else here, takes a mandatory
-deadline, submits one task and waits for it. It is not a stable API and goes
-away once generation routes itself.
+deadline, submits one task and waits for it. On desktop that means loopback;
+in server mode a remote caller needs `OMNIVOICE_API_KEY`. It is not a stable
+API and goes away once generation routes itself.
 
 ## How work is placed
 
@@ -197,16 +213,18 @@ The row tells you what happened in words — "Paused after 3 failures … retryi
 in 45s" — and **Resume** clears it immediately when you've fixed the machine.
 
 **You quit the app mid-task.** Remote work keeps running on the worker. On next
-launch OmniVoice recovers those tasks and reconciles with each worker about
+launch VoiceStudio recovers those tasks and reconciles with each worker about
 what is genuinely still in flight.
 
 **Version or feature mismatch.** The protocol keeps a two-release compatibility
 window, but release numbers alone do not prove that a worker understands every
 additive command. Registration therefore also declares named features for task
-inputs, progress leases, and remote model downloads. A worker outside the
+inputs, progress leases, remote model downloads, and the voice-identity render
+pipeline. A worker outside the
 version window, or one missing a required feature, is refused with
 `UPGRADE_REQUIRED` and an update instruction before any task runs. It can never
-silently render without reference audio or leave a download stuck at 0%.
+silently render without reference audio, substitute a different voice, or leave
+a download stuck at 0%.
 
 Every remote failure includes a concrete next step. Capacity, missing models,
 expired leases or sessions, authentication, rejected inputs, and result upload

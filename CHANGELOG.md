@@ -10,67 +10,59 @@ the frozen-backend fallback mirror it for their toolchains.
 
 **Highlights**
 
-- Importing a whole novel into Stories no longer makes the app stutter — the line list virtualizes and saving stopped rewriting the entire book on every keystroke
-- Subtitle translation shows live segment-level progress and no longer dies silently on long LLM jobs — requests are batched, finished work survives a failure, and failed rows can be retried alone
-- Five new color themes: Tokyo Night, Dracula, Everforest, One Dark, and Kanagawa
-- Speech synthesis, transcription and vocal separation can each run on a cloud service now — OpenAI-compatible servers, ElevenLabs, Alibaba Cloud DashScope, and MVSEP — all opt-in, with the local engines staying the default
-- A faster, cleaner Dub workspace for multilingual production (#1489)
-- VoiceStudio now gives the app, desktop chrome, documentation, and package metadata one clear identity
-- A local-first creative studio: voice cloning, design, dubbing, dictation, stories, audiobooks, and transcription without a subscription meter
-- Reliability first: automatic cache repair, truthful hardware routing, safer sidecars, and actionable recovery instead of mystery failures
-- Security boundaries now match the product: native file access stays native, untrusted network destinations fail closed, and public errors keep private diagnostics local
-- RTX 40-series GPUs are used again instead of being sent to the CPU
-- A warning before a slow generation, rather than after a five-minute wait
-- The watermark can be turned off in Settings, as the docs always said
-- Your other GPU can take the work now — send individual jobs to a second machine, opt-in
-- More than one person can share one GPU machine, without shell access to it or taking turns
-- A Model Catalogue workspace: every engine and model in one place, with the defaults set there
-- Workspace tabs in the title bar, if you prefer them to the icon rail (#1412)
-- macOS support now matches what the app actually delivers
-- Linux AppImage: a blank white window on rolling distros (Mesa 26.1+) now starts normally
-- Apple Silicon: transcription no longer needs a system ffmpeg, as the docs always said — thanks @gambletan! (#1436)
-- A failed audiobook chapter says why, instead of turning red and saying nothing
+- The backend now answers within a second of launch and narrates its startup step by step
+- Reporting a bug from an outdated build now offers the latest release first
+- The backend is only announced ready once it can actually serve, and crash-loop restarts now pace themselves
+
+### Changed
+- The backend binds its port immediately and reports startup progress live — `/health` answers 503-with-step and a new `/startup/progress` endpoint lists every step while PyTorch, API routes, and database migrations load in the background, so "starting at step X" is never mistakable for "dead"; the desktop splash narrates each step (#1550)
+
+### Added
+- The bug reporter notices when you're on an outdated build and offers the latest release before filing — with a "File anyway" escape hatch — and stamps a `Build status` line into every report so up-to-date reports are tellable from stale ones (#1547)
+- Settings → Performance & Device gains a compute-device override (Auto / CUDA / ROCm / XPU / MPS / CPU, or `OMNIVOICE_DEVICE`) — pin the device when auto-detect picks wrong; only devices your machine actually has are offered (#1557)
+
+### Docs
+- The READMEs now lead with download buttons and a three-step first-clone walkthrough, and a new benchmarks page anchors measured per-engine/per-device numbers on the in-repo harness (#1555)
+- Every engine now has its own guide — 21 new pages under docs/engines plus an index covering all 16 TTS and 11 ASR engines, linked from both READMEs (#1556)
 
 ### Fixed
+- The crash-isolated ASR sidecar and its download preflight now agree on which model to load — setting the shared faster-whisper model variable applies to both variants instead of the sidecar quietly using a different one (#1556)
+- "Ready" now requires the deep health probe (a working database-backed route), not just the identity probe — a backend whose install broke underneath can no longer be announced up while every real request fails (#1548)
+- Supervisor restarts after repeat crashes now back off (immediate, then 5s, then 15s) instead of respawning back-to-back, so a tight crash loop can't burn the whole restart budget in seconds (#1548)
 
-- An imported novel no longer freezes the app: the Stories line list virtualizes past 120 lines (thousands of always-mounted cards used to hit six figures of DOM nodes), and the store's localStorage persist batches its writes instead of synchronously rewriting the whole book on every keystroke — which also removes a silent data-loss risk near the storage quota. — thanks @ahov520!
-- Typing in the Audiobook script no longer costs three full-text scans per keystroke (stats, validation, cast parse run on a deferred snapshot), and importing a large PDF/EPUB no longer blocks the whole backend while it parses. — thanks @ahov520!
-- Subtitle translation no longer dies silently on long LLM jobs: segments travel in small sequential batches (one giant byte-silent POST used to hit the webview's ~5-minute cap and get re-sent whole), every finished batch is kept on a later failure, and translations now persist to the job the moment they land instead of only at generate time. — thanks @ahov520!
-- The fast LLM translation path now caps its provider concurrency and honors 429 Retry-After before spending its retry, so one rate-limit window can't fail a whole stripe of segments; Argos language-pack downloads are time-bounded instead of hanging the request on a blocked network. — thanks @ahov520!
-- The guard that keeps transcription on the degrading ASR loader now scans the whole backend, not just the routers — a service that transcribes on a request's behalf skipped `ensure_loaded()` just as thoroughly. (#1519) — thanks @ahov520!
-- The Linux app icon is no longer blank. Every AppImage since v0.4.2 shipped `.DirIcon` as an absolute symlink into the machine that built it (`/home/runner/work/…`), so the link dangled on every user's computer and file managers, app menus and desktop integration all drew nothing. The release build now verifies the icon resolves inside the bundle before publishing. (#1518)
-- The Linux desktop entry no longer ships an empty `Categories=`, which `desktop-file-validate` rejects and menu builders skip. (#1518)
+## [0.5.0] — 2026-08-13
 
-### Added
+**Highlights**
 
-- Translation progress is visible from any workspace: a status pill counts translated segments live, in single-language and multi-language runs alike. — thanks @ahov520!
-- A "Retry failed" button next to Translate All re-translates only the segments whose last attempt failed, instead of re-sending (and re-billing) the whole video. — thanks @ahov520!
-- Five new color themes — Tokyo Night, Dracula, Everforest, One Dark, Kanagawa — in Settings → Appearance, all meeting WCAG AA contrast on the chrome bar. — thanks @ahov520!
-- Cloud TTS engines: any OpenAI-compatible `/v1/audio/speech` server (SiliconFlow, OpenAI, self-hosted), ElevenLabs (with a voice picker fed by your voice library), and Alibaba Cloud CosyVoice via DashScope — configured and tested under Model Catalogue → Engines, activated like any other engine. — thanks @ahov520!
-- Cloud transcription engines: ElevenLabs Scribe (word timestamps, 10-hour files) and Alibaba Cloud DashScope (sentence timestamps, long audio chunked automatically), joining the existing OpenAI-compatible remote ASR; neither ever wins auto-detect. — thanks @ahov520!
-- Vocal separation is engine-driven now: local Demucs stays the default, with MVSEP (vocals + instrumental, algorithm selectable) and ElevenLabs Voice Isolator (voice only) as cloud options under Settings → Vocal separation — same progress bar, same fall-back-to-mixed-audio safety. — thanks @ahov520!
-- One Settings → Cloud providers panel holds the ElevenLabs / DashScope / MVSEP keys — encrypted at rest, shared by every engine of that provider, each testable with one click; env vars still win for CI. — thanks @ahov520!
-- The demo audio the app has always advertised now actually ships: previews for all seven voice-design presets, the three dictation replay clips, and the dubbing demo's source video plus four dubbed languages with subtitles. Every one of those was a dead link before — the tooling that renders them required macOS, so on Windows and Linux the files were never built. (#1517)
-- Demo assets are rendered by VoiceStudio's own engine, so the tooling runs wherever the app does, and the demos are made by the thing they demonstrate. (#1517)
+- The app is now **VoiceStudio** (previously OmniVoice-Studio) — one waveform-and-spark identity across the app, docs and installers. Your data folder, settings and Docker image paths stay put.
+- **Model Catalogue** — engines and models in one workspace: every TTS, transcription and LLM engine with its device routing and install state, defaults picked there.
+- Switch TTS, ASR and LLM engines from the status bar or any workspace — ready-only choices, memory status, environment-pin protection, `Ctrl/Cmd+E`. (#1530)
+- Lend another machine's GPU with a join code and a QR scan — a Compute control in the status bar picks where jobs run, and several people can share one GPU box with revocable, certificate-pinned connections. (#1516, #1496)
+- Server mode is locked down: admin actions require an API key (#1525), and the remote UI exchanges it for short-lived sessions that never sit in browser storage or WebSocket URLs (#1528) — thanks @bultodepapas!
+- A faster, cleaner Dub workspace for multilingual production, with a production command bar and per-language cards. (#1489)
+- The demo audio and video the app always advertised now actually ship, rendered by VoiceStudio's own engine. (#1517)
+- Dictation works on Wayland now — the portal shortcut actually fires (#1490, #1526) — and the recording pill is back on every desktop.
+- The Launchpad wears the project's signal-field waveform artwork over a quieter, borderless layout. (#1533)
+- The catalogue reads as headroom, not breakage: available engines sort first, uninstalled ones say what they need (#1531), and the LLM row names the provider that actually answers (#1538).
+- Gallery voices can be saved as local profiles — audio lands in your profile store with validated, content-addressed references. (#1542)
 
-### Added
+<img src="https://raw.githubusercontent.com/debpalash/VoiceStudio/main/docs/media/0.5.0/quick-switch.gif" alt="Switching TTS engines from the status bar" width="820" />
 
-- A machine can now join a control plane from the app: Settings → System → Remote workers → **Lend this machine's GPU**, paste the join code, done — no environment variables and no restart. The address travels with the code, so the machine reconnects on its own afterwards. (#1516)
-- Join codes and connection strings are shown as a **QR code** alongside the text, with a live expiry countdown — scan it from the other machine instead of retyping forty characters. (#1516)
-- A **Compute** control in the status bar: pick local or a remote machine, turn remote workers on or off, and mint a join code without opening Settings. It appears only once you have opted in or enrolled a machine. (#1516)
-- A worker waiting for approval can be approved from its row. The panel labelled that state before but offered no way out of it. (#1516)
-- The demo audio the app has always advertised now actually ships: previews for all seven voice-design presets, the three dictation replay clips, and the dubbing demo's source video plus four dubbed languages with subtitles. Every one of those was a dead link before — the tooling that renders them required macOS, so on Windows and Linux the files were never built. (#1517)
-- Demo assets are rendered by VoiceStudio's own engine, so the tooling runs wherever the app does, and the demos are made by the thing they demonstrate. (#1517)
+| The Model Catalogue | The Voice Gallery |
+| --- | --- |
+| <img src="https://raw.githubusercontent.com/debpalash/VoiceStudio/main/docs/media/0.5.0/catalogue.png" alt="Model Catalogue — engines pane" width="420" /> | <img src="https://raw.githubusercontent.com/debpalash/VoiceStudio/main/docs/media/0.5.0/gallery-save.png" alt="Voice Gallery — save a voice as a profile" width="420" /> |
 
 ### Changed
 
+- Gallery personas now preview through the local backend, retain their complete voice-design recipe, and open directly in Voice, Stories, or Audiobook. (#1542)
+- Typing and large workspace edits no longer serialize and rewrite persisted documents on every input; writes are coalesced off the interaction path — thanks @bultodepapas! (#1541)
+- Support amount choices now use every theme's shared card, accent and focus tokens. (#1530)
 - Sponsoring, commercial licensing and getting in touch are one page now. They answered the same question between them and each used to live somewhere else, so they are three sections on a single scroll — the footer heart, the commercial-licence links and Contact all land on it, at the section you asked for. (#1522)
 - Model Catalogue switches panes with tabs instead of a two-state toggle, and the Engine Compatibility Matrix's TTS / ASR / LLM switcher is now tabs too — arrow-key navigable, and each tab still shows the engine it would use. (#1522)
 - Engines you can actually use sort to the top of the compatibility matrix, and an unavailable engine's name recedes instead of the whole row fading — the status badge and GPU chips that say *why* it is unavailable stay legible. (#1522)
 - Remote workers reads as a device list: status dot, address, latency, a live task meter, resident models and last-seen per machine, with housekeeping actions revealed on hover and a three-step empty state. (#1516)
 - The GPU picker and the new status-bar control paint their status dots and menu surfaces from themed tokens instead of fixed palette classes, so they stop showing Gruvbox colours on Midnight and Catppuccin. (#1516)
 - Dictation shows the pill again: a capture puts a small always-on-top capsule near the bottom of the screen you are working on — listening, transcribing, the result, and any error — and takes it away when the session ends. It never takes focus, so the text still lands in the app you were typing into. On Wayland the compositor decides where it sits; everywhere else it is bottom-centred.
-- Remote workers reads as a device list: status dot, address, latency, a live task meter, resident models and last-seen per machine, with housekeeping actions revealed on hover and a three-step empty state. (#1516)
 - Engines and models moved out of Settings into a new Model Catalogue workspace, reachable from the icon rail (or the title-bar tabs); Settings → Engines and Settings → Models now point there, and Settings keeps the models directory and Hugging Face mirror.
 - The Settings sidebar is keyboard-navigable: ⌘K / Ctrl+K jumps to the filter, ↑/↓ and Home/End move between categories, and Enter or ↓ from the filter drops into the list. Matching text in a filtered category name is highlighted, and group headers stay pinned while the list scrolls.
 - The Launchpad has a quieter, more spacious look: borderless feature tiles that light up on hover or keyboard focus, plain-numeral counts, hairline section rules, and one shared page column for the hero, tiles, recent files and project lists.
@@ -90,6 +82,13 @@ the frozen-backend fallback mirror it for their toolchains.
 
 ### Added
 
+- Gallery personas preview through the local backend, keep their full voice-design recipe, and open directly in Voice, Stories, or Audiobook — and can be saved as local profiles with validated audio references. (#1542)
+- The demo audio the app has always advertised now actually ships: previews for all seven voice-design presets, the three dictation replay clips, and the dubbing demo's source video plus four dubbed languages with subtitles. Every one of those was a dead link before — the tooling that renders them required macOS, so on Windows and Linux the files were never built. (#1517)
+- Demo assets are rendered by VoiceStudio's own engine, so the tooling runs wherever the app does, and the demos are made by the thing they demonstrate. (#1517)
+- A machine can now join a control plane from the app: Settings → System → Remote workers → **Lend this machine's GPU**, paste the join code, done — no environment variables and no restart. The address travels with the code, so the machine reconnects on its own afterwards. (#1516)
+- Join codes and connection strings are shown as a **QR code** alongside the text, with a live expiry countdown — scan it from the other machine instead of retyping forty characters. (#1516)
+- A **Compute** control in the status bar: pick local or a remote machine, turn remote workers on or off, and mint a join code without opening Settings. It appears only once you have opted in or enrolled a machine. (#1516)
+- A worker waiting for approval can be approved from its row. The panel labelled that state before but offered no way out of it. (#1516)
 - **Model Catalogue** — a workspace of its own for engines and models: browse every TTS, transcription and LLM engine with its device routing and install state, pick the default for each, and install or remove model weights, all from one screen instead of two Settings categories.
 - Remote GPU machines can now accept connections instead of dialling out, so several people can use the same box at once — each gets their own revocable connection string, with certificate-pinned TLS, a live list of who is connected, and a disconnect button. (#1496)
 - Remote GPU model downloads now use the normal Models install flow and show per-worker progress. (#1478)
@@ -103,14 +102,22 @@ the frozen-backend fallback mirror it for their toolchains.
 - Settings → Privacy now has an **Invisible watermark** toggle. On by default, available to everyone, and it only affects audio generated after the change. (#1308)
 - A new opt-in crash-isolated TTS engine, so a native crash takes down the sidecar instead of the whole backend — thanks @paoloantinori! (#1292, #1298, #1304)
 - **PocketTTS** (Kyutai), an opt-in CPU-only engine for fast, low-latency renders in six languages (en/fr/de/pt/it/es) with zero-shot cloning from a reference clip. Enable in Settings → Engines — thanks @paoloantinori! (#1306, #1328)
+- A warning before a slow generation, rather than after a five-minute wait. (#1280)
 
-### CI
+### Docs
 
-- The stdio wire protocol every engine sidecar speaks is now tested once across all nine of them, instead of against a single engine — a bug in any one sidecar's copy gets caught — thanks @paoloantinori! (#1408)
+- Engine acceptance: new `docs/engine-acceptance.md` documents the job map, the bar a new engine must clear, and the out-of-tree path (#1306)
+- macOS install notes and the README support table now state the real floor (#1268)
+- Contact: the project X account is listed alongside Discord (#1313)
+- `OMNIVOICE_ALLOWED_ORIGINS` is finally documented: a browser loading the UI from another machine's origin needs the backend's CORS allow-list, which neither server mode nor trusted networks touches — thanks @vanderlpp! (#1348)
 
 ### Fixed
 
-- The Linux app icon is no longer blank: the AppImage shipped `.DirIcon` as a symlink into the machine that built it, so file managers and app menus drew nothing. (#1518)
+- AMD/ROCm hosts no longer crash ASR with "CUDA driver version is insufficient": ROCm torch reports itself as CUDA, but whisperx/faster-whisper run on CTranslate2, which is NVIDIA-only — they now take the CPU path there, and auto-detect prefers pytorch-whisper, which genuinely uses the HIP GPU. (#1529)
+- Crash reports now carry the crashed run's own stderr: the shared error log is append-only with per-run offsets, so a restart can no longer overwrite the dying process's final output with the replacement's healthy startup. (#1510)
+- Wayland: a stale portal identity no longer kills the dictation shortcut for the whole session. The desktop entry the app writes for the GlobalShortcuts portal could point at a binary that has since moved (a `cargo clean`, a relocated AppImage) — GNOME then refuses the bind with "App info not found" and the hotkey silently dies. The entry is validated and rewritten at startup now. (#1526)
+- The guard that keeps transcription on the degrading ASR loader now scans the whole backend, not just the routers — a service that transcribes on a request's behalf skipped `ensure_loaded()` just as thoroughly. (#1519) — thanks @ahov520!
+- The Linux app icon is no longer blank. Every AppImage since v0.4.2 shipped `.DirIcon` as an absolute symlink into the machine that built it (`/home/runner/work/…`), so the link dangled on every user's computer and file managers, app menus and desktop integration all drew nothing. The release build now verifies the icon resolves inside the bundle before publishing. (#1518)
 - The Linux desktop entry no longer ships an empty `Categories=`, which `desktop-file-validate` rejects and menu builders skip. (#1518)
 - Wayland: the dictation shortcut now actually starts dictation. The desktop portal registered the key correctly — GNOME and KDE even showed it back — but every press was discarded while decoding the compositor's signal, so the hotkey did nothing on any Wayland session. (#1490)
 - The first-run "Choose a comfortable UI size" screen no longer stutters while you sit there. Applying a scale resizes the window's own viewport, which the screen was reading back to re-pick a size — so it flipped between two sizes forever without anyone touching it. (#1514)
@@ -224,19 +231,17 @@ the frozen-backend fallback mirror it for their toolchains.
 - Translation through LM Studio works. The built-in model name was the placeholder `local-model`, which LM Studio rejects because it serves whatever you have loaded — VoiceStudio now asks it, and a 404 from a local server names the models that ARE loaded instead of telling you to check a URL that was fine — thanks @biga73! (#1332)
 - Generation that silently dropped the end of the input now says so. When an engine returns no audio for part of the text the result sounds clean and is simply short, so the only way to notice was to read along; the backend log now names the sentences that produced nothing. (#1330)
 - Dubbing: a re-rendered line that quietly came back in a default voice instead of the cloned one now says why in the backend log — the clone clips are extracted per job and a saved dub outlives them, so regenerating after cleanup loses the reference with no error. (#1331)
-
-### Docs
-
-- Engine acceptance: new `docs/engine-acceptance.md` documents the job map, the bar a new engine must clear, and the out-of-tree path (#1306)
-- macOS install notes and the README support table now state the real floor (#1268)
-- Contact: the project X account is listed alongside Discord (#1313)
-- `OMNIVOICE_ALLOWED_ORIGINS` is finally documented: a browser loading the UI from another machine's origin needs the backend's CORS allow-list, which neither server mode nor trusted networks touches — thanks @vanderlpp! (#1348)
+- RTX 40-series GPUs are used again instead of being sent to the CPU. (#1289)
+- Apple Silicon: transcription no longer needs a system ffmpeg, as the docs always said — thanks @gambletan! (#1436)
+- A failed audiobook chapter says why, instead of turning red and saying nothing. (#1325)
 
 ### CI
 
+- Windows CI falls back to a static ffmpeg build when the Chocolatey feed is down, instead of failing the run. (#1542)
+- The stdio wire protocol every engine sidecar speaks is now tested once across all nine of them, instead of against a single engine — a bug in any one sidecar's copy gets caught — thanks @paoloantinori! (#1408)
 - Windows smoke tests stopped silently passing a broken ffmpeg install, and every smoke leg is now budgeted for a cold dependency install. (#1290)
 - Test suites no longer leak config paths or model-manager shutdown state into one another, which had been failing unrelated pull requests. (#1269)
-- The nightly preview build stopped refusing to publish its own healthy updater manifest when the macOS legs finished a few minutes ahead of the slowest one — Preview-channel users were silently left without new builds.
+- The nightly preview build stopped refusing to publish its own healthy updater manifest when the macOS legs finished a few minutes ahead of the slowest one — Preview-channel users were silently left without new builds. 
 
 ## [0.4.2] — 2026-07-28
 

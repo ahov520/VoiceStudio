@@ -9,6 +9,7 @@ import React, {
 } from 'react';
 import './index.css';
 import { useAppStore, FONT_STACKS } from './store';
+import { NAV_ITEMS } from './components/navItems';
 import SearchableSelect from './components/SearchableSelect';
 import DirectionDialog from './components/DirectionDialog';
 
@@ -396,6 +397,7 @@ function App() {
     handleLockProfile,
     handleUnlockProfile,
   } = useProfiles({ loadHistory, loadProfiles });
+  const clearSelectedProfile = useCallback(() => setSelectedProfile(null), [setSelectedProfile]);
 
   const {
     refAudio,
@@ -657,7 +659,7 @@ function App() {
     let cancelled = false;
     (async () => {
       if (remoteBackend) {
-        const result = await probeRemoteBackend(remoteBackend.url, remoteBackend.key);
+        const result = await probeRemoteBackend(remoteBackend.url);
         if (cancelled) return;
         setRemoteFailure(result.ok ? null : result);
         setSetupNeeded(false);
@@ -804,6 +806,22 @@ function App() {
   // ── KEYBOARD SHORTCUTS ──
   useEffect(() => {
     const handler = (e) => {
+      // In-webview navigation only: using DOM keydown keeps this identical in
+      // browser, macOS, Windows and Linux builds (unlike OS-level hotkeys).
+      if ((e.metaKey || e.ctrlKey) && !e.altKey && !e.shiftKey) {
+        const key = e.key.toLowerCase();
+        if (key === 'e') {
+          e.preventDefault();
+          window.dispatchEvent(new Event('engine-quick-switch'));
+          return;
+        }
+        const index = Number(key);
+        if (index >= 1 && index <= NAV_ITEMS.length) {
+          e.preventDefault();
+          setMode(NAV_ITEMS[index - 1].id);
+          return;
+        }
+      }
       // ⌘+Enter or Ctrl+Enter → Generate
       if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
         e.preventDefault();
@@ -1497,7 +1515,7 @@ function App() {
         ) : mode === 'gallery' ? (
           <ErrorBoundary name="gallery">
             <Suspense fallback={<LazyFallback />}>
-              <VoiceGallery />
+              <VoiceGallery clearSelectedProfile={clearSelectedProfile} />
             </Suspense>
           </ErrorBoundary>
         ) : mode === 'transcriptions' ? (

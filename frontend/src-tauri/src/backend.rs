@@ -100,6 +100,52 @@ pub fn backend_deep_healthy(port: u16) -> bool {
     }
 }
 
+/// Readiness = identity AND capability. The shallow probe proves the
+/// responder is OUR backend; the deep probe proves it can actually serve a
+/// DB-backed route. Declaring Ready on the shallow probe alone announced a
+/// backend whose install/DB was broken underneath as up — the UI looked
+/// alive while every real request 500'd or dead-ended on "can't reach the
+/// backend". Both Ready transitions (startup poll, supervisor respawn wait)
+/// gate on this; the supervisor's DEATH detection stays process-exit-only
+/// (`try_wait`), so a busy-but-alive backend is still never killed.
+pub fn backend_ready(port: u16) -> bool {
+    backend_healthy(port) && backend_deep_healthy(port)
+}
+
+/// Startup progress from the backend's early-bind `/startup/progress`
+/// endpoint: `(status, step, label)`, e.g. `("starting", "ml_imports",
+/// "Loading ML runtime (PyTorch)…")`. `None` when nothing answers, when the
+/// responder lacks the `x-omnivoice-backend` marker header (a foreign
+/// process on our port must not narrate our splash), or on an old backend
+/// without the endpoint — callers fall back to the legacy probes.
+pub fn startup_progress(port: u16) -> Option<(String, String, String)> {
+    let url = format!("http://127.0.0.1:{}/startup/progress", port);
+    let resp = raw_http_get(&url, Duration::from_millis(800)).ok()?;
+    if parse_http_status(&resp) != Some(200) {
+        return None;
+    }
+    let head_end = resp.find("\r\n\r\n").unwrap_or(resp.len());
+    if !resp[..head_end].to_ascii_lowercase().contains("x-omnivoice-backend") {
+        return None;
+    }
+    let body = &resp[resp.find("\r\n\r\n").map(|i| i + 4).unwrap_or(0)..];
+    let status = parse_json_string_field(body, "status")?;
+    let step = parse_json_string_field(body, "step").unwrap_or_default();
+    let label = parse_json_string_field(body, "label").unwrap_or_default();
+    Some((status, step, label))
+}
+
+/// First `"key": "value"` string field in a JSON body — same dependency-free
+/// sniffing style as `parse_app_version`. `None` for absent or non-string
+/// (e.g. `null`) values.
+fn parse_json_string_field(body: &str, key: &str) -> Option<String> {
+    let needle = format!("\"{key}\"");
+    let rest = &body[body.find(&needle)? + needle.len()..];
+    let rest = rest[rest.find(':')? + 1..].trim_start();
+    let rest = rest.strip_prefix('"')?;
+    Some(rest[..rest.find('"')?].to_string())
+}
+
 /// Status code from a raw HTTP response ("HTTP/1.1 200 OK" → 200).
 fn parse_http_status(response: &str) -> Option<u16> {
     let line = response.lines().next()?;
@@ -243,6 +289,16 @@ pub fn kill_orphan_on_port(port: u16) {
 // ── Log paths ─────────────────────────────────────────────────────────────
 
 pub fn backend_log_path() -> PathBuf {
+    // Support/test override: point logs (and the crash-marker store, which
+    // derives from this path) somewhere explicit. The fault-injection
+    // harness gives every scenario its own tempdir through this.
+    if let Ok(dir) = std::env::var("OMNIVOICE_LOG_DIR") {
+        if !dir.trim().is_empty() {
+            let log_dir = PathBuf::from(dir);
+            let _ = fs::create_dir_all(&log_dir);
+            return log_dir.join("backend.log");
+        }
+    }
     let log_dir = if cfg!(target_os = "macos") {
         let home = std::env::var("HOME").unwrap_or_else(|_| "/tmp".to_string());
         PathBuf::from(home).join("Library/Logs/OmniVoice")
@@ -262,16 +318,115 @@ pub fn backend_log_path() -> PathBuf {
 }
 
 /// Read the last N lines from backend_err.log for diagnostic messages.
+///
+/// Whole-file view — bootstrap phases (uv sync et al.) that predate any
+/// backend run use this. Anything reporting on a specific backend process
+/// (crash markers, death diagnostics) must use [`read_error_log_tail_for_run`]
+/// instead: the file outlives runs, so an unbounded tail can attribute one
+/// run's output to another (#1510).
 pub fn read_error_log_tail(max_lines: usize) -> String {
     let err_path = backend_log_path().with_file_name("backend_err.log");
-    match fs::read_to_string(&err_path) {
-        Ok(content) => {
-            let lines: Vec<&str> = content.lines().collect();
-            let start = lines.len().saturating_sub(max_lines);
-            lines[start..].join("\n")
+    read_error_log_tail_at(&err_path, 0, max_lines)
+}
+
+// ── Per-run crash evidence (#1510) ────────────────────────────────────────
+//
+// backend_err.log is one file shared by every backend run in an app session,
+// and it used to be TRUNCATED on each spawn. Both properties destroyed crash
+// evidence: a respawn wiped the dead process's final words, and any tail read
+// after the replacement started could attach the new run's healthy startup to
+// the old run's crash marker — exactly the undiagnosable report in #1510.
+// The file is append-only now, each spawn records where its run begins, and
+// death paths read only their own run's slice.
+
+/// Byte offset in backend_err.log where the CURRENT run's output begins.
+/// Set by `spawn_backend` before the child starts writing.
+static ERR_LOG_RUN_START: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+
+/// Rotate once the shared file gets this big (append-only would otherwise
+/// grow across runs forever). Generous: evidence beats disk here.
+const ERR_LOG_ROTATE_BYTES: u64 = 1024 * 1024;
+
+/// Where the current backend run's slice of backend_err.log begins.
+pub fn err_log_run_start() -> u64 {
+    ERR_LOG_RUN_START.load(std::sync::atomic::Ordering::SeqCst)
+}
+
+/// Last N lines of the CURRENT run's slice of backend_err.log.
+///
+/// This is the reader every death path must use: it cannot see another run's
+/// output, so a crash marker carries the dying process's words or nothing.
+pub fn read_error_log_tail_for_run(max_lines: usize) -> String {
+    let err_path = backend_log_path().with_file_name("backend_err.log");
+    read_error_log_tail_at(&err_path, err_log_run_start(), max_lines)
+}
+
+/// Tail of `path` starting at byte `start` (whole file when `start` is 0 or
+/// no longer valid — an externally replaced/shrunk file must degrade to the
+/// old whole-file behaviour, never to a silent empty capture).
+fn read_error_log_tail_at(path: &Path, start: u64, max_lines: usize) -> String {
+    let content = match fs::read_to_string(path) {
+        Ok(c) => c,
+        Err(_) => return String::new(),
+    };
+    let start = usize::try_from(start).unwrap_or(0);
+    let slice = if start > 0 && start <= content.len() && content.is_char_boundary(start) {
+        &content[start..]
+    } else {
+        &content[..]
+    };
+    let lines: Vec<&str> = slice.lines().collect();
+    let from = lines.len().saturating_sub(max_lines);
+    lines[from..].join("\n")
+}
+
+/// The previous run's stderr-drainer thread. Joined (bounded) before a new
+/// spawn records its offset, so a dying run's still-buffered stderr cannot be
+/// appended AFTER the new run's start offset and get attributed to the new
+/// run. (Full per-child offset binding isn't needed: spawns are serialized by
+/// the #1223 spawn-once flow, so the only race left was this buffered tail.)
+static ERR_LOG_DRAINER: Mutex<Option<std::thread::JoinHandle<()>>> = Mutex::new(None);
+
+/// Wait briefly for the previous run's stderr drainer to flush. A wedged
+/// drainer (pipe held open by an orphaned grandchild) must not block a
+/// respawn forever — after the bound we proceed; the offset then simply
+/// includes whatever the old run still manages to write, which degrades to
+/// attributing too MUCH to the new run, never to destroying evidence.
+fn join_previous_err_drainer(bound: Duration) {
+    let handle = ERR_LOG_DRAINER.lock().ok().and_then(|mut g| g.take());
+    if let Some(handle) = handle {
+        let deadline = std::time::Instant::now() + bound;
+        while !handle.is_finished() && std::time::Instant::now() < deadline {
+            std::thread::sleep(Duration::from_millis(20));
         }
-        Err(_) => String::new(),
+        if handle.is_finished() {
+            let _ = handle.join();
+        }
     }
+}
+
+/// Open backend_err.log for a new run: append-only (a respawn must not
+/// destroy the previous run's evidence), rotated when oversized, with the
+/// run's start offset returned for `ERR_LOG_RUN_START`.
+fn open_err_log_for_run(err_path: &Path) -> (Option<fs::File>, u64) {
+    let len = fs::metadata(err_path).map(|m| m.len()).unwrap_or(0);
+    if len > ERR_LOG_ROTATE_BYTES {
+        let rotated = err_path.with_file_name("backend_err.log.1");
+        // Rename preferred (keeps the old evidence in .1); on failure —
+        // e.g. the file is still held open on Windows — fall back to
+        // truncating, which is exactly the pre-#1510 behaviour.
+        if fs::rename(err_path, &rotated).is_err() {
+            let file = fs::File::create(err_path).ok();
+            return (file, 0);
+        }
+    }
+    let file = fs::OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open(err_path)
+        .ok();
+    let start = fs::metadata(err_path).map(|m| m.len()).unwrap_or(0);
+    (file, start)
 }
 
 /// Human-readable diagnostic for a failed `Command::spawn()` of the backend.
@@ -281,6 +436,21 @@ pub fn read_error_log_tail(max_lines: usize) -> String {
 /// process "never started" and we previously surfaced "no error output
 /// captured". Writing this to backend_err.log lets read_error_log_tail show the
 /// real OS error + an actionable hint instead.
+/// Replace the user's home-directory prefix with `~`. This diagnostic is
+/// retained in backend_err.log across runs and lands verbatim in bug
+/// reports, so the username must not travel with it.
+fn redact_home(text: &str) -> String {
+    for var in ["HOME", "USERPROFILE"] {
+        if let Ok(home) = std::env::var(var) {
+            let home = home.trim_end_matches(['/', '\\']);
+            if home.len() > 1 && text.starts_with(home) {
+                return format!("~{}", &text[home.len()..]);
+            }
+        }
+    }
+    text.to_string()
+}
+
 fn spawn_failure_diagnostic(python: &Path, err: &std::io::Error) -> String {
     // Platform-specific tail (cfg! resolves to this build's target OS, i.e. the
     // OS it runs on) — don't show AppImage/loader wording to macOS/Windows users.
@@ -305,7 +475,7 @@ fn spawn_failure_diagnostic(python: &Path, err: &std::io::Error) -> String {
          Interpreter present on disk: {}\n\
          OS error: {}\n\n\
          {} Use \"Clean & Retry\" to rebuild the environment.",
-        python.display(),
+        redact_home(&python.display().to_string()),
         python.exists(),
         err,
         os_hint,
@@ -357,6 +527,29 @@ fn analytics_env(baked_token: Option<&str>, baked_host: Option<&str>) -> Vec<(St
     out
 }
 
+/// Parse the `OMNIVOICE_BACKEND_CMD` override: a JSON array (`["prog","a"]`)
+/// when it starts with `[` — the form the harness uses, so paths with spaces
+/// survive — else whitespace-split. `None` for unset/empty/unparseable.
+pub fn parse_backend_cmd_override(raw: &str) -> Option<Vec<String>> {
+    let raw = raw.trim();
+    if raw.is_empty() {
+        return None;
+    }
+    let argv: Vec<String> = if raw.starts_with('[') {
+        serde_json::from_str(raw).ok()?
+    } else {
+        raw.split_whitespace().map(str::to_string).collect()
+    };
+    if argv.is_empty() || argv[0].trim().is_empty() {
+        return None;
+    }
+    Some(argv)
+}
+
+fn backend_cmd_override() -> Option<Vec<String>> {
+    parse_backend_cmd_override(&std::env::var("OMNIVOICE_BACKEND_CMD").ok()?)
+}
+
 pub fn spawn_backend<R: tauri::Runtime>(app: &tauri::AppHandle<R>, progress: Option<&Arc<Mutex<BootstrapStage>>>) -> Option<Child> {
     let log_path = backend_log_path();
     let err_path = log_path.with_file_name("backend_err.log");
@@ -366,12 +559,22 @@ pub fn spawn_backend<R: tauri::Runtime>(app: &tauri::AppHandle<R>, progress: Opt
         err_path.display(),
     );
 
-    let (python, backend_dir) = match ensure_venv_ready(app, progress) {
-        Some(x) => x,
-        None => {
-            log::error!("Venv bootstrap failed — backend not started");
-            return None;
-        }
+    // Fault-injection / QA seam: OMNIVOICE_BACKEND_CMD runs the given argv
+    // as "the backend". Venv bootstrap and ffmpeg resolution are skipped
+    // (they can install toolchains or touch the network); everything else —
+    // the err-log run offset, the drainer threads, env pinning, real OS
+    // pipes, the spawn-failure diagnostic — stays exactly real, which is
+    // the point: the lifecycle harness exercises genuine process deaths.
+    let cmd_override = backend_cmd_override();
+    let (python, backend_dir) = match cmd_override {
+        Some(ref argv) => (PathBuf::from(&argv[0]), PathBuf::new()),
+        None => match ensure_venv_ready(app, progress) {
+            Some(x) => x,
+            None => {
+                log::error!("Venv bootstrap failed — backend not started");
+                return None;
+            }
+        },
     };
 
     if let Some(p) = progress {
@@ -379,7 +582,24 @@ pub fn spawn_backend<R: tauri::Runtime>(app: &tauri::AppHandle<R>, progress: Opt
     }
 
     let stdout_file = fs::File::create(&log_path).ok();
-    let err_log_file = fs::File::create(&err_path).ok();
+    // Append + per-run offset, never truncate: the previous run's stderr is
+    // crash evidence until someone reads it (#1510). Flush the previous
+    // drainer first so old buffered lines land BEFORE this run's offset.
+    join_previous_err_drainer(Duration::from_secs(2));
+    let (err_log_file, err_log_start) = open_err_log_for_run(&err_path);
+    ERR_LOG_RUN_START.store(err_log_start, std::sync::atomic::Ordering::SeqCst);
+    if let Some(ref f) = err_log_file {
+        use std::io::Write;
+        let mut f = f;
+        let _ = writeln!(
+            f,
+            "──── backend run starting (unix {}s) ────",
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .map(|d| d.as_secs())
+                .unwrap_or(0)
+        );
+    }
 
     let mut env: Vec<(String, String)> = vec![("PYTHONUNBUFFERED".into(), "1".into())];
     // Pin the child's OMNIVOICE_PORT to the value Rust resolved so Python's
@@ -433,18 +653,20 @@ pub fn spawn_backend<R: tauri::Runtime>(app: &tauri::AppHandle<R>, progress: Opt
     }
     // Analytics destination (#1123) — see analytics_env() below for why.
     env.extend(analytics_env(option_env!("VITE_POSTHOG_KEY"), option_env!("VITE_POSTHOG_HOST")));
-    let app_data = app.path().app_local_data_dir().unwrap_or_default();
-    if let Some(ffmpeg_path) = resolve_ffmpeg(app, &app_data) {
-        env.push(("FFMPEG_PATH".into(), ffmpeg_path.to_string_lossy().into()));
-    }
-    if let Some(ffprobe_path) = resolve_ffprobe(app, &app_data) {
-        let ffprobe_str: String = ffprobe_path.to_string_lossy().into();
-        env.push(("FFPROBE_PATH".into(), ffprobe_str.clone()));
-        // Issue #76: OMNIVOICE_FFPROBE_PATH is the canonical name going
-        // forward — explicit, namespaced, and unambiguously the path of a
-        // file (not a PATH-style command name). FFPROBE_PATH stays for
-        // backward compat with prior backend releases.
-        env.push(("OMNIVOICE_FFPROBE_PATH".into(), ffprobe_str));
+    if cmd_override.is_none() {
+        let app_data = app.path().app_local_data_dir().unwrap_or_default();
+        if let Some(ffmpeg_path) = resolve_ffmpeg(app, &app_data) {
+            env.push(("FFMPEG_PATH".into(), ffmpeg_path.to_string_lossy().into()));
+        }
+        if let Some(ffprobe_path) = resolve_ffprobe(app, &app_data) {
+            let ffprobe_str: String = ffprobe_path.to_string_lossy().into();
+            env.push(("FFPROBE_PATH".into(), ffprobe_str.clone()));
+            // Issue #76: OMNIVOICE_FFPROBE_PATH is the canonical name going
+            // forward — explicit, namespaced, and unambiguously the path of a
+            // file (not a PATH-style command name). FFPROBE_PATH stays for
+            // backward compat with prior backend releases.
+            env.push(("OMNIVOICE_FFPROBE_PATH".into(), ffprobe_str));
+        }
     }
     let mut cmd = Command::new(&python);
     cmd.env_remove("PYTHONHOME").env_remove("PYTHONPATH").env_remove("LD_LIBRARY_PATH");
@@ -463,18 +685,25 @@ pub fn spawn_backend<R: tauri::Runtime>(app: &tauri::AppHandle<R>, progress: Opt
         // nvidia-smi probe already uses (setup.rs).
         cmd.creation_flags(0x0800_0000 | 0x0000_0200);
     }
+    match cmd_override {
+        Some(ref argv) => {
+            cmd.args(&argv[1..]);
+        }
+        None => {
+            cmd.args([
+                "-m",
+                "uvicorn",
+                "main:app",
+                "--app-dir",
+                backend_dir.to_string_lossy().as_ref(),
+                "--host",
+                "127.0.0.1",
+                "--port",
+                &backend_port().to_string(),
+            ]);
+        }
+    }
     let mut child = match cmd
-        .args([
-            "-m",
-            "uvicorn",
-            "main:app",
-            "--app-dir",
-            backend_dir.to_string_lossy().as_ref(),
-            "--host",
-            "127.0.0.1",
-            "--port",
-            &backend_port().to_string(),
-        ])
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .spawn()
@@ -493,7 +722,16 @@ pub fn spawn_backend<R: tauri::Runtime>(app: &tauri::AppHandle<R>, progress: Opt
             // real exec error instead of "no error output captured".
             let diag = spawn_failure_diagnostic(&python, &e);
             log::error!("{}", diag);
-            let _ = fs::write(&err_path, &diag);
+            // Append (not overwrite): the run header above already marks this
+            // run's slice, and earlier runs' evidence stays intact.
+            if let Ok(mut f) = fs::OpenOptions::new()
+                .create(true)
+                .append(true)
+                .open(&err_path)
+            {
+                use std::io::Write;
+                let _ = writeln!(f, "{}", diag);
+            }
             return None;
         }
     };
@@ -516,7 +754,9 @@ pub fn spawn_backend<R: tauri::Runtime>(app: &tauri::AppHandle<R>, progress: Opt
 
     if let Some(stderr_pipe) = child.stderr.take() {
         let app_clone = app.clone();
-        std::thread::spawn(move || {
+        // Tracked (not detached): the next spawn joins this handle so this
+        // run's buffered tail flushes before the next run's offset is taken.
+        let drainer = std::thread::spawn(move || {
             use std::io::Write;
             let reader = BufReader::new(stderr_pipe);
             let mut log_file = err_log_file;
@@ -528,6 +768,9 @@ pub fn spawn_backend<R: tauri::Runtime>(app: &tauri::AppHandle<R>, progress: Opt
                 }
             }
         });
+        if let Ok(mut guard) = ERR_LOG_DRAINER.lock() {
+            *guard = Some(drainer);
+        }
     }
 
     Some(child)
@@ -597,6 +840,119 @@ mod tests {
         std::env::remove_var("OMNIVOICE_INSTALL_CHANNEL");
     }
 
+    /// Loopback responder for the /startup/progress probe tests.
+    fn spawn_progress_stub(with_marker: bool, body: &'static str) -> u16 {
+        use std::io::{Read, Write};
+        let listener = std::net::TcpListener::bind("127.0.0.1:0").expect("bind");
+        let port = listener.local_addr().unwrap().port();
+        std::thread::spawn(move || {
+            for stream in listener.incoming() {
+                let Ok(mut stream) = stream else { break };
+                let mut buf = [0u8; 512];
+                let _ = stream.read(&mut buf);
+                let marker = if with_marker {
+                    "x-omnivoice-backend: 0.0.0\r\n"
+                } else {
+                    ""
+                };
+                let resp = format!(
+                    "HTTP/1.1 200 OK\r\n{marker}Content-Length: {}\r\n\r\n{body}",
+                    body.len()
+                );
+                let _ = stream.write_all(resp.as_bytes());
+            }
+        });
+        port
+    }
+
+    /// Loopback HTTP responder for the probe tests: answers `/system/info`
+    /// with a genuine-looking backend body and `/profiles` with the given
+    /// status — the exact shape of a zombie whose install/DB broke while
+    /// `/system/info` kept answering from memory.
+    fn spawn_probe_stub(profiles_status: u16) -> u16 {
+        use std::io::{Read, Write};
+        let listener = std::net::TcpListener::bind("127.0.0.1:0").expect("bind");
+        let port = listener.local_addr().unwrap().port();
+        std::thread::spawn(move || {
+            for stream in listener.incoming() {
+                let Ok(mut stream) = stream else { break };
+                let mut buf = [0u8; 512];
+                let n = stream.read(&mut buf).unwrap_or(0);
+                let req = String::from_utf8_lossy(&buf[..n]);
+                let resp = if req.starts_with("GET /system/info") {
+                    "HTTP/1.1 200 OK\r\nContent-Length: 19\r\n\r\n{\"data_dir\": \"/x\"}\n".to_string()
+                } else {
+                    format!("HTTP/1.1 {profiles_status} X\r\nContent-Length: 2\r\n\r\n[]")
+                };
+                let _ = stream.write_all(resp.as_bytes());
+            }
+        });
+        port
+    }
+
+    #[test]
+    fn backend_cmd_override_parses_json_and_whitespace_forms() {
+        // JSON form (the harness's): paths with spaces survive.
+        assert_eq!(
+            parse_backend_cmd_override(r#"["/tmp/my dir/prog", "arg1"]"#),
+            Some(vec!["/tmp/my dir/prog".into(), "arg1".into()])
+        );
+        // Whitespace form (manual QA): OMNIVOICE_BACKEND_CMD="/bin/false x".
+        assert_eq!(
+            parse_backend_cmd_override("/bin/false x"),
+            Some(vec!["/bin/false".into(), "x".into()])
+        );
+        // Unset/empty/garbage never activates the seam — production behavior
+        // is byte-identical without the env var.
+        assert_eq!(parse_backend_cmd_override(""), None);
+        assert_eq!(parse_backend_cmd_override("   "), None);
+        assert_eq!(parse_backend_cmd_override("[not json"), None);
+        assert_eq!(parse_backend_cmd_override("[]"), None);
+        assert_eq!(parse_backend_cmd_override(r#"[""]"#), None);
+    }
+
+    #[test]
+    fn startup_progress_parses_fields_and_requires_the_marker() {
+        const BODY: &str =
+            r#"{"status": "starting", "step": "ml_imports", "label": "Loading ML runtime (PyTorch)…", "error": null}"#;
+        // Marker present → the tuple the poll loops narrate from.
+        let port = spawn_progress_stub(true, BODY);
+        assert_eq!(
+            startup_progress(port),
+            Some((
+                "starting".into(),
+                "ml_imports".into(),
+                "Loading ML runtime (PyTorch)…".into()
+            ))
+        );
+        // No marker header → a foreign responder must not narrate our splash.
+        let foreign = spawn_progress_stub(false, BODY);
+        assert_eq!(startup_progress(foreign), None);
+        // Ready body with null step/label → status still parses, step empty.
+        let ready = spawn_progress_stub(true, r#"{"status": "ready", "step": null, "label": null}"#);
+        assert_eq!(startup_progress(ready), Some(("ready".into(), String::new(), String::new())));
+        // Nothing listening → None (old backend / dead port fall back).
+        assert_eq!(startup_progress(1), None);
+    }
+
+    #[test]
+    fn ready_requires_the_deep_probe_not_just_identity() {
+        // Regression for the shallow-Ready class: a backend that identifies
+        // itself on /system/info but 500s a DB-backed route must NOT be
+        // announced Ready — that zombie looked alive while every real
+        // request dead-ended on "can't reach the backend".
+        let broken = spawn_probe_stub(500);
+        assert!(backend_healthy(broken), "identity probe should pass");
+        assert!(!backend_deep_healthy(broken), "deep probe must fail on 500");
+        assert!(!backend_ready(broken), "Ready must gate on the deep probe");
+
+        let ok = spawn_probe_stub(200);
+        assert!(backend_ready(ok), "identity + working DB route is Ready");
+
+        // Nothing listening at all: no probe passes.
+        assert!(!backend_ready(1)); // port 1 — never bindable by us
+    }
+
     #[test]
     fn spawn_failure_diagnostic_surfaces_path_error_and_hint() {
         let err = io::Error::new(io::ErrorKind::NotFound, "No such file or directory");
@@ -646,5 +1002,132 @@ mod tests {
         assert!(!same_app_version("0.0.1"));
         // unversioned (pre-app_version backend) is stale by definition
         assert!(!same_app_version(""));
+    }
+
+    // ── Per-run crash evidence (#1510) ───────────────────────────────────
+    // The reported failure shape: a crash marker whose stderr tail was the
+    // REPLACEMENT process's healthy startup, because the shared err log was
+    // truncated on respawn and read unbounded afterwards.
+
+    #[test]
+    fn a_respawn_preserves_the_previous_runs_evidence() {
+        use std::io::Write;
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("backend_err.log");
+
+        let (file, start) = open_err_log_for_run(&path);
+        assert_eq!(start, 0);
+        writeln!(file.unwrap(), "run1: fatal abort, last words").unwrap();
+
+        // Respawn: pre-#1510 this truncated the file (File::create), turning
+        // the dead run's final output into nothing.
+        let (file2, start2) = open_err_log_for_run(&path);
+        let content = fs::read_to_string(&path).unwrap();
+        assert!(
+            content.contains("run1: fatal abort"),
+            "respawn destroyed the previous run's evidence: {content:?}"
+        );
+        assert_eq!(
+            start2 as usize,
+            content.len(),
+            "run2 must begin at the old EOF"
+        );
+        drop(file2);
+    }
+
+    #[test]
+    fn a_run_bounded_tail_cannot_show_another_runs_output() {
+        use std::io::Write;
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("backend_err.log");
+
+        let (file, _) = open_err_log_for_run(&path);
+        writeln!(file.unwrap(), "run1: Traceback — the actual crash").unwrap();
+        let (file2, start2) = open_err_log_for_run(&path);
+        writeln!(file2.unwrap(), "run2: OmniVoice model loaded successfully.").unwrap();
+
+        // The dead run's slice: only its own words.
+        let run1 = read_error_log_tail_at(&path, 0, 10);
+        assert!(run1.contains("the actual crash"));
+        // The replacement's slice: its startup, and NEVER run1's crash —
+        // and, symmetrically, a marker bounded to run1's slice could never
+        // have contained run2's healthy startup (the #1510 report).
+        let run2 = read_error_log_tail_at(&path, start2, 10);
+        assert!(run2.contains("model loaded successfully"));
+        assert!(
+            !run2.contains("the actual crash"),
+            "run-bounded tail leaked another run's output: {run2:?}"
+        );
+    }
+
+    #[test]
+    fn an_invalid_offset_degrades_to_the_whole_file_not_to_silence() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("backend_err.log");
+        fs::write(&path, "only line\n").unwrap();
+        // Offset beyond EOF (file replaced/shrunk externally): evidence
+        // beats precision — degrade to the whole file, never to "".
+        assert_eq!(read_error_log_tail_at(&path, 10_000, 10), "only line");
+    }
+
+    #[test]
+    fn a_dying_runs_buffered_stderr_flushes_before_the_next_offset() {
+        use std::io::Write;
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("backend_err.log");
+        fs::write(&path, "run1: early line\n").unwrap();
+
+        // A drainer still flushing the dead run's buffered tail…
+        let p = path.clone();
+        let late = std::thread::spawn(move || {
+            std::thread::sleep(Duration::from_millis(120));
+            let mut f = fs::OpenOptions::new().append(true).open(&p).unwrap();
+            writeln!(f, "run1: buffered last words").unwrap();
+        });
+        *ERR_LOG_DRAINER.lock().unwrap() = Some(late);
+
+        // …must land BEFORE the next run records where its output begins.
+        join_previous_err_drainer(Duration::from_secs(2));
+        let (_file, start) = open_err_log_for_run(&path);
+        let run2 = read_error_log_tail_at(&path, start, 10);
+        assert!(
+            !run2.contains("buffered last words"),
+            "old run's buffered stderr was attributed to the new run: {run2:?}"
+        );
+        assert!(fs::read_to_string(&path)
+            .unwrap()
+            .contains("buffered last words"));
+    }
+
+    #[test]
+    fn the_spawn_diagnostic_never_carries_the_users_home_path() {
+        let _g = ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner());
+        let saved = std::env::var("HOME").ok();
+        std::env::set_var("HOME", "/home/realname");
+        let diag = spawn_failure_diagnostic(
+            Path::new("/home/realname/.local/share/app/venv/bin/python"),
+            &io::Error::new(io::ErrorKind::NotFound, "nope"),
+        );
+        match saved {
+            Some(v) => std::env::set_var("HOME", v),
+            None => std::env::remove_var("HOME"),
+        }
+        assert!(!diag.contains("/home/realname"), "home path leaked: {diag}");
+        assert!(diag.contains("~/.local/share/app/venv/bin/python"));
+    }
+
+    #[test]
+    fn an_oversized_log_rotates_instead_of_growing_forever() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("backend_err.log");
+        fs::write(&path, "x".repeat((ERR_LOG_ROTATE_BYTES + 1) as usize)).unwrap();
+
+        let (_file, start) = open_err_log_for_run(&path);
+        assert_eq!(start, 0, "a rotated log starts the new run at offset 0");
+        let rotated = path.with_file_name("backend_err.log.1");
+        assert!(
+            rotated.exists(),
+            "old evidence must survive rotation in the sibling file"
+        );
     }
 }
