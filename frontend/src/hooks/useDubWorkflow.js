@@ -117,7 +117,7 @@ export default function useDubWorkflow({
   const [transcribeProgress, setTranscribeProgress] = useState(0);
   const [asrInstall, setAsrInstall] = useState(null);
   // Subtitle-first transcription: languages of the video's own subtitle
-  // tracks (Bilibili AI 字幕 / YouTube captions via yt-dlp VTT), offered to
+  // tracks (Bilibili AI-generated captions / YouTube captions via yt-dlp VTT), offered to
   // the user so they can skip local ASR entirely.
   const [availableSubs, setAvailableSubs] = useState([]);
   const availableSubsRef = useRef([]);
@@ -536,7 +536,7 @@ export default function useDubWorkflow({
 
   // Shared tail of every ingest path: enter the transcribe stage and wait for
   // segments. `useSubtitle` seeds from the video's own subtitle track and
-  // skips local ASR (Bilibili AI 字幕 / YouTube captions).
+  // skips local ASR (Bilibili AI-generated captions / YouTube captions).
   const startTranscribe = useCallback(
     async (jobId, ctrl, useSubtitle) => {
       setDubStep('transcribing');
@@ -778,7 +778,7 @@ export default function useDubWorkflow({
             homeMode: 'dub',
           });
         await _waitForPrep(data.task_id, ctrl);
-        // Subtitle-first: same offer as the local-file path (Bilibili AI 字幕
+        // Subtitle-first: same offer as the local-file path (Bilibili AI-generated captions
         // / YouTube captions come down with the video via the yt-dlp VTT pass).
         if (availableSubsRef.current.length) {
           setDubStep('transcribing');

@@ -122,7 +122,7 @@ export function transcribeStreamUrl(
   if (numSpeakers && Number.isFinite(numSpeakers) && numSpeakers > 0) {
     qs.set('num_speakers', String(Math.floor(numSpeakers)));
   }
-  // Seed segments from the video's own subtitle track (Bilibili AI 字幕 /
+  // Seed segments from the video's own subtitle track (Bilibili AI-generated captions /
   // YouTube captions) and skip local ASR entirely.
   if (useSubtitle) {
     qs.set('use_subtitle', useSubtitle);

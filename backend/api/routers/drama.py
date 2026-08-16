@@ -8,7 +8,7 @@ Endpoints:
   DELETE /drama/projects/{id}- remove a project
 
 The parse endpoint is the director: it assigns roles (cast), per-line emotion
-(语气腔调) and compiles an audiobook-ready script with [voice:NAME] + SSML-lite
+(tone of voice) and compiles an audiobook-ready script with [voice:NAME] + SSML-lite
 markers. Projects are plain JSON files under DATA_DIR/drama/ - no DB migration.
 """
 from __future__ import annotations
