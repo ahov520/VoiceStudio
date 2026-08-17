@@ -1712,6 +1712,39 @@ class CosyVoiceBackend(TTSBackend):
             lang_key = full_lang if len(full_lang) <= 3 else full_lang[:2]
         return cls.LANG_TAGS.get(lang_key, "")
 
+    @staticmethod
+    def _dominant_script(value: str) -> str:
+        """Identify scripts strongly enough to avoid cross-language prompting."""
+        counts = {"cjk": 0, "hangul": 0, "cyrillic": 0, "latin": 0}
+        for char in value or "":
+            codepoint = ord(char)
+            if (
+                0x3400 <= codepoint <= 0x4DBF
+                or 0x4E00 <= codepoint <= 0x9FFF
+                or 0x3040 <= codepoint <= 0x30FF
+            ):
+                counts["cjk"] += 1
+            elif 0xAC00 <= codepoint <= 0xD7AF:
+                counts["hangul"] += 1
+            elif 0x0400 <= codepoint <= 0x052F:
+                counts["cyrillic"] += 1
+            elif char.isascii() and char.isalpha():
+                counts["latin"] += 1
+
+        total = sum(counts.values())
+        script, count = max(counts.items(), key=lambda item: item[1])
+        return script if total and count / total >= 0.6 else ""
+
+    @classmethod
+    def _is_cross_lingual(cls, text: str, ref_text: str) -> bool:
+        target_script = cls._dominant_script(text)
+        reference_script = cls._dominant_script(ref_text)
+        return bool(
+            target_script
+            and reference_script
+            and target_script != reference_script
+        )
+
     def generate(self, text: str, **kw) -> torch.Tensor:
         import numpy as np
         self._ensure_loaded()
@@ -1724,8 +1757,8 @@ class CosyVoiceBackend(TTSBackend):
 
         # Pick the right inference method based on what the caller provides:
         # 1. instruct + ref_audio → inference_instruct2 (emotion/dialect/speed)
-        # 2. ref_audio + ref_text → inference_zero_shot (voice cloning)
-        # 3. ref_audio only → inference_cross_lingual (with lang tag)
+        # 2. ref_audio + same-language ref_text → zero-shot voice cloning
+        # 3. ref_audio without a matching transcript → cross-lingual cloning
         # 4. nothing → inference_sft (built-in speakers, v1/SFT model only)
         pieces = []
         if instruct and ref_audio:
@@ -1734,7 +1767,7 @@ class CosyVoiceBackend(TTSBackend):
             results = self._model.inference_instruct2(
                 text, instruct, ref_audio, stream=False,
             )
-        elif ref_audio and ref_text:
+        elif ref_audio and ref_text and not self._is_cross_lingual(text, ref_text):
             if is_cosyvoice3:
                 ref_text = self._cv3_reference_prompt(ref_text)
             results = self._model.inference_zero_shot(

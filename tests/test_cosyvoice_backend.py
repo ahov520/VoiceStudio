@@ -47,6 +47,7 @@ def test_cosyvoice3_zero_shot_puts_boundary_before_reference_transcript():
     model = CosyVoice3()
     _backend(model).generate(
         "要合成的正文", ref_audio="ref.wav", ref_text="参考音频里的话",
+        language="Chinese",
     )
 
     name, args, kwargs = model.calls[0]
@@ -54,6 +55,24 @@ def test_cosyvoice3_zero_shot_puts_boundary_before_reference_transcript():
     assert args[:2] == (
         "要合成的正文",
         "You are a helpful assistant.<|endofprompt|>参考音频里的话",
+    )
+    assert kwargs == {"stream": False}
+
+
+def test_cosyvoice3_uses_cross_lingual_for_english_reference_and_chinese_text():
+    model = CosyVoice3()
+    _backend(model).generate(
+        "你好，这是中文测试。",
+        ref_audio="ref.wav",
+        ref_text="Welcome to this course on agentic AI.",
+        language="Chinese",
+    )
+
+    name, args, kwargs = model.calls[0]
+    assert name == "cross_lingual"
+    assert args[:2] == (
+        "You are a helpful assistant.<|endofprompt|>你好，这是中文测试。",
+        "ref.wav",
     )
     assert kwargs == {"stream": False}
 
