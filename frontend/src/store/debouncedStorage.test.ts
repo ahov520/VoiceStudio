@@ -34,6 +34,23 @@ describe('createDebouncedStorage (persist write-behind)', () => {
     });
   });
 
+  it('retains writes for every storage key in the same window', () => {
+    const inner = makeInner();
+    const storage = createDebouncedStorage(inner, 300);
+    storage.setItem('app', { state: 'app-v1', version: 1 } as never);
+    storage.setItem('projects', { state: 'projects-v1', version: 1 } as never);
+    storage.setItem('app', { state: 'app-v2', version: 1 } as never);
+
+    vi.advanceTimersByTime(300);
+
+    expect(inner.setItem).toHaveBeenCalledTimes(2);
+    expect(inner.setItem).toHaveBeenCalledWith('app', { state: 'app-v2', version: 1 });
+    expect(inner.setItem).toHaveBeenCalledWith('projects', {
+      state: 'projects-v1',
+      version: 1,
+    });
+  });
+
   it('guarantees a write at most delayMs after the first change (trailing throttle)', () => {
     const inner = makeInner();
     const storage = createDebouncedStorage(inner, 300);
@@ -78,13 +95,15 @@ describe('createDebouncedStorage (persist write-behind)', () => {
     expect(inner.setItem).toHaveBeenCalledWith('k', { state: 'closing', version: 1 });
   });
 
-  it('removeItem drops any pending write for that key', () => {
+  it('removeItem drops only the pending write for that key', () => {
     const inner = makeInner();
     const storage = createDebouncedStorage(inner, 300);
     storage.setItem('k', { state: 'x', version: 1 } as never);
+    storage.setItem('other', { state: 'kept', version: 1 } as never);
     storage.removeItem('k');
     vi.advanceTimersByTime(1000);
-    expect(inner.setItem).not.toHaveBeenCalled();
+    expect(inner.setItem).toHaveBeenCalledTimes(1);
+    expect(inner.setItem).toHaveBeenCalledWith('other', { state: 'kept', version: 1 });
     expect(inner.removeItem).toHaveBeenCalledWith('k');
   });
 });

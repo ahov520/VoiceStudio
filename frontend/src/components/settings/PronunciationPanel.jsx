@@ -64,6 +64,7 @@ export default function PronunciationPanel() {
   // request takes a ticket and only the latest one may write the result.
   const testSeq = useRef(0);
   const testTimer = useRef(null);
+  const testAbort = useRef(null);
   const fileRef = useRef(null);
 
   const refresh = useCallback(async () => {
@@ -82,6 +83,8 @@ export default function PronunciationPanel() {
   useEffect(
     () => () => {
       if (testTimer.current) clearTimeout(testTimer.current);
+      testSeq.current += 1;
+      testAbort.current?.abort();
     },
     [],
   );
@@ -94,15 +97,20 @@ export default function PronunciationPanel() {
       testTimer.current = null;
     }
     const seq = ++testSeq.current;
+    testAbort.current?.abort();
     if (!text.trim()) {
+      testAbort.current = null;
       setTestOut(null);
       setTestError(false);
       return;
     }
+    const controller = new AbortController();
+    testAbort.current = controller;
     try {
       const r = await apiJson('/pronunciation/test', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        signal: controller.signal,
         body: JSON.stringify({
           text,
           ...(lang && lang !== '*' ? { language: lang } : {}),
@@ -112,11 +120,14 @@ export default function PronunciationPanel() {
         setTestOut(r);
         setTestError(false);
       }
-    } catch {
+    } catch (e) {
+      if (e?.name === 'AbortError') return;
       if (seq === testSeq.current) {
         setTestOut(null);
         setTestError(true);
       }
+    } finally {
+      if (testAbort.current === controller) testAbort.current = null;
     }
   }, []);
 
@@ -124,6 +135,7 @@ export default function PronunciationPanel() {
     (text, lang) => {
       if (testTimer.current) clearTimeout(testTimer.current);
       testSeq.current += 1; // invalidate any in-flight response
+      testAbort.current?.abort();
       if (!text.trim()) {
         setTestOut(null);
         setTestError(false);

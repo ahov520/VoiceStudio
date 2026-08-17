@@ -809,6 +809,8 @@
     "empty_tauri": "Không có nhật ký Tauri. Chỉ chạy trong vỏ máy tính để bàn.",
     "empty_backend": "Nhật ký thời gian chạy trống. Hoạt động sẽ xuất hiện ở đây khi chương trình phụ trợ ghi lại hoạt động đó.",
     "title": "Nhật ký",
+    "notifications": "Thông báo",
+    "notifications_count": "Thông báo ({{count}})",
     "source_backend": "Phần phụ trợ",
     "source_frontend": "Giao diện người dùng",
     "source_tauri": "Tauri",

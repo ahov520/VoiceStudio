@@ -35,6 +35,28 @@ export function clampRestoredDubStep(savedStep, savedSegments) {
   return Array.isArray(savedSegments) && savedSegments.length > 0 ? 'editing' : 'idle';
 }
 
+/** Keep overlapping refreshes monotonic: only the newest request may commit. */
+export function useLatestListLoader(fetchList, setList, warning) {
+  const requestRef = useRef(0);
+
+  useEffect(
+    () => () => {
+      requestRef.current += 1;
+    },
+    [],
+  );
+
+  return useCallback(async () => {
+    const request = ++requestRef.current;
+    try {
+      const items = await fetchList();
+      if (request === requestRef.current) setList(items);
+    } catch (e) {
+      if (request === requestRef.current) console.warn(warning, e);
+    }
+  }, [fetchList, setList, warning]);
+}
+
 export default function useAppData() {
   const mode = useAppStore((s) => s.mode);
   const setMode = useAppStore((s) => s.setMode);
@@ -165,41 +187,31 @@ export default function useAppData() {
   // ── Data loading callbacks ──
   // Failures keep the previous list (better than blanking the UI), but are
   // logged so "my voices/history vanished" reports carry a cause (#1158).
-  const loadProfiles = useCallback(async () => {
-    try {
-      setProfiles(await listProfiles());
-    } catch (e) {
-      console.warn('Failed to load voice profiles:', e);
-    }
-  }, []);
-  const loadHistory = useCallback(async () => {
-    try {
-      setHistory(await listHistory());
-    } catch (e) {
-      console.warn('Failed to load generation history:', e);
-    }
-  }, []);
-  const loadDubHistory = useCallback(async () => {
-    try {
-      setDubHistory(await listDubHistory());
-    } catch (e) {
-      console.warn('Failed to load dub history:', e);
-    }
-  }, []);
-  const loadProjects = useCallback(async () => {
-    try {
-      setStudioProjects(await listProjects());
-    } catch (e) {
-      console.warn('Failed to load projects:', e);
-    }
-  }, []);
-  const loadExportHistory = useCallback(async () => {
-    try {
-      setExportHistory(await listExportHistory());
-    } catch (e) {
-      console.warn('Failed to load export history:', e);
-    }
-  }, []);
+  const loadProfiles = useLatestListLoader(
+    listProfiles,
+    setProfiles,
+    'Failed to load voice profiles:',
+  );
+  const loadHistory = useLatestListLoader(
+    listHistory,
+    setHistory,
+    'Failed to load generation history:',
+  );
+  const loadDubHistory = useLatestListLoader(
+    listDubHistory,
+    setDubHistory,
+    'Failed to load dub history:',
+  );
+  const loadProjects = useLatestListLoader(
+    listProjects,
+    setStudioProjects,
+    'Failed to load projects:',
+  );
+  const loadExportHistory = useLatestListLoader(
+    listExportHistory,
+    setExportHistory,
+    'Failed to load export history:',
+  );
 
   // ── WebSocket real-time updates ──
   useRealtimeEvents({

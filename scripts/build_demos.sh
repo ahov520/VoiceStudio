@@ -2,7 +2,8 @@
 # Build all demo assets for VoiceStudio v0.3.0.
 #
 # Two render paths:
-#   1. macOS `say` (default) — fast, deterministic, ships immediately.
+#   1. macOS `say` (default when available) — fast, deterministic.
+#   2. Linux `espeak-ng` fallback — functional bootstrap for contributors.
 #      Used to bootstrap the demo bundle so v0.3.0 has working demos on day one.
 #   2. VoiceStudio engine (--engine omnivoice) — production-quality re-render
 #      once model weights are cached. Recipes documented but not executed
@@ -48,7 +49,7 @@ while [ $# -gt 0 ]; do
 done
 
 if [ "$ENGINE" = "omnivoice" ]; then
-  # Delegate to the Python script that talks to the real engine.
+  # The portable renderer owns cloning, design, and dictation assets.
   PY_ARGS=""
   [ "$SKIP_EXISTING" = 1 ] && PY_ARGS="--skip-existing"
   echo "Rendering cloning + voice-design demos via VoiceStudio engine…"
@@ -58,17 +59,17 @@ if [ "$ENGINE" = "omnivoice" ]; then
     echo "WARN: .venv missing; trying system python3" >&2
     python3 "${REPO_ROOT}/scripts/render_demos_omnivoice.py" $PY_ARGS
   fi
-  echo ""
-  echo "Note: dictation samples are still rendered via 'say' — re-running for them now."
-  # Fall through to render dictation; --skip-existing will preserve the
-  # VoiceStudio-rendered cloning + design outputs we just produced.
-  SKIP_EXISTING=1
-  ENGINE="say"
+  exit 0
 fi
 
-if ! command -v say >/dev/null; then
-  echo "ERROR: 'say' not found. This script currently requires macOS." >&2
-  echo "TODO: add espeak-ng path for Linux contributors." >&2
+RENDERER=""
+if command -v say >/dev/null; then
+  RENDERER="say"
+elif command -v espeak-ng >/dev/null; then
+  RENDERER="espeak-ng"
+else
+  echo "ERROR: neither 'say' nor 'espeak-ng' is installed." >&2
+  echo "Install espeak-ng (Linux) or run with --engine omnivoice." >&2
   exit 1
 fi
 if ! command -v ffmpeg >/dev/null; then
@@ -87,7 +88,13 @@ render() {
   fi
   local tmp_aiff
   tmp_aiff="$(mktemp -t omni-demo).aiff"
-  say -v "$voice" -o "$tmp_aiff" "$text"
+  if [ "$RENDERER" = "say" ]; then
+    say -v "$voice" -o "$tmp_aiff" "$text"
+  else
+    # espeak-ng does not share Apple's voice catalogue; its default voice is
+    # intentional here because this is a bootstrap asset, not a final render.
+    espeak-ng -w "$tmp_aiff" "$text"
+  fi
   ffmpeg -y -loglevel error -i "$tmp_aiff" \
     -ar "$sr" -ac 1 -sample_fmt s16 "$out"
   rm -f "$tmp_aiff"
@@ -172,7 +179,7 @@ echo "── Manifest ───────────────────�
 cat > "${SAMPLES_DIR}/demo/manifest.json" <<EOF
 {
   "version": "0.3.0",
-  "rendered_by": "macOS say (bootstrap)",
+  "rendered_by": "${RENDERER} (bootstrap)",
   "rendered_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
   "license": "MIT (synthetic speech, no third-party voice IP)",
   "assets": {
@@ -242,7 +249,7 @@ cat > "${SAMPLES_DIR}/demo/manifest.json" <<EOF
       }
     }
   },
-  "rerender_with_omnivoice": "scripts/build_demos.sh --engine omnivoice (TODO)"
+  "rerender_with_omnivoice": "scripts/build_demos.sh --engine omnivoice"
 }
 EOF
 echo "  ✓ demo/manifest.json"

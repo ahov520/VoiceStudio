@@ -16,7 +16,9 @@ Stdlib + psutil (already a runtime dep). Never raises.
 """
 from __future__ import annotations
 
+import asyncio
 import logging
+import math
 import os
 from typing import Optional
 from core.logging_utils import log_safe
@@ -26,7 +28,25 @@ logger = logging.getLogger("omnivoice.memory_budget")
 # Below this much free RAM, a heavy model load is at real risk of tipping the
 # machine into the OOM-kill territory behind the 16 GB-Mac "Can't reach the
 # backend" reports. Tunable for smaller/larger boxes.
-_LOW_RAM_HEADROOM_GB = float(os.environ.get("OMNIVOICE_LOW_MEMORY_HEADROOM_GB", "2.0"))
+_DEFAULT_LOW_RAM_HEADROOM_GB = 2.0
+
+
+def _configured_headroom(raw: str | None) -> float:
+    """Parse the advisory threshold without allowing bad env config to break startup."""
+    try:
+        value = float(raw) if raw is not None else _DEFAULT_LOW_RAM_HEADROOM_GB
+    except (TypeError, ValueError):
+        return _DEFAULT_LOW_RAM_HEADROOM_GB
+    return value if math.isfinite(value) and value >= 0 else _DEFAULT_LOW_RAM_HEADROOM_GB
+
+
+_LOW_RAM_HEADROOM_GB = _configured_headroom(os.environ.get("OMNIVOICE_LOW_MEMORY_HEADROOM_GB"))
+_capacity_lock = asyncio.Lock()
+
+
+def configured_headroom() -> float:
+    """Return the current threshold, tolerating runtime environment changes."""
+    return _configured_headroom(os.environ.get("OMNIVOICE_LOW_MEMORY_HEADROOM_GB"))
 
 
 def available_memory() -> dict:
@@ -56,13 +76,13 @@ def available_memory() -> dict:
     return out
 
 
-def low_memory_warning(headroom_gb: float = _LOW_RAM_HEADROOM_GB) -> Optional[str]:
+def low_memory_warning(headroom_gb: float | None = None) -> Optional[str]:
     """A one-line advisory when free memory is below ``headroom_gb``, else None.
 
     Checks free VRAM on a dedicated-GPU host, otherwise free system RAM (the
     figure that matters on MPS/CPU). Pure given ``available_memory`` output —
     ``_format`` does the wording — so the threshold logic is unit-testable."""
-    return _format(available_memory(), headroom_gb)
+    return _format(available_memory(), configured_headroom() if headroom_gb is None else headroom_gb)
 
 
 def _format(mem: dict, headroom_gb: float) -> Optional[str]:
@@ -85,7 +105,7 @@ def _format(mem: dict, headroom_gb: float) -> Optional[str]:
     return None
 
 
-def log_if_low(context: str, headroom_gb: float = _LOW_RAM_HEADROOM_GB) -> Optional[str]:
+def log_if_low(context: str, headroom_gb: float | None = None) -> Optional[str]:
     """Log (once, at WARNING) and return the advisory when memory is low before
     a heavy operation named by ``context``. Non-blocking — the caller proceeds
     regardless; this is forensics, so a later OOM death has a breadcrumb."""
@@ -93,3 +113,58 @@ def log_if_low(context: str, headroom_gb: float = _LOW_RAM_HEADROOM_GB) -> Optio
     if msg:
         logger.warning("%s: %s", log_safe(context), log_safe(msg))
     return msg
+
+
+def _available_for_device(mem: dict) -> Optional[float]:
+    """Return the relevant free pool (dedicated VRAM, otherwise system RAM)."""
+    vram = mem.get("vram_free_gb")
+    return vram if vram is not None else mem.get("ram_available_gb")
+
+
+async def _ensure_capacity_unlocked(required_gb: float, context: str, keep_engine: str = "") -> dict:
+    """Make a best-effort capacity check before a model load.
+
+    When the current pool cannot accommodate ``required_gb`` plus headroom,
+    invoke the existing engine registry eviction hook and probe again. Loads
+    remain permissive when the platform cannot report memory, preserving the
+    historical behaviour on unusual torch/OS combinations.
+    """
+    try:
+        required = max(0.0, float(required_gb or 0.0))
+    except (TypeError, ValueError):
+        required = 0.0
+    headroom_gb = configured_headroom()
+    before = available_memory()
+    free_before = _available_for_device(before)
+    evicted = []
+    if required and free_before is not None and free_before < required + headroom_gb:
+        try:
+            from services.engine_memory import evict_other_tts_engines
+            evicted = await evict_other_tts_engines(keep_engine)
+        except Exception:  # noqa: BLE001
+            logger.warning("%s: resource eviction failed", log_safe(context), exc_info=True)
+    after = available_memory()
+    free_after = _available_for_device(after)
+    if evicted:
+        logger.info(
+            "%s: evicted idle engines=%s for %.1f GB request; free %.2f -> %.2f GB",
+            log_safe(context), log_safe(evicted), required,
+            free_before if free_before is not None else -1,
+            free_after if free_after is not None else -1,
+        )
+    if required and free_after is not None and free_after < required:
+        logger.warning("%s: memory remains constrained (%.2f GB free, %.1f GB requested)",
+                       log_safe(context), free_after, required)
+    return {"before": before, "after": after, "evicted": evicted,
+            "sufficient": free_after is None or not required or free_after >= required}
+
+
+async def ensure_capacity(required_gb: float, context: str, keep_engine: str = "") -> dict:
+    """Serialize capacity probes and eviction across concurrent model loads.
+
+    Without this gate, two requests can both observe low memory, race through
+    eviction, and then load their models together. The lock covers only the
+    short probe/eviction window; model loading itself remains concurrent.
+    """
+    async with _capacity_lock:
+        return await _ensure_capacity_unlocked(required_gb, context, keep_engine)

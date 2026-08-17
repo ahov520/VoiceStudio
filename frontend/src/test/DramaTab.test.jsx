@@ -3,9 +3,15 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { I18nextProvider } from 'react-i18next';
 import i18n from '../i18n';
+import toast from 'react-hot-toast';
 
 import DramaTab from '../pages/DramaTab';
 import { parseDrama, saveDramaProject, listDramaProjects } from '../api/drama';
+import { copyText } from '../utils/copyText';
+
+vi.mock('../utils/copyText', () => ({
+  copyText: vi.fn(),
+}));
 
 vi.mock('../api/drama', () => ({
   parseDrama: vi.fn(),
@@ -56,6 +62,7 @@ describe('DramaTab', () => {
     parseDrama.mockResolvedValue(PARSE_RESULT);
     listDramaProjects.mockResolvedValue({ projects: [] });
     saveDramaProject.mockResolvedValue({ id: 'abc', name: '测试剧' });
+    copyText.mockResolvedValue(true);
   });
 
   it('runs the director and shows cast + emotion-annotated lines', async () => {
@@ -104,5 +111,21 @@ describe('DramaTab', () => {
     });
     fireEvent.click(screen.getByRole('button', { name: /Auto-direct/ }));
     expect(await screen.findByText('LLM unavailable')).toBeInTheDocument();
+  });
+
+  it('uses the plain-HTTP-safe clipboard helper and reports copy failure', async () => {
+    copyText.mockResolvedValue(false);
+    const errorToast = vi.spyOn(toast, 'error').mockImplementation(() => 'toast-id');
+    renderTab();
+    fireEvent.change(screen.getByPlaceholderText(/Paste a script/), {
+      target: { value: SCRIPT },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /Auto-direct/ }));
+    await screen.findByDisplayValue(/\[voice:林晚\]/);
+
+    fireEvent.click(screen.getByRole('button', { name: /^Copy$/ }));
+
+    await waitFor(() => expect(copyText).toHaveBeenCalledWith(expect.stringContaining('[voice:林晚]')));
+    expect(errorToast).toHaveBeenCalledWith('Copy failed');
   });
 });

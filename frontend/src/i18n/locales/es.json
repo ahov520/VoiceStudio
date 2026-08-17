@@ -809,6 +809,8 @@
     "empty_tauri": "No hay registros de Tauri disponibles. Se ejecuta únicamente en el shell del escritorio.",
     "empty_backend": "El registro de tiempo de ejecución está vacío. La actividad aparecerá aquí cuando el backend la registre.",
     "title": "Registros",
+    "notifications": "Notificaciones",
+    "notifications_count": "Notificaciones ({{count}})",
     "source_backend": "backend",
     "source_frontend": "Interfaz",
     "source_tauri": "Tauro",

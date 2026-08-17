@@ -17,6 +17,8 @@ import type { CommunityFilters } from './community';
 import * as enginesApi from './engines';
 import type { AllEnginesResponse, EngineFamily } from './types';
 
+const EMPTY_DISMISSED_NOTIFICATION_IDS: string[] = [];
+
 // ── Keys (prevents typos, enables targeted invalidation) ─────────────────
 export const queryKeys = {
   sysinfo: ['sysinfo'] as const,
@@ -97,19 +99,29 @@ export function isDismissibleNotification(n: { level?: string }): boolean {
 // client-side — see the slice doc for the id-stability contract.
 export function useVisibleNotifications(enabled = true) {
   const query = useNotifications(enabled);
-  const dismissed = useAppStore((s) => s.dismissedNotificationIds);
-  const all = query.data?.notifications;
+  // Persisted preferences can be malformed after an interrupted migration or
+  // manual localStorage edits. Treat anything other than an array as empty so
+  // a bad preference cannot crash every consumer of the notifications hook.
+  const dismissed = useAppStore((s) =>
+    Array.isArray(s.dismissedNotificationIds)
+      ? s.dismissedNotificationIds
+      : EMPTY_DISMISSED_NOTIFICATION_IDS,
+  );
+  const dismissedSet = useMemo(() => new Set(dismissed), [dismissed]);
+  const all = Array.isArray(query.data?.notifications)
+    ? query.data.notifications
+    : [];
   // Memoized so the array reference is stable across re-renders while the
   // inputs are unchanged (downstream effect/memo deps stay quiet).
   // A note is hidden only while it is *currently* dismissible: if a stable id
   // ever escalates to error level, an old info/warn dismissal must not hide it.
   const notifications = useMemo(
     () =>
-      (all || []).filter(
+      all.filter(
         (n: { id?: string; level?: string }) =>
-          !n.id || !isDismissibleNotification(n) || !dismissed.includes(n.id),
+          !n.id || !isDismissibleNotification(n) || !dismissedSet.has(n.id),
       ),
-    [all, dismissed],
+    [all, dismissedSet],
   );
   // Omit `data` from the returned query: `data.notifications` is the raw
   // UNFILTERED list, and any consumer reaching for it would silently bypass

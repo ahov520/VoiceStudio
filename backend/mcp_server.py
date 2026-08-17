@@ -30,6 +30,11 @@ import sys
 logger = logging.getLogger("omnivoice.mcp")
 
 
+def _json_text(value: object) -> str:
+    """Serialize MCP text responses as standards-compliant JSON."""
+    return json.dumps(value, ensure_ascii=False, separators=(",", ":"))
+
+
 def _decode_ref_audio(ref_audio_base64: str) -> "bytes | None":
     """Decoded reference audio, or None when the input isn't valid base64.
 
@@ -239,7 +244,7 @@ def create_mcp_server():
         and personality.
         """
         profiles = await _api_get("/profiles")
-        return str(profiles)
+        return _json_text(profiles)
 
     @mcp.tool()
     async def list_personalities() -> str:
@@ -249,7 +254,7 @@ def create_mcp_server():
         instruct text. Use the instruct text with generate_speech.
         """
         presets = await _api_get("/personalities")
-        return str(presets)
+        return _json_text(presets)
 
     @mcp.tool()
     async def list_languages() -> str:
@@ -291,13 +296,13 @@ def create_mcp_server():
             "/transcribe", data=data,
             files={"audio": ("audio.wav", raw, "application/octet-stream")},
         )
-        return str(r.json())
+        return _json_text(r.json())
 
     @mcp.tool()
     async def check_health() -> str:
         """Check if the VoiceStudio backend is running and what GPU device is active."""
         info = await _api_get("/health")
-        return str(info)
+        return _json_text(info)
 
     # ── Resources ───────────────────────────────────────────────────────
 
@@ -307,14 +312,14 @@ def create_mcp_server():
         profiles = await _api_get("/profiles")
         for p in profiles:
             if p.get("id") == profile_id:
-                return str(p)
-        return f'{{"error":"Voice profile {profile_id} not found"}}'
+                return _json_text(p)
+        return _json_text({"error": f"Voice profile {profile_id} not found"})
 
     @mcp.resource("history://recent")
     async def get_recent_history() -> str:
         """Get the 20 most recent generation history items."""
         history = await _api_get("/history")
-        return str(history[:20])
+        return _json_text(history[:20])
 
     @mcp.tool()
     async def clone_voice(

@@ -19,7 +19,11 @@ import {
 } from 'lucide-react';
 import { apiFetch } from '../api/client';
 import { timeAgo, toMillis } from '../utils/relativeTime';
-import { loadTranscriptions, TRANSCRIPTION_EVENT } from '../utils/transcriptionsStore';
+import {
+  loadTranscriptions,
+  TRANSCRIPTIONS_KEY,
+  TRANSCRIPTION_EVENT,
+} from '../utils/transcriptionsStore';
 import { audioUrl } from '../api/generate';
 import { playBlobAudio } from '../utils/media';
 
@@ -161,8 +165,15 @@ export default function Projects({
   // Listen for new transcriptions
   React.useEffect(() => {
     const handler = () => setTranscriptions(loadTranscriptions());
+    const storageHandler = (event) => {
+      if (event.key === TRANSCRIPTIONS_KEY) handler();
+    };
     window.addEventListener(TRANSCRIPTION_EVENT, handler);
-    return () => window.removeEventListener(TRANSCRIPTION_EVENT, handler);
+    window.addEventListener('storage', storageHandler);
+    return () => {
+      window.removeEventListener(TRANSCRIPTION_EVENT, handler);
+      window.removeEventListener('storage', storageHandler);
+    };
   }, []);
 
   // Normalise every source into a common shape so the filter + search +

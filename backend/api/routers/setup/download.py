@@ -14,6 +14,7 @@ import logging
 import os
 import sys
 import threading
+from pathlib import PurePosixPath
 
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
@@ -74,6 +75,7 @@ _cancelled: set[str] = set()
 # on the same install; starting a second snapshot_download against the same HF
 # cache is wasteful and can corrupt the user-visible progress stream.
 _active_installs: set[str] = set()
+_active_deletes: set[str] = set()
 _active_installs_lock = threading.Lock()
 _install_tasks: set[asyncio.Task] = set()
 
@@ -179,6 +181,32 @@ def _repo_cancelled(repo_id: str) -> bool:
     return repo_id in _cancelled
 
 
+def _safe_cache_component(value: str, *, label: str) -> str:
+    """Validate an untrusted value before using it as one cache directory name."""
+    if (
+        not value
+        or value in {".", ".."}
+        or "/" in value
+        or "\\" in value
+        or ":" in value
+    ):
+        raise ValueError(f"unsafe {label} returned by Hugging Face endpoint")
+    return value
+
+
+def _safe_repo_file(value: str) -> str:
+    """Accept a portable repo-relative POSIX path and reject cache traversal."""
+    path = PurePosixPath(value)
+    if (
+        not value
+        or "\\" in value
+        or path.is_absolute()
+        or any(part in {"", ".", ".."} or ":" in part for part in path.parts)
+    ):
+        raise ValueError("unsafe filename returned by Hugging Face endpoint")
+    return path.as_posix()
+
+
 def _segmented_snapshot(repo_id: str, *, endpoint: "str | None", revision: str) -> str:
     """Fetch every file of a repo via the segmented downloader into the HF
     cache, mirroring hf_hub_download's blob+snapshot+refs layout so the result
@@ -201,6 +229,8 @@ def _segmented_snapshot(repo_id: str, *, endpoint: "str | None", revision: str) 
     files = [s.rfilename for s in (info.siblings or [])]
     if commit != revision or not files:
         raise RuntimeError("repo_info returned no commit/siblings")
+    commit = _safe_cache_component(commit, label="commit")
+    files = [_safe_repo_file(rel) for rel in files]
 
     repo_dir = os.path.join(_C.HF_HUB_CACHE, repo_folder_name(repo_id=repo_id, repo_type="model"))
     blobs_dir = os.path.join(repo_dir, "blobs")
@@ -217,6 +247,7 @@ def _segmented_snapshot(repo_id: str, *, endpoint: "str | None", revision: str) 
         etag = (meta.etag or "").strip('"')
         if not etag:
             raise RuntimeError(f"no etag for {rel}")
+        etag = _safe_cache_component(etag, label="ETag")
         blob_path = os.path.join(blobs_dir, etag)
         pointer = os.path.join(snap_dir, rel)
         os.makedirs(os.path.dirname(pointer), exist_ok=True)
@@ -423,6 +454,11 @@ async def install_model(req: InstallModelRequest):
     with _active_installs_lock:
         if req.repo_id in _active_installs:
             return {"status": "already_running", "repo_id": req.repo_id}
+        if req.repo_id in _active_deletes:
+            raise HTTPException(
+                status_code=409,
+                detail=f"Model {req.repo_id!r} is being deleted. Retry when deletion finishes.",
+            )
         _active_installs.add(req.repo_id)
     loop = asyncio.get_running_loop()
 
@@ -718,13 +754,20 @@ async def cancel_install(req: InstallModelRequest):
 @router.delete("/models/{repo_id:path}")
 def delete_model(repo_id: str):
     """Remove every cached revision of a repo from the HF cache."""
-    hf_progress.emit({
-        "repo_id": repo_id,
-        "filename": repo_id,
-        "downloaded": 0, "total": 0, "pct": 0.0,
-        "phase": "delete_start",
-    })
+    with _active_installs_lock:
+        if repo_id in _active_installs or repo_id in _active_deletes:
+            raise HTTPException(
+                status_code=409,
+                detail=f"Model {repo_id!r} already has an install or delete in progress.",
+            )
+        _active_deletes.add(repo_id)
     try:
+        hf_progress.emit({
+            "repo_id": repo_id,
+            "filename": repo_id,
+            "downloaded": 0, "total": 0, "pct": 0.0,
+            "phase": "delete_start",
+        })
         from huggingface_hub import scan_cache_dir
         info = scan_cache_dir()
         commits = [
@@ -765,3 +808,6 @@ def delete_model(repo_id: str):
                 "Close any process using the model (e.g. the app's main dub job) and retry."
             ),
         )
+    finally:
+        with _active_installs_lock:
+            _active_deletes.discard(repo_id)

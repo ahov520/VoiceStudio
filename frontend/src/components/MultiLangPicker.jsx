@@ -147,6 +147,23 @@ export default function MultiLangPicker({
     );
   }, [query, selectedCodes]);
 
+  const popularCodes = useMemo(
+    () => new Set(popularFiltered.map(({ code }) => code)),
+    [popularFiltered],
+  );
+  const allFiltered = useMemo(
+    () => filteredLangs.filter(({ code }) => !popularCodes.has(code)),
+    [filteredLangs, popularCodes],
+  );
+
+  const addFirstSearchResult = (event) => {
+    if (event.key !== 'Enter' || !query.trim()) return;
+    const first = popularFiltered[0] || allFiltered[0];
+    if (!first) return;
+    event.preventDefault();
+    addLang(first.lang || first.label, first.code);
+  };
+
   return (
     <div className="relative" ref={dropRef}>
       <button
@@ -199,6 +216,7 @@ export default function MultiLangPicker({
                 ref={inputRef}
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
+                onKeyDown={addFirstSearchResult}
                 placeholder={t('dub.search_languages')}
                 aria-label={t('dub.search_languages')}
                 name="language-search"
@@ -262,7 +280,7 @@ export default function MultiLangPicker({
               <div className="[font-family:var(--font-mono)] text-[0.62rem] font-semibold uppercase [letter-spacing:0.04em] text-[color:var(--chrome-fg-dim)] pt-[6px] px-[10px] pb-[2px]">
                 {t('dub.all_languages')}
               </div>
-              {filteredLangs.slice(0, 50).map((lc) => (
+              {allFiltered.slice(0, 50).map((lc) => (
                 <button
                   key={lc.code}
                   type="button"
@@ -277,12 +295,12 @@ export default function MultiLangPicker({
                   <span className="min-w-0 truncate">{lc.label}</span>
                 </button>
               ))}
-              {filteredLangs.length > 50 && (
+              {allFiltered.length > 50 && (
                 <div className="px-[10px] py-[8px] text-[0.7rem] text-[color:var(--chrome-fg-dim)] text-center">
-                  {t('dub.more_to_narrow', { count: filteredLangs.length - 50 })}
+                  {t('dub.more_to_narrow', { count: allFiltered.length - 50 })}
                 </div>
               )}
-              {filteredLangs.length === 0 &&
+              {allFiltered.length === 0 &&
                 popularFiltered.length === 0 &&
                 selectedFiltered.length === 0 && (
                   <div className="px-[10px] py-[8px] text-[0.7rem] text-[color:var(--chrome-fg-dim)] text-center">

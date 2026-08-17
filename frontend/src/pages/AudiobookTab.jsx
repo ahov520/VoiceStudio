@@ -160,12 +160,14 @@ export default function AudiobookTab({ profiles = [] }) {
     if (!f) return;
     setCoverFile(f);
     setCoverPreview(URL.createObjectURL(f));
+    // Allow picking the same file again after removing its preview. Browsers
+    // suppress `change` when the file input value has not changed.
+    e.target.value = '';
   }, []);
   const clearCover = useCallback(() => {
     setCoverFile(null);
-    if (coverPreview) URL.revokeObjectURL(coverPreview);
     setCoverPreview('');
-  }, [coverPreview]);
+  }, []);
   // Revoke the cover blob URL when it's replaced or the tab unmounts (React
   // doesn't reclaim object URLs on its own).
   useEffect(

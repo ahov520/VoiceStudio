@@ -31,9 +31,12 @@ export const doubleClickMaximize = () => {
  * Falls back to createObjectURL for regular browsers.
  */
 export const fileToMediaUrl = async (file, prevUrls) => {
-  // Revoke previous blob URLs if they exist
-  if (prevUrls?.videoUrl?.startsWith('blob:')) URL.revokeObjectURL(prevUrls.videoUrl);
-  if (prevUrls?.audioUrl?.startsWith('blob:')) URL.revokeObjectURL(prevUrls.audioUrl);
+  const releasePrevious = (nextUrl) => {
+    const previous = new Set([prevUrls?.videoUrl, prevUrls?.audioUrl]);
+    for (const url of previous) {
+      if (url?.startsWith('blob:') && url !== nextUrl) URL.revokeObjectURL(url);
+    }
+  };
 
   if (isTauri) {
     try {
@@ -41,15 +44,18 @@ export const fileToMediaUrl = async (file, prevUrls) => {
       form.append('video', file, file.name || 'media.wav');
       const res = await apiFetch(`${_PREVIEW_API}/preview/upload`, { method: 'POST', body: form });
       const data = await res.json();
-      return {
+      const urls = {
         videoUrl: `${_PREVIEW_API}${data.url}`,
         audioUrl: data.audioUrl ? `${_PREVIEW_API}${data.audioUrl}` : `${_PREVIEW_API}${data.url}`,
       };
+      releasePrevious(urls.videoUrl);
+      return urls;
     } catch (e) {
       console.warn('Preview upload failed, falling back to blob URL:', e);
     }
   }
   const url = URL.createObjectURL(file);
+  releasePrevious(url);
   return { videoUrl: url, audioUrl: url };
 };
 

@@ -809,6 +809,8 @@
     "empty_tauri": "Kein Tauri-Protokoll verfügbar. Läuft nur in der Desktop-Shell.",
     "empty_backend": "Das Laufzeitprotokoll ist leer. Die Aktivität wird hier angezeigt, wenn das Backend sie protokolliert.",
     "title": "Protokolle",
+    "notifications": "Benachrichtigungen",
+    "notifications_count": "Benachrichtigungen ({{count}})",
     "source_backend": "Backend",
     "source_frontend": "Frontend",
     "source_tauri": "Tauri",

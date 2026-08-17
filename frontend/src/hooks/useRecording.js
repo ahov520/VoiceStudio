@@ -45,6 +45,8 @@ export default function useRecording(ingestRefAudio) {
   const recordingChunksRef = useRef([]);
   const recordingTimerRef = useRef(null);
   const stopLevelMonitorRef = useRef(null);
+  const activeStreamRef = useRef(null);
+  const mountedRef = useRef(true);
 
   const refreshAudioInputs = async () => {
     try {
@@ -65,11 +67,18 @@ export default function useRecording(ingestRefAudio) {
   };
 
   useEffect(() => {
+    mountedRef.current = true;
     void refreshAudioInputs();
     const mediaDevices = navigator.mediaDevices;
     mediaDevices?.addEventListener?.('devicechange', refreshAudioInputs);
     return () => {
+      mountedRef.current = false;
       mediaDevices?.removeEventListener?.('devicechange', refreshAudioInputs);
+      const recorder = mediaRecorderRef.current;
+      if (recorder && recorder.state !== 'inactive') recorder.stop();
+      mediaRecorderRef.current = null;
+      activeStreamRef.current?.getTracks().forEach((track) => track.stop());
+      activeStreamRef.current = null;
       stopLevelMonitorRef.current?.();
       clearInterval(recordingTimerRef.current);
     };
@@ -89,6 +98,11 @@ export default function useRecording(ingestRefAudio) {
       stream = await navigator.mediaDevices.getUserMedia(
         buildAudioInputConstraints(selectedAudioInputId, channelMode),
       );
+      if (!mountedRef.current) {
+        stream.getTracks().forEach((track) => track.stop());
+        return;
+      }
+      activeStreamRef.current = stream;
       void refreshAudioInputs();
       stopLevelMonitor();
       try {
@@ -108,6 +122,8 @@ export default function useRecording(ingestRefAudio) {
         clearInterval(recordingTimerRef.current);
         stopLevelMonitor();
         stream.getTracks().forEach((t) => t.stop());
+        activeStreamRef.current = null;
+        if (!mountedRef.current) return;
         if (blob.size < 1000) {
           toast.error(t('recording.too_short', { defaultValue: 'Recording too short' }));
           return;

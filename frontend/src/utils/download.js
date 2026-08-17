@@ -25,6 +25,21 @@ export function parseFilenameFromContentDisposition(header) {
   return plain ? plain[1].trim() : null;
 }
 
+/** Make a server-provided filename safe and usable across desktop browsers. */
+export function sanitizeDownloadFilename(filename, fallback = 'download') {
+  const basename = String(filename ?? '').split(/[\\/]/).pop() ?? '';
+  let sanitized = basename
+    .replace(/[<>:"|?*\u0000-\u001f]/g, '_')
+    .replace(/[. ]+$/g, '')
+    .trim();
+  // Windows rejects these device names even when an extension is present
+  // (for example, `CON.wav`). Prefixing keeps the user's extension intact
+  // while making the name valid on all supported desktop platforms.
+  const stem = sanitized.split('.')[0]?.toUpperCase();
+  if (/^(CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])$/.test(stem)) sanitized = `_${sanitized}`;
+  return sanitized && sanitized !== '.' && sanitized !== '..' ? sanitized : fallback;
+}
+
 /**
  * Fetch `url` and trigger a standard browser blob download via a temporary
  * <a download> element. Prefers the server-provided Content-Disposition
@@ -38,6 +53,7 @@ export async function browserDownload(url, fallbackName, deps = {}) {
   const _fetch = deps.fetch ?? apiFetch;
   const doc = deps.document ?? globalThis.document;
   const urlApi = deps.url ?? globalThis.URL;
+  const schedule = deps.setTimeout ?? globalThis.setTimeout;
 
   const response = await _fetch(url);
   if (!response.ok) throw new Error('Download failed');
@@ -45,16 +61,30 @@ export async function browserDownload(url, fallbackName, deps = {}) {
   const serverName = parseFilenameFromContentDisposition(
     response.headers?.get?.('content-disposition'),
   );
-  const finalName = serverName || fallbackName || 'download';
+  const finalName = sanitizeDownloadFilename(serverName || fallbackName);
 
   const blob = await response.blob();
   const localUrl = urlApi.createObjectURL(blob);
   const a = doc.createElement('a');
   a.href = localUrl;
   a.download = finalName;
-  doc.body.appendChild(a);
-  a.click();
-  doc.body.removeChild(a);
-  urlApi.revokeObjectURL(localUrl);
+  let handedOff = false;
+  try {
+    doc.body.appendChild(a);
+    a.click();
+    // WebKit may not consume the blob until after the click handler returns.
+    // Keep it alive briefly so browser/Docker downloads are reliable there.
+    schedule(() => urlApi.revokeObjectURL(localUrl), 1000);
+    handedOff = true;
+  } finally {
+    try {
+      doc.body.removeChild(a);
+    } catch {
+      // Keep cleanup failures from masking the original download error.
+    }
+    // If DOM setup/click/scheduling fails, there is no browser download to
+    // consume the URL, so release it immediately instead of leaking it.
+    if (!handedOff) urlApi.revokeObjectURL(localUrl);
+  }
   return finalName;
 }

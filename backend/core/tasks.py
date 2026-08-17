@@ -50,8 +50,14 @@ class TaskManager:
         await self.queue.put((task_id, func, args, kwargs))
 
     def cancel_task(self, task_id):
-        if task_id in self.active_tasks:
-            self.active_tasks[task_id]["cancelled"] = True
+        task = self.active_tasks.get(task_id)
+        if task:
+            if task["status"] in {"done", "failed", "cancelled"}:
+                return False
+            task["cancelled"] = True
+            execution_task = task.get("execution_task")
+            if execution_task is not None and not execution_task.done():
+                execution_task.cancel()
             return True
         return False
 
@@ -64,7 +70,11 @@ class TaskManager:
         if not t:
             return False
         async with t["listeners_lock"]:
-            t["listeners"].append(q)
+            # A reconnect/race can attempt to attach the same queue twice.
+            # Keep listener registration idempotent so every event is
+            # delivered once per client.
+            if q not in t["listeners"]:
+                t["listeners"].append(q)
         return True
 
     async def remove_listener(self, task_id, q):
@@ -81,6 +91,7 @@ class TaskManager:
             return
         if event_str is not None:
             t["history"].append(event_str)
+            self._persist_progress_event(task_id, event_str)
             try:
                 seq = job_store.append_event(task_id, event_str)
                 # Stash the seq on the in-memory copy too, mainly for tests.
@@ -92,7 +103,40 @@ class TaskManager:
         async with t["listeners_lock"]:
             listeners = list(t["listeners"])
         for q in listeners:
-            await q.put(event_str)
+            # A slow SSE consumer must not back-pressure the worker. Keep the
+            # newest progress frame, dropping the oldest queued frame when a
+            # bounded listener is full. (The default stream queue is unbounded.)
+            try:
+                q.put_nowait(event_str)
+            except asyncio.QueueFull:
+                try:
+                    q.get_nowait()
+                    q.put_nowait(event_str)
+                except (asyncio.QueueEmpty, asyncio.QueueFull):
+                    logger.debug("Dropping task event for a saturated listener: %s", task_id)
+
+    @staticmethod
+    def _persist_progress_event(task_id, event_str):
+        """Mirror standard SSE progress payloads into the jobs summary row."""
+        try:
+            payload = event_str.split("data:", 1)[1].strip()
+            event = json.loads(payload)
+            if event.get("type") != "progress":
+                return
+            if "percent" in event:
+                fraction = float(event["percent"]) / 100.0
+            elif "current" in event and float(event.get("total") or 0) > 0:
+                fraction = float(event["current"]) / float(event["total"])
+            else:
+                fraction = event.get("progress", 0.0)
+            stage = event.get("stage")
+            if stage is None:
+                stage = event.get("text")
+            job_store.update_progress(task_id, fraction, stage)
+        except (ValueError, TypeError, json.JSONDecodeError, IndexError, KeyError):
+            return
+        except Exception:
+            logger.exception("job progress persistence failed for %s", task_id)
 
     async def worker(self):
         self._init_queue()
@@ -101,6 +145,14 @@ class TaskManager:
             t = self.active_tasks.get(task_id)
             if not t:
                 self.queue.task_done()
+                continue
+
+            if t.get("cancelled"):
+                try:
+                    await self._finish_cancelled(task_id)
+                finally:
+                    await self._push_event(task_id, None)
+                    self.queue.task_done()
                 continue
 
             t["status"] = "running"
@@ -115,22 +167,27 @@ class TaskManager:
             run_sentinel.touch_activity("task", t.get("type"))
             try:
                 import inspect
-                res = func(*args, **kwargs)
-                if inspect.isasyncgen(res):
-                    async for update in res:
-                        if t.get("cancelled"):
-                            await self._push_event(task_id, f"data: {json.dumps({'type': 'cancelled'})}\n\n")
-                            t["status"] = "cancelled"
-                            try: job_store.mark_cancelled(task_id)
-                            except Exception: logger.exception("job_store.mark_cancelled failed")
-                            break
-                        await self._push_event(task_id, update)
-                elif inspect.iscoroutine(res):
-                    await res
-                if t["status"] != "cancelled":
+                async def execute():
+                    res = func(*args, **kwargs)
+                    if inspect.isasyncgen(res):
+                        async for update in res:
+                            await self._push_event(task_id, update)
+                    elif inspect.isawaitable(res):
+                        await res
+
+                execution_task = asyncio.create_task(execute())
+                t["execution_task"] = execution_task
+                await execution_task
+                if t.get("cancelled"):
+                    await self._finish_cancelled(task_id)
+                else:
                     t["status"] = "done"
                     try: job_store.mark_done(task_id)
                     except Exception: logger.exception("job_store.mark_done failed")
+            except asyncio.CancelledError:
+                if not t.get("cancelled"):
+                    raise
+                await self._finish_cancelled(task_id)
             except Exception as e:
                 logger.exception("Task %s failed", task_id)
                 t["status"] = "failed"
@@ -147,7 +204,24 @@ class TaskManager:
                 except Exception as push_err:
                     logger.warning("Failed to push error event for %s: %s", task_id, push_err)
             finally:
+                t.pop("execution_task", None)
                 await self._push_event(task_id, None)  # EOF
                 self.queue.task_done()
+
+    async def _finish_cancelled(self, task_id):
+        t = self.active_tasks.get(task_id)
+        if t is None or t.get("cancel_notified"):
+            return
+        t["cancelled"] = True
+        t["cancel_notified"] = True
+        t["status"] = "cancelled"
+        try:
+            job_store.mark_cancelled(task_id)
+        except Exception:
+            logger.exception("job_store.mark_cancelled failed")
+        await self._push_event(
+            task_id,
+            f"data: {json.dumps({'type': 'cancelled'})}\n\n",
+        )
 
 task_manager = TaskManager()

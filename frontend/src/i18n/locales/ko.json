@@ -809,6 +809,8 @@
     "empty_tauri": "Tauri 로그를 사용할 수 없습니다. 데스크톱 셸에서만 실행됩니다.",
     "empty_backend": "런타임 로그가 비어 있습니다. 백엔드가 기록할 때 활동이 여기에 표시됩니다.",
     "title": "로그",
+    "notifications": "알림",
+    "notifications_count": "알림 ({{count}})",
     "source_backend": "백엔드",
     "source_frontend": "프런트엔드",
     "source_tauri": "타우리",

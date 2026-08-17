@@ -809,6 +809,8 @@
     "empty_tauri": "Tauri ログは利用できません。デスクトップ シェルでのみ実行されます。",
     "empty_backend": "実行時ログが空です。バックエンドがログを記録すると、アクティビティがここに表示されます。",
     "title": "ログ",
+    "notifications": "通知",
+    "notifications_count": "通知 ({{count}})",
     "source_backend": "バックエンド",
     "source_frontend": "フロントエンド",
     "source_tauri": "タウリ",

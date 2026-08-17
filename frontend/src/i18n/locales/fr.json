@@ -809,6 +809,8 @@
     "empty_tauri": "Aucun journal Tauri disponible. Fonctionne uniquement dans le shell du bureau.",
     "empty_backend": "Le journal d'exécution est vide. L'activité apparaîtra ici au fur et à mesure que le backend l'enregistrera.",
     "title": "Journaux",
+    "notifications": "Notifications",
+    "notifications_count": "Notifications ({{count}})",
     "source_backend": "Back-end",
     "source_frontend": "Front-end",
     "source_tauri": "Taureau",

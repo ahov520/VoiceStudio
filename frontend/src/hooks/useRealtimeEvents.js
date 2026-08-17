@@ -60,6 +60,7 @@ export default function useRealtimeEvents(handlers) {
     if (!mountedRef.current) return;
     // Don't double-connect
     if (connectingRef.current || (wsRef.current && wsRef.current.readyState <= 1)) return;
+    connectingRef.current = true;
 
     // ── Phase 1: Wait for backend HTTP to be reachable ────────────────
     // Background: the Python backend takes ~14s to import torch/fastapi/etc
@@ -70,14 +71,20 @@ export default function useRealtimeEvents(handlers) {
       .then((res) => {
         if (!res.ok) throw new Error(`health check returned ${res.status}`);
         // Backend is up — proceed to Phase 2
-        if (!mountedRef.current) return;
-        if (connectingRef.current || (wsRef.current && wsRef.current.readyState <= 1)) return;
+        if (!mountedRef.current) {
+          connectingRef.current = false;
+          return;
+        }
+        if (wsRef.current && wsRef.current.readyState <= 1) {
+          connectingRef.current = false;
+          return;
+        }
         retryCountRef.current = 0; // reset backoff — health passed
-        connectingRef.current = true;
         void openWebSocketRef.current();
       })
       .catch(() => {
         // Backend not ready yet — schedule reconnect (no error log)
+        connectingRef.current = false;
         scheduleReconnect();
       });
   }, [scheduleReconnect]);

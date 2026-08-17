@@ -85,6 +85,15 @@ beforeEach(() => {
 });
 
 describe('LogsFooter notifications tab — dismissals', () => {
+  it('recovers when persisted dismissal state is malformed', async () => {
+    useAppStore.setState({ dismissedNotificationIds: null });
+    renderFooter();
+    openNotificationsTab();
+
+    expect(await screen.findByText('Running on CPU')).toBeInTheDocument();
+    expect(screen.getByText('Media engine unavailable')).toBeInTheDocument();
+  });
+
   it('shows both notes; only the info note offers a dismiss button', async () => {
     renderFooter();
     openNotificationsTab();
@@ -118,5 +127,21 @@ describe('LogsFooter notifications tab — dismissals', () => {
     fireEvent.click(dismissBtnIn(rowOf('Low VRAM')));
     expect(openSettingsTab).not.toHaveBeenCalled();
     expect(screen.queryByText('Low VRAM')).toBeNull();
+  });
+
+  it('clears dismissible notifications from the footer action', async () => {
+    renderFooter();
+    openNotificationsTab();
+
+    await screen.findByText('Running on CPU');
+    fireEvent.click(screen.getByTitle('Clear logs'));
+
+    expect(screen.queryByText('Running on CPU')).toBeNull();
+    expect(screen.queryByText('Low VRAM')).toBeNull();
+    expect(screen.getByText('Media engine unavailable')).toBeInTheDocument();
+    expect(useAppStore.getState().dismissedNotificationIds).toEqual([
+      'gpu-unavailable',
+      'vram-low',
+    ]);
   });
 });

@@ -59,6 +59,21 @@ describe('Header — rail mode (default)', () => {
     await waitFor(() => expect(windowActions.toggleMaximize).toHaveBeenCalledOnce());
     expect(screen.getByTestId('window-controls')).toBeInTheDocument();
   });
+
+  it('closes memory management with Escape and restores trigger focus', async () => {
+    renderHeader({ onFlushMemory: vi.fn() });
+    const trigger = await screen.findByRole('button', { name: 'Flush' });
+
+    fireEvent.click(trigger);
+    expect(trigger).toHaveAttribute('aria-expanded', 'true');
+    expect(screen.getByRole('menu')).toBeInTheDocument();
+
+    fireEvent.keyDown(document, { key: 'Escape' });
+
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument();
+    expect(trigger).toHaveAttribute('aria-expanded', 'false');
+    expect(trigger).toHaveFocus();
+  });
 });
 
 describe('Header — titlebar tabs mode', () => {

@@ -38,7 +38,11 @@ vi.mock('i18next', () => ({
   default: { t: (key, opts) => (opts ? `${key} ${JSON.stringify(opts)}` : key) },
 }));
 
-import { asrMissingPayload, toastAsrModelMissing } from '../utils/asrModelMissing';
+import {
+  asrMissingPayload,
+  installRecommendedAsr,
+  toastAsrModelMissing,
+} from '../utils/asrModelMissing';
 
 const PAYLOAD = {
   error: 'asr_model_missing',
@@ -107,6 +111,16 @@ describe('toastAsrModelMissing', () => {
     // Toast content is a render-prop; mount it like react-hot-toast would.
     render(typeof content === 'function' ? content({ id: 'tst-1' }) : content);
   }
+
+  it('does not start a download when already cancelled', async () => {
+    const controller = new AbortController();
+    controller.abort();
+
+    await expect(
+      installRecommendedAsr(PAYLOAD, { signal: controller.signal }),
+    ).rejects.toMatchObject({ name: 'AbortError' });
+    expect(installModel).not.toHaveBeenCalled();
+  });
 
   it('renders the download CTA and starts the install on click', async () => {
     installModel.mockResolvedValue({ status: 'started' });

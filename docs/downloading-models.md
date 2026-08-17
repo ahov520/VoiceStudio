@@ -24,6 +24,10 @@ Managed sidecar engines are intentionally excluded from remote installation.
 Their current installer fetches mutable source before creating an editable
 environment; install those directly on the worker until that source is pinned.
 
+Installing and deleting the same model are mutually exclusive. If one operation
+is already running, the other returns a conflict instead of modifying the shared
+Hugging Face cache underneath an active download; retry after it finishes.
+
 ## Download backend: legacy LFS by default (accurate progress)
 
 VoiceStudio ships `hf_xet` (Hugging Face's chunked, parallel, dedup transfer
@@ -78,7 +82,8 @@ When a download starts you'll see, in order:
 > up front (a pre-flight resolve), so remaining is accurate from the start.
 > Live per-byte speed appears once a file is large enough to stream over
 > several seconds; very small/fast files may jump straight to done. The bar
-> always lands on the exact total at completion. (If Xet is re-enabled,
+> remains capped at the planned total across connection retries or segmented-
+> to-LFS fallback, and lands on the exact total at completion. (If Xet is re-enabled,
 > progress becomes file-granular — see above.)
 
 ## Advanced / opt-in tuning

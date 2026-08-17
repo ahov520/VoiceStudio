@@ -66,6 +66,20 @@ describe('MultiLangPicker viewport-safe menu', () => {
     expect(trigger).toHaveFocus();
   });
 
+  it('adds the first search result with Enter without duplicating popular results', () => {
+    const onChange = vi.fn();
+    render(<MultiLangPicker selected={[]} onChange={onChange} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Manage languages' }));
+
+    const search = screen.getByRole('textbox', { name: 'Search languages…' });
+    fireEvent.change(search, { target: { value: 'Spanish' } });
+    expect(screen.getAllByRole('button', { name: /Spanish/ })).toHaveLength(1);
+
+    fireEvent.keyDown(search, { key: 'Enter' });
+    expect(onChange).toHaveBeenCalledWith([{ lang: 'Spanish', code: 'es' }]);
+    expect(search).toHaveValue('');
+  });
+
   it('keeps 56 selected languages collapsed and manages them through search', () => {
     const selected = Array.from({ length: 56 }, (_, index) => ({
       lang: `Language ${index}`,

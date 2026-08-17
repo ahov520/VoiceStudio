@@ -809,6 +809,8 @@
     "empty_tauri": "Немає журналу Tauri. Працює лише в оболонці робочого столу.",
     "empty_backend": "Журнал виконання порожній. Діяльність відображатиметься тут, оскільки серверна система реєструватиме її.",
     "title": "Журнали",
+    "notifications": "Сповіщення",
+    "notifications_count": "Сповіщення ({{count}})",
     "source_backend": "Backend",
     "source_frontend": "Інтерфейс",
     "source_tauri": "Телець",

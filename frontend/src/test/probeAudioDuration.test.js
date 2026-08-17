@@ -14,6 +14,7 @@ let lastAudio;
 class FakeAudio {
   constructor() {
     this.duration = NaN;
+    this.src = '';
     this._listeners = {};
     lastAudio = this;
   }
@@ -26,7 +27,16 @@ class FakeAudio {
     if (behavior === 'error' && ev === 'error') queueMicrotask(cb);
     // 'silent': never fire — only the timeout can settle the promise.
   }
-  set src(_) {}
+  set src(value) {
+    this._src = value;
+  }
+  get src() {
+    return this._src;
+  }
+  load() {
+    this.loaded = true;
+    if (!this.src) this.duration = NaN;
+  }
 }
 
 let probeAudioDuration;
@@ -58,12 +68,15 @@ describe('probeAudioDuration', () => {
     behavior = 'metadata';
     await expect(probeAudioDuration({ name: 'ok.wav' })).resolves.toBe(12.5);
     expect(revoked).toBe(1);
+    expect(lastAudio.src).toBe('');
+    expect(lastAudio.loaded).toBe(true);
   });
 
   it('resolves null — never rejects — when the media element errors (undecodable codec)', async () => {
     behavior = 'error';
     await expect(probeAudioDuration({ name: 'exotic-codec.wav' })).resolves.toBeNull();
     expect(revoked).toBe(1);
+    expect(lastAudio.src).toBe('');
   });
 
   it('resolves null via the timeout when no event ever fires, instead of hanging (#1162)', async () => {
@@ -73,6 +86,7 @@ describe('probeAudioDuration', () => {
     await vi.advanceTimersByTimeAsync(10_000);
     await expect(p).resolves.toBeNull();
     expect(revoked).toBe(1);
+    expect(lastAudio.src).toBe('');
   });
 
   it('does not double-settle or double-revoke when a late event fires after the timeout', async () => {

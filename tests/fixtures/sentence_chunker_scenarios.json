@@ -22,10 +22,7 @@
     {
       "name": "two_sentences_streamed_token_by_token",
       "tokens": ["This ", "is ", "the ", "first ", "sentence. ", "This ", "is ", "the ", "second ", "sentence."],
-      "expected_sentences": ["This is the first sentence.", "This is the second sentence."],
-      "current_behavior": ["This is the first sentence.", "Thisis the second sentence."],
-      "regression": true,
-      "notes": "When tokens arrive after a sentence-end, the buffer for the next sentence loses the leading space inside the chunker carry. Phase 1 should preserve the inter-sentence space."
+      "expected_sentences": ["This is the first sentence.", "This is the second sentence."]
     },
     {
       "name": "three_sentences_question_exclamation_period",
@@ -125,10 +122,7 @@
     {
       "name": "newline_normalized_to_space",
       "tokens": ["First line.\nSecond line on a new physical row."],
-      "expected_sentences": ["First line.", "Second line on a new physical row."],
-      "current_behavior": ["First line.\nSecond line on a new physical row."],
-      "regression": true,
-      "notes": "_split_sentences replaces \\n with space, but the buffer comparison happens before that. Newline in input prevents normal sentence boundary detection. Phase 1 should normalize newlines on push()."
+      "expected_sentences": ["First line.", "Second line on a new physical row."]
     },
     {
       "name": "single_word_with_question_mark",

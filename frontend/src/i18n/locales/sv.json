@@ -809,6 +809,8 @@
     "empty_tauri": "Ingen Tauri-logg tillgänglig. Körs endast i skrivbordsskalet.",
     "empty_backend": "Körtidsloggen är tom. Aktivitet kommer att visas här när backend loggar den.",
     "title": "Loggar",
+    "notifications": "Aviseringar",
+    "notifications_count": "Aviseringar ({{count}})",
     "source_backend": "Backend",
     "source_frontend": "Frontend",
     "source_tauri": "Tauri",

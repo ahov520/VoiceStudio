@@ -1,6 +1,7 @@
 import React from 'react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
+import { TRANSCRIPTIONS_KEY } from '../utils/transcriptionsStore';
 
 // Regression guard for the "20617d ago" epoch bug: /history rows carry
 // created_at as Unix SECONDS (backend time.time()). Projects/OmniDrive fed
@@ -60,5 +61,17 @@ describe('Projects — relative timestamps (seconds-vs-ms epoch class)', () => {
     const titles = (await screen.findAllByText(/Newest gen|Old story/)).map((el) => el.textContent);
     // Pre-fix, the seconds stamp sorted as ~0 and sank below the story.
     expect(titles).toEqual(['Newest gen', 'Old story']);
+  });
+
+  it('refreshes transcripts when another window updates local storage', async () => {
+    render(<Projects />);
+    localStorage.setItem(
+      TRANSCRIPTIONS_KEY,
+      JSON.stringify([{ id: 1, text: 'Synced dictation', timestamp: new Date().toISOString() }]),
+    );
+
+    fireEvent(window, new StorageEvent('storage', { key: TRANSCRIPTIONS_KEY }));
+
+    expect(await screen.findByText('Synced dictation')).toBeInTheDocument();
   });
 });

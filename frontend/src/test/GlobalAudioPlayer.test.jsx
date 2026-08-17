@@ -94,6 +94,20 @@ describe('GlobalAudioPlayer', () => {
     expect(seek).toHaveBeenCalledTimes(2);
   });
 
+  it('stops scrubbing when pointer capture is lost', () => {
+    const seek = vi.fn();
+    render(<GlobalAudioPlayer />);
+    claimOutput({ seek });
+    const slider = screen.getByRole('slider');
+    slider.getBoundingClientRect = () => ({ left: 0, width: 200, top: 0, height: 28 });
+
+    fireEvent.pointerDown(slider, { clientX: 100, pointerId: 1 });
+    fireEvent.lostPointerCapture(slider, { pointerId: 1 });
+    fireEvent.pointerMove(slider, { clientX: 150, pointerId: 1 });
+
+    expect(seek).toHaveBeenCalledTimes(1);
+  });
+
   it('keyboard seeks: arrows nudge ±5s, Home/End jump', () => {
     const seek = vi.fn();
     render(<GlobalAudioPlayer />);

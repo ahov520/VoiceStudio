@@ -2401,6 +2401,8 @@
     "empty_tauri": "No Tauri log available. Runs in the desktop shell only.",
     "empty_backend": "Runtime log is empty. Activity will appear here as the backend logs it.",
     "title": "Logs",
+    "notifications": "Notifications",
+    "notifications_count": "Notifications ({{count}})",
     "source_backend": "Backend",
     "source_frontend": "Frontend",
     "source_tauri": "Tauri",

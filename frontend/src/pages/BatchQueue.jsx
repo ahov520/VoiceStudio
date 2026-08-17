@@ -236,8 +236,8 @@ export default function BatchQueue({ onBack }) {
               tab === 'active'
                 ? t('batch.drop_hint')
                 : tab === 'done'
-                  ? 'Nothing has completed recently.'
-                  : 'No failed jobs — enjoy the silence.'
+                  ? t('batch.no_completed')
+                  : t('batch.no_failed')
             }
             action={
               tab === 'active'

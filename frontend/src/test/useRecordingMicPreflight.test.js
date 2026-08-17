@@ -172,3 +172,56 @@ it('records a WAV through Web Audio when MediaRecorder is unsupported', async ()
   expect(new DataView(await audio.arrayBuffer()).getUint16(22, true)).toBe(2);
   expect(ingest).toHaveBeenCalledOnce();
 });
+
+it('stops an active recorder and microphone tracks on unmount', async () => {
+  const stopTrack = vi.fn();
+  installGum(async () => ({
+    getTracks: () => [{ stop: stopTrack }],
+    getAudioTracks: () => [{ getSettings: () => ({ channelCount: 1 }) }],
+  }));
+  const recorder = {
+    state: 'recording',
+    start: vi.fn(),
+    stop: vi.fn(function stop() {
+      this.state = 'inactive';
+      this.onstop?.();
+    }),
+  };
+  globalThis.MediaRecorder = vi.fn(() => recorder);
+  globalThis.MediaRecorder.isTypeSupported = vi.fn(() => true);
+  const ingest = vi.fn();
+  const { result, unmount } = renderHook(() => useRecording(ingest));
+
+  await act(async () => {
+    await result.current.startRecording();
+  });
+  unmount();
+  await Promise.resolve();
+
+  expect(recorder.stop).toHaveBeenCalledOnce();
+  expect(stopTrack).toHaveBeenCalled();
+  expect(cleanAudioMock).not.toHaveBeenCalled();
+  expect(ingest).not.toHaveBeenCalled();
+});
+
+it('releases a microphone stream granted after unmount', async () => {
+  let grant;
+  const stopTrack = vi.fn();
+  installGum(
+    () =>
+      new Promise((resolve) => {
+        grant = resolve;
+      }),
+  );
+  const { result, unmount } = renderHook(() => useRecording(vi.fn()));
+
+  let start;
+  act(() => {
+    start = result.current.startRecording();
+  });
+  unmount();
+  grant({ getTracks: () => [{ stop: stopTrack }] });
+  await start;
+
+  expect(stopTrack).toHaveBeenCalledOnce();
+});

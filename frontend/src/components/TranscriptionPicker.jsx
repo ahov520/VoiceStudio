@@ -3,7 +3,11 @@ import { useTranslation } from 'react-i18next';
 import { Mic, Search, Clock, Languages } from 'lucide-react';
 import { Dialog, Input } from '../ui';
 import { toMillis } from '../utils/relativeTime';
-import { loadTranscriptions, TRANSCRIPTION_EVENT } from '../utils/transcriptionsStore';
+import {
+  loadTranscriptions,
+  TRANSCRIPTIONS_KEY,
+  TRANSCRIPTION_EVENT,
+} from '../utils/transcriptionsStore';
 
 /**
  * A controlled modal that lets the user seed long-form work from a past
@@ -23,8 +27,15 @@ export default function TranscriptionPicker({ open, onClose, onPick }) {
     setSearch('');
     setEntries(loadTranscriptions());
     const handler = () => setEntries(loadTranscriptions());
+    const storageHandler = (event) => {
+      if (event.key === TRANSCRIPTIONS_KEY) handler();
+    };
     window.addEventListener(TRANSCRIPTION_EVENT, handler);
-    return () => window.removeEventListener(TRANSCRIPTION_EVENT, handler);
+    window.addEventListener('storage', storageHandler);
+    return () => {
+      window.removeEventListener(TRANSCRIPTION_EVENT, handler);
+      window.removeEventListener('storage', storageHandler);
+    };
   }, [open]);
 
   // Relative time, host-locale absolute fallback; null on unparseable timestamp.

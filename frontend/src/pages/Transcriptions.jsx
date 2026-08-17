@@ -16,6 +16,7 @@ import { toast } from 'react-hot-toast';
 import { toMillis } from '../utils/relativeTime';
 import { useEffectiveDictationShortcut } from '../hooks/useEffectiveDictationShortcut';
 import { requestDictationCapture } from '../utils/dictationCapture';
+import { copyText as copyToClipboard } from '../utils/copyText';
 import {
   loadTranscriptions,
   TRANSCRIPTIONS_KEY,
@@ -67,8 +68,20 @@ export default function TranscriptionsPage() {
     const handler = () => {
       setTranscriptions(loadTranscriptions());
     };
+    const storageHandler = (event) => {
+      if (event.key !== TRANSCRIPTIONS_KEY) return;
+      const next = loadTranscriptions();
+      setTranscriptions(next);
+      setSelectedId((current) =>
+        current != null && next.some((entry) => entry.id === current) ? current : null,
+      );
+    };
     window.addEventListener(TRANSCRIPTION_EVENT, handler);
-    return () => window.removeEventListener(TRANSCRIPTION_EVENT, handler);
+    window.addEventListener('storage', storageHandler);
+    return () => {
+      window.removeEventListener(TRANSCRIPTION_EVENT, handler);
+      window.removeEventListener('storage', storageHandler);
+    };
   }, []);
 
   const filtered = useMemo(() => {
@@ -84,12 +97,11 @@ export default function TranscriptionsPage() {
     [transcriptions, selectedId],
   );
 
-  const copyText = useCallback(
-    (text) => {
-      copyText(text).then(
-        () => toast.success(t('transcriptions.copied')),
-        () => toast.error(t('transcriptions.copy_failed')),
-      );
+  const handleCopy = useCallback(
+    async (text) => {
+      const copied = await copyToClipboard(text);
+      if (copied) toast.success(t('transcriptions.copied'));
+      else toast.error(t('transcriptions.copy_failed'));
     },
     [t],
   );
@@ -120,7 +132,9 @@ export default function TranscriptionsPage() {
     a.href = url;
     a.download = `transcriptions_${new Date().toISOString().slice(0, 10)}.txt`;
     a.click();
-    URL.revokeObjectURL(url);
+    // Let the browser start the download before releasing the Blob URL. An
+    // immediate revoke can produce an empty file in WebKit and some webviews.
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
     toast.success(t('transcriptions.exported'));
   }, [transcriptions]);
 
@@ -232,12 +246,20 @@ export default function TranscriptionsPage() {
               <div
                 key={t.id}
                 role="listitem"
+                tabIndex={0}
+                aria-selected={selectedId === t.id}
                 className={`py-[10px] px-[12px] bg-bg-elev-1 [border:1px_solid_var(--color-border)] rounded-[var(--radius-lg)] cursor-pointer [transition:border-color_0.15s,box-shadow_0.15s] hover:[border-color:var(--color-border-strong)] ${
                   selectedId === t.id
                     ? '[border-color:var(--color-brand)] [box-shadow:0_0_0_1px_var(--color-brand-glow)]'
                     : ''
                 }`}
                 onClick={() => setSelectedId(t.id)}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    setSelectedId(t.id);
+                  }
+                }}
               >
                 <div className="txn-item__text mb-[6px] text-[var(--text-sm)] leading-[1.5] text-fg [word-break:break-word]">
                   {t.text.length > 120 ? t.text.slice(0, 120) + '…' : t.text}
@@ -270,7 +292,7 @@ export default function TranscriptionsPage() {
                 {new Date(selected.timestamp).toLocaleString()}
               </span>
               <div className="txn-detail__actions flex gap-[4px]">
-                <Button size="sm" variant="ghost" onClick={() => copyText(selected.text)}>
+                <Button size="sm" variant="ghost" onClick={() => handleCopy(selected.text)}>
                   <Copy size={12} /> {t('transcriptions.copy')}
                 </Button>
                 <Button size="sm" variant="ghost" onClick={() => deleteEntry(selected.id)}>

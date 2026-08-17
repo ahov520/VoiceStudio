@@ -222,7 +222,6 @@ export default function VoiceProfile({ voiceId, onBack, onOpenProject, onDeleted
       fd.append('postprocess_output', true);
       const res = await generateSpeech(fd);
       const blob = await res.blob();
-      if (testAudioUrl && testAudioUrl.startsWith('blob:')) URL.revokeObjectURL(testAudioUrl);
       const url = URL.createObjectURL(blob);
       setTestAudioUrl(url);
       // Playback (and autoplay) is handled by the shared WaveformPlayer below.

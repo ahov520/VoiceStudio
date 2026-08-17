@@ -1051,6 +1051,8 @@
     "empty_tauri": "无 Tauri 日志可用。仅在桌面 Shell 中运行。",
     "empty_backend": "运行时日志为空。后端记录活动后将显示在此处。",
     "title": "日志",
+    "notifications": "通知",
+    "notifications_count": "通知（{{count}}）",
     "source_backend": "后端",
     "source_frontend": "前端",
     "source_tauri": "Tauri",

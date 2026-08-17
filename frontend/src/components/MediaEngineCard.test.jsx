@@ -1,6 +1,6 @@
 import React from 'react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 
 vi.mock('../api/client', () => ({
   apiJson: vi.fn(),
@@ -25,6 +25,10 @@ describe('MediaEngineCard — invisible-by-default media engine', () => {
     apiFetch.mockResolvedValue({ ok: true, json: async () => ({}) });
   });
 
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   it('renders NOTHING when the media engine is resolved (the ideal outcome)', async () => {
     apiJson.mockResolvedValue(statusWith(true));
     const { container } = render(<MediaEngineCard />);
@@ -42,6 +46,27 @@ describe('MediaEngineCard — invisible-by-default media engine', () => {
     // No requirements-style card, no mention of package managers.
     expect(screen.queryByTestId('media-engine-card')).not.toBeInTheDocument();
     expect(document.body.textContent).not.toMatch(/brew|apt|choco/i);
+  });
+
+  it('keeps polling while acquisition is idle so delayed failures become actionable', async () => {
+    vi.useFakeTimers();
+    apiJson
+      .mockResolvedValueOnce(statusWith(false, { state: 'idle', progress: 0, error: null }))
+      .mockResolvedValueOnce(
+        statusWith(false, { state: 'error', progress: 0, error: 'download unavailable' }),
+      );
+
+    render(<MediaEngineCard />);
+    await act(async () => {});
+    expect(screen.getByTestId('media-engine-progress')).toBeInTheDocument();
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1500);
+    });
+
+    expect(screen.getByTestId('media-engine-card')).toBeInTheDocument();
+    expect(screen.getByTestId('media-engine-error')).toHaveTextContent('download unavailable');
+    expect(apiJson).toHaveBeenCalledTimes(2);
   });
 
   it('shows the actionable failure card only when acquisition failed', async () => {

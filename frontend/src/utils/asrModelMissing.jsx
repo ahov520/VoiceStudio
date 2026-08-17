@@ -48,6 +48,12 @@ function installPercent(event) {
 export async function installRecommendedAsr(payload, { onProgress, signal } = {}) {
   const rec = payload?.recommended;
   if (!rec?.repo_id) throw new Error(i18next.t('asr_missing.message'));
+  // A caller may cancel while the confirmation UI is closing, before this
+  // async function gets its turn. Do not open a stream or queue a multi-GB
+  // download after the user has already withdrawn the request.
+  if (signal?.aborted) {
+    throw new DOMException('Model installation cancelled', 'AbortError');
+  }
 
   let settled = false;
   let pollId = null;

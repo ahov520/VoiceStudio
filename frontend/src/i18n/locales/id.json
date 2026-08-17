@@ -809,6 +809,8 @@
     "empty_tauri": "Tidak ada log Tauri yang tersedia. Berjalan di shell desktop saja.",
     "empty_backend": "Log waktu proses kosong. Aktivitas akan muncul di sini saat backend mencatatnya.",
     "title": "Log",
+    "notifications": "Notifikasi",
+    "notifications_count": "Notifikasi ({{count}})",
     "source_backend": "Bagian belakang",
     "source_frontend": "Bagian depan",
     "source_tauri": "Tauri",

@@ -1,6 +1,7 @@
 """Phase 2.1 — persist task queue. Round-trip tests for core/job_store."""
 import os
 import time
+from concurrent.futures import ThreadPoolExecutor
 
 os.environ.setdefault("OMNIVOICE_DISABLE_FILE_LOG", "1")
 
@@ -35,10 +36,13 @@ def test_create_mark_done_round_trip():
     job_store.mark_running(jid)
     assert job_store.get(jid)["status"] == "running"
 
+    job_store.update_progress(jid, 0.4, "generating")
     job_store.mark_done(jid)
     done = job_store.get(jid)
     assert done["status"] == "done"
     assert done["finished_at"] is not None
+    assert done["progress"] == 1.0
+    assert done["stage"] == "done"
 
 
 def test_mark_failed_carries_error():
@@ -48,6 +52,17 @@ def test_mark_failed_carries_error():
     row = job_store.get(jid)
     assert row["status"] == "failed"
     assert row["error"] == "something broke"
+    assert row["stage"] == "failed"
+
+
+def test_status_update_logs_and_reraises_db_failure(monkeypatch, caplog):
+    def fail(*args, **kwargs):
+        raise RuntimeError("db unavailable")
+
+    monkeypatch.setattr(job_store, "db_conn", fail)
+    with pytest.raises(RuntimeError, match="db unavailable"):
+        job_store.mark_running("missing")
+    assert "Task status persistence failed" in caplog.text
 
 
 # ── Events ─────────────────────────────────────────────────────────────────
@@ -62,6 +77,16 @@ def test_append_event_assigns_monotonic_seq():
     assert (s1, s2, s3) == (1, 2, 3)
 
 
+def test_append_event_serializes_concurrent_sequence_allocation():
+    jid = _unique_id("concurrent")
+    job_store.create(jid, type="x")
+    with ThreadPoolExecutor(max_workers=8) as pool:
+        seqs = list(pool.map(lambda i: job_store.append_event(jid, f"data: {i}\n\n"), range(40)))
+
+    assert sorted(seqs) == list(range(1, 41))
+    assert len(job_store.events_since(jid)) == 40
+
+
 def test_events_since_filters():
     jid = _unique_id()
     job_store.create(jid, type="x")
@@ -74,6 +99,27 @@ def test_events_since_filters():
     tail = job_store.events_since(jid, after_seq=3)
     assert [e["seq"] for e in tail] == [4, 5]
     assert all(e["payload"] for e in tail)
+
+
+def test_events_since_normalizes_invalid_cursor():
+    jid = _unique_id("cursor")
+    job_store.create(jid, type="x")
+    job_store.append_event(jid, "data: first\n\n")
+
+    assert [e["seq"] for e in job_store.events_since(jid, after_seq="invalid")] == [1]
+    assert [e["seq"] for e in job_store.events_since(jid, after_seq=-10)] == [1]
+
+
+def test_query_limits_are_bounded_for_direct_callers():
+    jid = _unique_id("bounded")
+    job_store.create(jid, type="x")
+    for i in range(5):
+        job_store.append_event(jid, f"data: {i}\n\n")
+
+    # Negative LIMIT has special unbounded semantics in SQLite; callers must
+    # never be able to trigger that accidentally.
+    assert len(job_store.events_since(jid, limit=0)) == 1
+    assert len(job_store.list_jobs(limit=0)) == 1
 
 
 def test_events_respect_per_job_cap():
@@ -122,6 +168,7 @@ def test_sweep_orphans_flips_running_to_failed():
 
     orphan = job_store.get(jid_orphan)
     assert orphan["status"] == "failed"
+    assert orphan["stage"] == "failed"
     assert "interrupted" in orphan["error"].lower()
 
     done = job_store.get(jid_done)

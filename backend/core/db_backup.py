@@ -31,6 +31,8 @@ import time
 
 logger = logging.getLogger("omnivoice.db.backup")
 
+_SQLITE_BUSY_TIMEOUT_MS = 30_000
+
 #: Keep this many snapshots; older ones are pruned after each new snapshot.
 KEEP_BACKUPS = 3
 
@@ -140,9 +142,11 @@ def snapshot_before_migration(db_path: str, version: str) -> str | None:
     safe_version = _sanitize_version(version)
     target = f"{db_path}.backup-{safe_version}-{_next_counter(db_path, safe_version)}"
     tmp = f"{target}.part-{os.getpid()}"
-    src = sqlite3.connect(db_path)
+    src = sqlite3.connect(db_path, timeout=_SQLITE_BUSY_TIMEOUT_MS / 1000)
+    src.execute(f"PRAGMA busy_timeout={_SQLITE_BUSY_TIMEOUT_MS}")
     try:
-        dst = sqlite3.connect(tmp)
+        dst = sqlite3.connect(tmp, timeout=_SQLITE_BUSY_TIMEOUT_MS / 1000)
+        dst.execute(f"PRAGMA busy_timeout={_SQLITE_BUSY_TIMEOUT_MS}")
         try:
             # Online backup: consistent snapshot including WAL contents.
             src.backup(dst)

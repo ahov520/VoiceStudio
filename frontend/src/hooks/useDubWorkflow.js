@@ -58,6 +58,21 @@ export function isExpiredDubJobError(err) {
  */
 export const TRANSLATE_BATCH_SIZE = 10;
 
+/** Bind a one-shot abort handler and return an idempotent unbind function. */
+export function bindAbortHandler(signal, handler) {
+  if (signal.aborted) {
+    handler();
+    return () => {};
+  }
+  let bound = true;
+  signal.addEventListener('abort', handler, { once: true });
+  return () => {
+    if (!bound) return;
+    bound = false;
+    signal.removeEventListener('abort', handler);
+  };
+}
+
 /**
  * Encapsulates the entire dub pipeline workflow:
  *   upload → prep → transcribe → translate → generate → export
@@ -263,10 +278,20 @@ export default function useDubWorkflow({
           } catch {}
         };
         const onAbortSignal = () => {
-          close();
-          reject(Object.assign(new Error('aborted'), { name: 'AbortError' }));
+          settleReject(Object.assign(new Error('aborted'), { name: 'AbortError' }));
         };
-        ctrl.signal.addEventListener('abort', onAbortSignal, { once: true });
+        let unbindAbort = () => {};
+        const settleResolve = (value) => {
+          close();
+          unbindAbort();
+          resolve(value);
+        };
+        const settleReject = (error) => {
+          close();
+          unbindAbort();
+          reject(error);
+        };
+        unbindAbort = bindAbortHandler(ctrl.signal, onAbortSignal);
 
         evt.addEventListener('start', () => {});
         evt.addEventListener('segments', (e) => {
@@ -317,14 +342,10 @@ export default function useDubWorkflow({
           }
         });
         evt.addEventListener('done', () => {
-          close();
-          ctrl.signal.removeEventListener('abort', onAbortSignal);
-          resolve();
+          settleResolve();
         });
         evt.addEventListener('aborted', () => {
-          close();
-          ctrl.signal.removeEventListener('abort', onAbortSignal);
-          reject(Object.assign(new Error('aborted'), { name: 'AbortError' }));
+          settleReject(Object.assign(new Error('aborted'), { name: 'AbortError' }));
         });
         evt.addEventListener('error', (e) => {
           // A named `error` event carries the real cause in `data.detail`. Latch
@@ -335,13 +356,12 @@ export default function useDubWorkflow({
             const m = e.data ? JSON.parse(e.data) : null;
             if (m && m.detail) {
               lastErrorDetail = m.detail;
-              close();
               // Typed "no ASR model installed" preflight (TTS-only install):
               // tag the rejection so the catch sites can render the one-click
               // download CTA instead of the generic report toast.
               const err = new Error(m.detail);
               if (m.error === 'asr_model_missing') err.asrModelMissing = m;
-              reject(err);
+              settleReject(err);
               return;
             }
           } catch {
@@ -351,16 +371,15 @@ export default function useDubWorkflow({
           // If we already saw a structured error, surface its cause, not the
           // generic message.
           if (lastErrorDetail) {
-            close();
-            reject(new Error(lastErrorDetail));
+            settleReject(new Error(lastErrorDetail));
             return;
           }
           if (gotFinal) {
-            close();
-            resolve();
+            settleResolve();
             return;
           }
           close();
+          unbindAbort();
           // The stream died with NO terminal event, which the backend contract
           // forbids — so the backend PROCESS went away (on small GPUs, a VRAM
           // abort while loading ASR is the usual trigger). Ask the shell's crash
@@ -389,10 +408,20 @@ export default function useDubWorkflow({
           } catch {}
         };
         const onAbort = () => {
-          close();
-          reject(Object.assign(new Error('aborted'), { name: 'AbortError' }));
+          settleReject(Object.assign(new Error('aborted'), { name: 'AbortError' }));
         };
-        ctrl.signal.addEventListener('abort', onAbort, { once: true });
+        let unbindAbort = () => {};
+        const settleResolve = (value) => {
+          close();
+          unbindAbort();
+          resolve(value);
+        };
+        const settleReject = (error) => {
+          close();
+          unbindAbort();
+          reject(error);
+        };
+        unbindAbort = bindAbortHandler(ctrl.signal, onAbort);
         let lastData = null;
         evt.onmessage = (e) => {
           if (!e.data) return;
@@ -480,13 +509,9 @@ export default function useDubWorkflow({
               });
               break;
             case 'ready':
-              close();
-              ctrl.signal.removeEventListener('abort', onAbort);
-              resolve(m);
+              settleResolve(m);
               return;
             case 'error': {
-              close();
-              ctrl.signal.removeEventListener('abort', onAbort);
               // plan-04 (#131): the backend now always sends a non-empty reason;
               // capture the structured failure so the UI can show a hint + docs link
               // + copyable diagnostic instead of a bare "unknown error".
@@ -499,13 +524,11 @@ export default function useDubWorkflow({
                 docsTopic: m.docs_topic,
                 diagnostic: m.diagnostic,
               });
-              reject(new Error(`${m.stage || 'prep'}: ${reason}`));
+              settleReject(new Error(`${m.stage || 'prep'}: ${reason}`));
               return;
             }
             case 'cancelled':
-              close();
-              ctrl.signal.removeEventListener('abort', onAbort);
-              reject(Object.assign(new Error('aborted'), { name: 'AbortError' }));
+              settleReject(Object.assign(new Error('aborted'), { name: 'AbortError' }));
               return;
             default:
               break;

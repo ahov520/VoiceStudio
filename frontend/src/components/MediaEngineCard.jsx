@@ -35,12 +35,13 @@ export default function MediaEngineCard() {
     refresh();
   }, [refresh]);
 
-  const acquiring = status?.ops?.acquire?.state === 'running';
+  const acquireState = status?.ops?.acquire?.state;
+  const awaitingAcquire = !status?.ready && (acquireState === 'idle' || acquireState === 'running');
   useEffect(() => {
-    if (!acquiring) return undefined;
+    if (!awaitingAcquire) return undefined;
     const iv = setInterval(refresh, 1500);
     return () => clearInterval(iv);
-  }, [acquiring, refresh]);
+  }, [awaitingAcquire, refresh]);
 
   const post = async (path, body) => {
     setBusy(true);

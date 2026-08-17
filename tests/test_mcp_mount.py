@@ -5,6 +5,7 @@ torch — these run locally). The mount-on-main check imports `main` and is
 validated in CI (local torch/Triton segfault on main-importing tests).
 """
 import asyncio
+import json
 import os
 
 os.environ.setdefault("OMNIVOICE_MODEL", "test")
@@ -13,6 +14,17 @@ os.environ.setdefault("OMNIVOICE_DISABLE_FILE_LOG", "1")
 import pytest
 
 mcp_pkg = pytest.importorskip("mcp")  # skip cleanly if the optional dep is absent
+
+
+def test_mcp_json_text_is_valid_json_for_api_payloads():
+    from mcp_server import _json_text
+
+    payload = [{"name": "O'Brien", "profile_id": None, "label": "Voice\nOne"}]
+    encoded = _json_text(payload)
+
+    assert json.loads(encoded) == payload
+    assert "None" not in encoded
+    assert "O'Brien" in encoded
 
 
 def test_server_builds_with_expected_tools():

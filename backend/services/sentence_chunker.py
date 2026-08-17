@@ -355,6 +355,12 @@ class SentenceChunker:
           behaviour where single-word utterances stay buffered until
           ``flush()``.
         """
+        # Normalize line boundaries before the streaming state machine sees
+        # them.  `_split_sentences` also normalizes newlines, but doing it only
+        # there leaves `_buffer` unchanged and prevents the emitted offsets
+        # from matching the carry retained below.
+        had_line_break = bool(re.search(r"\r\n?|\n", token))
+        token = re.sub(r"\r\n?|\n", " ", token)
         self._buffer += token
 
         # Aggressive first-clause flush: when enabled, emit the first clause
@@ -372,7 +378,10 @@ class SentenceChunker:
             return self._maybe_short_flush()
 
         sentences = _split_sentences(
-            self._buffer, min_sentence_len=self._min_sentence_len
+            self._buffer,
+            # A physical line break is an explicit author boundary. Do not
+            # merge a short completed line into the following one.
+            min_sentence_len=0 if had_line_break else self._min_sentence_len,
         )
 
         if len(sentences) <= 1:
@@ -386,7 +395,11 @@ class SentenceChunker:
 
         # Keep the last (potentially incomplete) sentence in the buffer
         last_text = sentences[-1][0] if sentences else ""
-        self._buffer = last_text
+        # `_split_sentences` strips each fragment. Preserve a trailing token
+        # boundary from the source buffer so the next streamed token cannot
+        # turn "This " + "is" into "Thisis".
+        trailing_space = " " if self._buffer[-1:].isspace() else ""
+        self._buffer = last_text + trailing_space
 
         if result:
             # A standard-path emission ends the "first flush" window too:

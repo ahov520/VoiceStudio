@@ -55,4 +55,10 @@ describe('loopWindow', () => {
     expect(loopEnd).toBeLessThanOrEqual(8);
     expect(loopEnd).toBeGreaterThan(loopStart);
   });
+
+  it('backs up from an exact end-of-buffer click', () => {
+    const { loopStart, loopEnd } = loopWindow(8, 8, 8);
+    expect(loopStart).toBeLessThan(loopEnd);
+    expect(loopEnd).toBe(8);
+  });
 });

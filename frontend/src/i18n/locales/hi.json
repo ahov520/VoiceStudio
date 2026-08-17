@@ -809,6 +809,8 @@
     "empty_tauri": "कोई टौरी लॉग उपलब्ध नहीं है. केवल डेस्कटॉप शेल में चलता है.",
     "empty_backend": "रनटाइम लॉग खाली है. जैसे ही बैकएंड इसे लॉग करेगा गतिविधि यहां दिखाई देगी।",
     "title": "लॉग",
+    "notifications": "सूचनाएं",
+    "notifications_count": "सूचनाएं ({{count}})",
     "source_backend": "बैकएंड",
     "source_frontend": "अग्रभाग",
     "source_tauri": "टौरी",

@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { useAppStore } from '../store';
 import { generateSpeech } from '../api/generate';
 import { pickDesignSeed } from '../utils/seed';
@@ -66,21 +66,36 @@ export default function useTTS({ selectedProfile, setSelectedProfile, loadHistor
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationTime, setGenerationTime] = useState(0);
   const timerRef = useRef(null);
+  const generatingRef = useRef(false);
+  const refAudioSeq = useRef(0);
   const textAreaRef = useRef(null);
+
+  useEffect(
+    () => () => {
+      refAudioSeq.current += 1;
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    },
+    [],
+  );
 
   const ingestRefAudio = useCallback(
     async (file) => {
+      const seq = ++refAudioSeq.current;
       if (!file) {
         setRefAudio(null);
+        setPendingTrimFile(null);
         return;
       }
       const dur = await probeAudioDuration(file);
+      if (seq !== refAudioSeq.current) return;
       if (dur && dur > CLONE_MAX_SECONDS) {
         setPendingTrimFile(file);
         setSelectedProfile(null);
         toast(t('tts_errors.trim_hint', { duration: dur.toFixed(1), max: CLONE_MAX_SECONDS }));
         return;
       }
+      setPendingTrimFile(null);
       setRefAudio(file);
       setSelectedProfile(null);
     },
@@ -110,9 +125,14 @@ export default function useTTS({ selectedProfile, setSelectedProfile, loadHistor
   );
 
   const handleGenerate = useCallback(async () => {
+    // State updates are not synchronous, so a fast double click can enter this
+    // callback twice before isGenerating disables the button. Claim the job
+    // synchronously to prevent duplicate renders and conflicting timers.
+    if (generatingRef.current) return;
     if (!text.trim()) return toast.error(t('tts_errors.enter_text'));
     if (defineMethod === 'audio' && !refAudio && !selectedProfile)
       return toast.error(t('tts_errors.upload_or_select'));
+    generatingRef.current = true;
     addBreadcrumb(`generate:start (${defineMethod})`);
     setIsGenerating(true);
     setGenerationTime(0);
@@ -376,8 +396,10 @@ export default function useTTS({ selectedProfile, setSelectedProfile, loadHistor
         toastErrorWithReport(t('tts_errors.error_prefix', { message: err.message }), err);
       }
     } finally {
+      generatingRef.current = false;
       if (abortTimer) clearTimeout(abortTimer);
       clearInterval(timerRef.current);
+      timerRef.current = null;
       setIsGenerating(false);
     }
   }, [

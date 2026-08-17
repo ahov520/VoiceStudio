@@ -136,6 +136,18 @@ function makeTrack(character = 'narrator', text = '') {
   };
 }
 
+export function storyPreviewUrls(tracks) {
+  return new Set(
+    tracks.map((track) => track.audioUrl).filter((url) => url?.startsWith('blob:')),
+  );
+}
+
+export function revokeRemovedStoryPreviewUrls(previous, next, revoke = URL.revokeObjectURL) {
+  for (const url of previous) {
+    if (!next.has(url)) revoke(url);
+  }
+}
+
 function genCastId() {
   const rnd = Math.random().toString(36).slice(2, 8);
   return `c_${rnd}`;
@@ -169,6 +181,33 @@ export default function StoriesEditor({ profiles = [] }) {
     },
     [setStoryTracks],
   );
+
+  // Preview URLs are ephemeral even though the surrounding project is
+  // persisted. Release URLs replaced by another preview/project, then release
+  // the remaining set when leaving Stories.
+  const previewUrlsRef = useRef(new Set());
+  const storiesMountedRef = useRef(true);
+  useEffect(() => {
+    const next = storyPreviewUrls(tracks);
+    revokeRemovedStoryPreviewUrls(previewUrlsRef.current, next);
+    previewUrlsRef.current = next;
+  }, [tracks]);
+  useEffect(() => {
+    storiesMountedRef.current = true;
+    return () => {
+      storiesMountedRef.current = false;
+      for (const url of previewUrlsRef.current) URL.revokeObjectURL(url);
+      previewUrlsRef.current.clear();
+      const current = useAppStore.getState().storyTracks;
+      setStoryTracks(
+        current.map((track) =>
+          track.audioUrl?.startsWith('blob:')
+            ? { ...track, audioUrl: null, generating: false }
+            : track,
+        ),
+      );
+    };
+  }, [setStoryTracks]);
 
   // Reseed the id counter from persisted tracks so new lines never collide.
   useEffect(() => {
@@ -473,12 +512,7 @@ export default function StoriesEditor({ profiles = [] }) {
   const addTrack = useCallback(() => setTracks((prev) => [...prev, makeTrack()]), [setTracks]);
   const removeTrack = useCallback(
     (id) =>
-      setTracks((prev) =>
-        prev.filter((tk) => {
-          if (tk.id === id && tk.audioUrl) URL.revokeObjectURL(tk.audioUrl); // free the preview blob
-          return tk.id !== id;
-        }),
-      ),
+      setTracks((prev) => prev.filter((tk) => tk.id !== id)),
     [setTracks],
   );
   const updateTrack = useCallback(
@@ -512,6 +546,13 @@ export default function StoriesEditor({ profiles = [] }) {
         try {
           const blob = await fetchChunkBlob(raw, pid, spd);
           const url = URL.createObjectURL(blob);
+          if (
+            !storiesMountedRef.current ||
+            !useAppStore.getState().storyTracks.some((tk) => tk.id === track.id)
+          ) {
+            URL.revokeObjectURL(url);
+            return;
+          }
           setTracks((prev) =>
             prev.map((tk) =>
               tk.id === track.id ? { ...tk, audioUrl: url, generating: false } : tk,

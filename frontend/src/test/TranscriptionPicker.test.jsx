@@ -87,4 +87,13 @@ describe('TranscriptionPicker', () => {
     fireEvent(window, new CustomEvent(TRANSCRIPTION_EVENT));
     expect(screen.getByText('live add')).toBeInTheDocument();
   });
+
+  it('refreshes when another window updates transcription storage', () => {
+    render(<TranscriptionPicker open onClose={vi.fn()} onPick={vi.fn()} />);
+    seed([{ id: 10, text: 'cross-window add', timestamp: new Date().toISOString() }]);
+
+    fireEvent(window, new StorageEvent('storage', { key: TRANSCRIPTIONS_KEY }));
+
+    expect(screen.getByText('cross-window add')).toBeInTheDocument();
+  });
 });

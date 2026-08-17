@@ -10,6 +10,7 @@ import {
   getDramaProject,
   deleteDramaProject,
 } from '../api/drama';
+import { copyText } from '../utils/copyText';
 
 // Keep the delivery contract aligned with backend/services/drama_director.py.
 const EMOTION_DELIVERY = {
@@ -122,12 +123,9 @@ export default function DramaTab({ profiles = [] }) {
   }, [scriptText, projectName, script, cast, lines, t, refreshProjects]);
 
   const onCopy = useCallback(async () => {
-    try {
-      await navigator.clipboard.writeText(scriptText);
-      toast.success(t('drama.copied'));
-    } catch {
-      toast.error(t('drama.copy_failed'));
-    }
+    const copied = await copyText(scriptText);
+    if (copied) toast.success(t('drama.copied'));
+    else toast.error(t('drama.copy_failed'));
   }, [scriptText, t]);
 
   const onLoad = useCallback(async (id) => {

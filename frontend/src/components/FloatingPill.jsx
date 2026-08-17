@@ -48,8 +48,9 @@ export default function FloatingPill() {
   const dismissPill = useAppStore((s) => s.dismissPill);
 
   const [elapsed, setElapsed] = useState(0);
-  const [exiting, setExiting] = useState(false);
+  const [exitingStartedAt, setExitingStartedAt] = useState(null);
   const timerRef = useRef(null);
+  const dismissTimerRef = useRef(null);
 
   // Elapsed timer
   useEffect(() => {
@@ -63,12 +64,30 @@ export default function FloatingPill() {
     return () => clearInterval(timerRef.current);
   }, [startedAt, stage]);
 
+  // A new operation can start during the exit animation. In that case the
+  // pending callback belongs to the old pill and must not dismiss the new one.
+  useEffect(() => {
+    if (dismissTimerRef.current) {
+      clearTimeout(dismissTimerRef.current);
+      dismissTimerRef.current = null;
+    }
+  }, [startedAt]);
+
+  useEffect(
+    () => () => {
+      if (dismissTimerRef.current) clearTimeout(dismissTimerRef.current);
+    },
+    [],
+  );
+
   // Handle dismiss with exit animation
   const handleDismiss = () => {
-    setExiting(true);
-    setTimeout(() => {
-      setExiting(false);
-      dismissPill();
+    const dismissedStartedAt = startedAt;
+    setExitingStartedAt(dismissedStartedAt);
+    dismissTimerRef.current = setTimeout(() => {
+      dismissTimerRef.current = null;
+      setExitingStartedAt(null);
+      if (useAppStore.getState().startedAt === dismissedStartedAt) dismissPill();
     }, 250);
   };
 
@@ -87,7 +106,7 @@ export default function FloatingPill() {
     <div
       className={[
         'floating-pill',
-        exiting ? 'floating-pill--exiting' : '',
+        exitingStartedAt === startedAt ? 'floating-pill--exiting' : '',
         isDone ? 'floating-pill--done' : '',
         isError ? 'floating-pill--error' : '',
       ]

@@ -1,6 +1,7 @@
 import re
 import sqlite3
 import logging
+import time
 from contextlib import contextmanager
 from core.config import DB_PATH
 from core import db_backup
@@ -8,12 +9,61 @@ from core.version import APP_VERSION
 
 logger = logging.getLogger("omnivoice.db")
 
+SQLITE_BUSY_TIMEOUT_MS = 5_000
+_LOCK_RETRY_DELAYS = (0.1, 0.25, 0.5)
+
 _IDENT_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 _TYPE_RE = re.compile(r"^[A-Za-z0-9_ '\"\(\)\-\.]+$")
 
 
+def _is_locked_error(exc: BaseException) -> bool:
+    return (
+        isinstance(exc, sqlite3.OperationalError)
+        and "database is locked" in str(exc).lower()
+    )
+
+
+class _RetryingConnection(sqlite3.Connection):
+    """Retry transient lock failures after SQLite's busy timeout expires."""
+
+    def _retry_locked(self, operation, *args, **kwargs):
+        for attempt, delay in enumerate((*_LOCK_RETRY_DELAYS, None), start=1):
+            try:
+                return operation(*args, **kwargs)
+            except sqlite3.OperationalError as exc:
+                if not _is_locked_error(exc) or delay is None:
+                    raise
+                logger.warning(
+                    "SQLite lock contention; retrying transaction operation",
+                    extra={"operation": operation.__name__, "attempt": attempt},
+                )
+                time.sleep(delay)
+
+    def execute(self, *args, **kwargs):
+        return self._retry_locked(super().execute, *args, **kwargs)
+
+    def executemany(self, *args, **kwargs):
+        return self._retry_locked(super().executemany, *args, **kwargs)
+
+    def executescript(self, *args, **kwargs):
+        return self._retry_locked(super().executescript, *args, **kwargs)
+
+    def commit(self):
+        return self._retry_locked(super().commit)
+
+
+def _connect(path: str) -> sqlite3.Connection:
+    conn = sqlite3.connect(
+        path,
+        timeout=SQLITE_BUSY_TIMEOUT_MS / 1000,
+        factory=_RetryingConnection,
+    )
+    conn.execute(f"PRAGMA busy_timeout={SQLITE_BUSY_TIMEOUT_MS}")
+    return conn
+
+
 def get_db():
-    conn = sqlite3.connect(DB_PATH)
+    conn = _connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA journal_mode=WAL")
     conn.execute("PRAGMA foreign_keys=ON")
@@ -123,7 +173,9 @@ _BASE_SCHEMA = """
         updated_at REAL NOT NULL,
         finished_at REAL,
         error TEXT,
-        meta_json TEXT DEFAULT '{}'
+        meta_json TEXT DEFAULT '{}',
+        progress REAL DEFAULT 0,
+        stage TEXT DEFAULT ''
     );
     CREATE INDEX IF NOT EXISTS idx_jobs_status ON jobs(status);
     CREATE INDEX IF NOT EXISTS idx_jobs_project ON jobs(project_id);
@@ -344,7 +396,7 @@ def _reconcile_additive_columns(conn) -> None:
     canonical names/types/defaults come solely from ``_BASE_SCHEMA`` (developer
     controlled), so the ALTER is injection-safe.
     """
-    canon = sqlite3.connect(":memory:")
+    canon = _connect(":memory:")
     try:
         canon.executescript(_BASE_SCHEMA)
         _tables_sql = "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'"
@@ -445,7 +497,7 @@ def _stamped_revisions(db_path: str) -> set | None:
     """Revisions recorded in ``alembic_version`` (empty set = never stamped),
     or None when the DB can't be read."""
     try:
-        conn = sqlite3.connect(db_path)
+        conn = _connect(db_path)
         try:
             try:
                 return {r[0] for r in conn.execute("SELECT version_num FROM alembic_version")}

@@ -1,4 +1,4 @@
-import { apiJson, apiPost, apiFetch } from './client';
+import { apiJson, apiPost } from './client';
 
 export interface GalleryVoice {
   id: string;
@@ -22,13 +22,19 @@ export const listGalleryVoices = (params?: {
   limit?: number;
 }): Promise<GalleryVoice[]> => {
   const query = params
-    ? '?' + new URLSearchParams(params as Record<string, string>).toString()
+    ? (() => {
+        const defined = Object.entries(params).filter(([, value]) => value != null);
+        const encoded = new URLSearchParams(
+          defined as [string, string][],
+        ).toString();
+        return encoded ? `?${encoded}` : '';
+      })()
     : '';
   return apiJson(`/gallery/voices${query}`);
 };
 
 export const deleteGalleryVoice = (voiceId: string): Promise<{ success: boolean }> =>
-  apiFetch(`/gallery/voices/${voiceId}`, { method: 'DELETE' }).then((r) => r.json());
+  apiJson(`/gallery/voices/${encodeURIComponent(voiceId)}`, { method: 'DELETE' });
 
 export interface YoutubeSearchResult {
   title: string;
@@ -69,8 +75,9 @@ export const saveVoiceAsProfile = async (
   voiceId: string,
   profileName: string,
 ): Promise<{ profile_id: string; name: string }> => {
-  const url = `/gallery/voices/${voiceId}/save-as-profile?profile_name=${encodeURIComponent(profileName)}`;
+  const url = `/gallery/voices/${encodeURIComponent(voiceId)}/save-as-profile?profile_name=${encodeURIComponent(profileName)}`;
   return apiJson(url, { method: 'POST' });
 };
 
-export const previewVoiceUrl = (voiceId: string): string => `/gallery/voices/${voiceId}/preview`;
+export const previewVoiceUrl = (voiceId: string): string =>
+  `/gallery/voices/${encodeURIComponent(voiceId)}/preview`;

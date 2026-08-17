@@ -20,7 +20,7 @@
  * that work runs here — the same lie the resolved-answer rule exists to
  * prevent, in a place the user cannot even see it happen.
  */
-import React, { useCallback, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Cpu, Check, ChevronDown } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -85,6 +85,18 @@ export default function GpuTarget() {
       return !wasOpen;
     });
   }, []);
+
+  useEffect(() => {
+    if (!open) return undefined;
+
+    const closeOnEscape = (event) => {
+      if (event.key !== 'Escape') return;
+      setOpen(false);
+      buttonRef.current?.focus();
+    };
+    document.addEventListener('keydown', closeOnEscape);
+    return () => document.removeEventListener('keydown', closeOnEscape);
+  }, [open]);
 
   // The surface being rendered, not the machine — see OP_BY_MODE. Part of the
   // query key so switching tabs re-resolves instead of showing the previous
@@ -173,6 +185,8 @@ export default function GpuTarget() {
         onClick={toggle}
         title={reason || undefined}
         aria-label={t('gpu.picker', { defaultValue: 'Where jobs run' })}
+        aria-expanded={open}
+        aria-controls={open ? 'gpu-target-menu' : undefined}
         className="inline-flex items-center gap-1.5 rounded-[5px] border-0 bg-transparent px-2 py-1 text-xs [font-family:inherit] [color:inherit] cursor-pointer opacity-75 hover:bg-[color-mix(in_srgb,var(--chrome-fg)_8%,transparent)] hover:opacity-100"
       >
         <Cpu size={13} />
@@ -188,6 +202,7 @@ export default function GpuTarget() {
           <>
             <div className="fixed inset-0 z-[9998]" onClick={() => setOpen(false)} />
             <div
+              id="gpu-target-menu"
               data-slot="gpu-target-menu"
               style={{ top: anchor.top, right: anchor.right }}
               className={`fixed z-[9999] min-w-[240px] ${MENU_SURFACE}`}

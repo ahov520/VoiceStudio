@@ -6,6 +6,7 @@ lightweight — it only imports os, uuid, time, asyncio, logging,
 fastapi, and pydantic at module level.
 """
 import io
+import os
 import pytest
 # These tests exercise ASR-consumer mechanics and assume ASR weights are
 # installed - neutralize the no-ASR preflight (its own suite:
@@ -141,6 +142,17 @@ class TestListJobs:
         cancelled = client.get("/batch/jobs?status=cancelled").json()
         assert len(cancelled) == 1
 
+    def test_negative_limit_is_clamped(self, client, fake_video):
+        _enqueue(client, fake_video)
+        _enqueue(client, fake_video)
+        response = client.get("/batch/jobs?limit=-1")
+        assert response.status_code == 200
+        assert len(response.json()) == 1
+
+    def test_invalid_limit_is_rejected(self, client):
+        response = client.get("/batch/jobs?limit=many")
+        assert response.status_code == 422
+
 
 class TestGetJob:
     def test_not_found(self, client):
@@ -172,6 +184,18 @@ class TestCancelJob:
 
 
 class TestDeleteJob:
+    @pytest.mark.parametrize("status", ["queued", "running"])
+    def test_delete_active_job_requires_cancel(self, client, batch, fake_video, status):
+        r = _enqueue(client, fake_video).json()
+        job = batch._jobs[r["job_id"]]
+        job["status"] = status
+
+        resp = client.delete(f"/batch/jobs/{r['job_id']}")
+
+        assert resp.status_code == 409
+        assert r["job_id"] in batch._jobs
+        assert os.path.exists(job["video_path"])
+
     def test_delete_cancelled(self, client, fake_video):
         r = _enqueue(client, fake_video).json()
         client.post(f"/batch/jobs/{r['job_id']}/cancel")

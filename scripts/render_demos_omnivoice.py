@@ -337,9 +337,9 @@ def render_dictation(model, args):
 def update_manifest(args):
     """Update the existing manifest with rendered_by + rendered_at."""
     print("\n── Manifest ─────────────────────────────────────────")
-    mpath = SAMPLES_DIR / "demo" / "dubbing" / "manifest.json"
+    mpath = SAMPLES_DIR / "demo" / "manifest.json"
     if not mpath.exists():
-        print(f"  ! manifest not found at {mpath} — run scripts/build_dub_demo.sh first")
+        print(f"  ! manifest not found at {mpath} — run scripts/build_demos.sh first")
         return
     data = json.loads(mpath.read_text())
     data["rendered_by"] = f"omnivoice@{_git_sha()}"

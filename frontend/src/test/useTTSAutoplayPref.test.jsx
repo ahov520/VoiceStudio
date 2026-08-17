@@ -9,6 +9,7 @@ import {
   supportsStreamingPreview,
 } from '../utils/streamingTts';
 import { generateSpeech } from '../api/generate';
+import { probeAudioDuration } from '../utils/format';
 import toast from 'react-hot-toast';
 
 // #1032: Settings → Appearance "Auto-play preview" ("play the output as soon
@@ -47,6 +48,11 @@ vi.mock('../api/generate', async (importOriginal) => {
       };
     }),
   };
+});
+
+vi.mock('../utils/format', async (importOriginal) => {
+  const actual = await importOriginal();
+  return { ...actual, probeAudioDuration: vi.fn().mockResolvedValue(null) };
 });
 
 // Streaming renders in THIS process, so with a worker selected the classic
@@ -110,6 +116,66 @@ describe('useTTS auto-play pref (#1032)', () => {
     useAppStore.setState({ autoPlayPreview: false });
     await runGenerate();
     expect(playBlobAudio).not.toHaveBeenCalled();
+  });
+});
+
+describe('useTTS concurrent generation guard', () => {
+  it('starts only one render when generation is triggered twice before React rerenders', async () => {
+    useAppStore.setState({ autoPlayPreview: false });
+    vi.mocked(generateSpeech).mockClear();
+    let release;
+    const pending = new Promise((resolve) => {
+      release = resolve;
+    });
+    vi.mocked(generateSpeech).mockImplementationOnce(async () => {
+      await pending;
+      return {
+        body: { getReader: () => ({ read: async () => ({ done: true }) }) },
+        headers: { get: () => null },
+      };
+    });
+
+    const { result } = renderHook(() => useTTS(hookProps()));
+    let first;
+    await act(async () => {
+      first = result.current.handleGenerate();
+      const second = result.current.handleGenerate();
+      await second;
+    });
+
+    expect(generateSpeech).toHaveBeenCalledTimes(1);
+    release();
+    await act(async () => first);
+  });
+});
+
+describe('useTTS reference audio selection', () => {
+  it('ignores an older duration probe that resolves after the latest selection', async () => {
+    let resolveFirst;
+    vi.mocked(probeAudioDuration)
+      .mockImplementationOnce(() => new Promise((resolve) => (resolveFirst = resolve)))
+      .mockResolvedValueOnce(2);
+    const setSelectedProfile = vi.fn();
+    const { result } = renderHook(() => useTTS({ ...hookProps(), setSelectedProfile }));
+    const older = new File(['old'], 'old.wav', { type: 'audio/wav' });
+    const latest = new File(['new'], 'new.wav', { type: 'audio/wav' });
+
+    let olderRequest;
+    await act(async () => {
+      olderRequest = result.current.ingestRefAudio(older);
+      await result.current.ingestRefAudio(latest);
+    });
+    expect(result.current.refAudio).toBe(latest);
+
+    await act(async () => {
+      resolveFirst(60);
+      await olderRequest;
+    });
+
+    expect(result.current.refAudio).toBe(latest);
+    expect(result.current.pendingTrimFile).toBeNull();
+    expect(setSelectedProfile).toHaveBeenCalledTimes(1);
+    expect(toast).not.toHaveBeenCalled();
   });
 });
 

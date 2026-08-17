@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Volume2, Play, Square, Loader, X, Mic } from 'lucide-react';
 import { generateSpeech } from '../api/generate';
@@ -30,6 +30,23 @@ export default function VoicePreview({
   const [audioUrl, setAudioUrl] = useState(null);
   const [loading, setLoading] = useState(false);
   const abortRef = useRef(null);
+  const requestSeqRef = useRef(0);
+
+  const invalidateGeneration = useCallback(() => {
+    requestSeqRef.current += 1;
+    abortRef.current?.abort();
+    abortRef.current = null;
+  }, []);
+
+  const cancelGeneration = useCallback(() => {
+    invalidateGeneration();
+    setLoading(false);
+  }, [invalidateGeneration]);
+
+  useEffect(() => {
+    if (!open) cancelGeneration();
+    return invalidateGeneration;
+  }, [open, cancelGeneration, invalidateGeneration]);
 
   // Sync initialProfileId when it changes (e.g. clicking preview on a different profile)
   React.useEffect(() => {
@@ -38,6 +55,8 @@ export default function VoicePreview({
 
   const handleGenerate = useCallback(async () => {
     if (!text.trim()) return;
+    abortRef.current?.abort();
+    const requestSeq = ++requestSeqRef.current;
     setLoading(true);
     setAudioUrl(null);
 
@@ -76,22 +95,25 @@ export default function VoicePreview({
       if (!res.ok) throw new Error(`TTS failed: ${res.status}`);
 
       const blob = await res.blob();
+      if (requestSeq !== requestSeqRef.current) return;
       const urls = await fileToMediaUrl(blob, null);
-      setAudioUrl(urls.audioUrl);
+      if (requestSeq === requestSeqRef.current) setAudioUrl(urls.audioUrl);
       // Playback + autoplay handled by the shared WaveformPlayer below.
     } catch (err) {
       if (err.name !== 'AbortError') {
         console.error('Preview generation failed:', err);
       }
     } finally {
-      setLoading(false);
+      if (requestSeq === requestSeqRef.current) {
+        abortRef.current = null;
+        setLoading(false);
+      }
     }
   }, [text, voiceId, profiles, fileToMediaUrl]);
 
   const handleStop = () => {
-    abortRef.current?.abort();
+    cancelGeneration();
     stopActivePlayback();
-    setLoading(false);
   };
 
   if (!open) return null;

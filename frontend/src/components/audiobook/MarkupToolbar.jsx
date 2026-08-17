@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   AudioLines,
   Bold,
@@ -30,6 +30,19 @@ const TAG_BTN =
  */
 export default function MarkupToolbar({ t, textareaRef, text, setText }) {
   const [reactionsOpen, setReactionsOpen] = useState(false);
+  const reactionsButtonRef = useRef(null);
+
+  useEffect(() => {
+    if (!reactionsOpen) return undefined;
+    const closeOnEscape = (event) => {
+      if (event.key !== 'Escape') return;
+      event.preventDefault();
+      setReactionsOpen(false);
+      reactionsButtonRef.current?.focus();
+    };
+    document.addEventListener('keydown', closeOnEscape);
+    return () => document.removeEventListener('keydown', closeOnEscape);
+  }, [reactionsOpen]);
 
   const focusCaret = (from, to) =>
     setTimeout(() => {
@@ -146,6 +159,7 @@ export default function MarkupToolbar({ t, textareaRef, text, setText }) {
         <SpellCheck size={11} /> {t('audiobook.insert_spell')}
       </button>
       <button
+        ref={reactionsButtonRef}
         type="button"
         className={PILL}
         onClick={() => setReactionsOpen((o) => !o)}

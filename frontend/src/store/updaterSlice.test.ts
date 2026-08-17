@@ -34,6 +34,18 @@ describe('updaterSlice', () => {
     expect(get().updateProgress).toBe(0);
   });
 
+  it('ignores invalid native progress without corrupting the current value', () => {
+    const { get } = harness();
+    get().setUpdateProgress(42);
+
+    get().setUpdateProgress(Number.NaN);
+    expect(get().updateStatus).toBe('downloading');
+    expect(get().updateProgress).toBe(42);
+
+    get().setUpdateProgress(Number.POSITIVE_INFINITY);
+    expect(get().updateProgress).toBe(42);
+  });
+
   it('ready pins 100; error sets status + message', () => {
     const { get } = harness();
     get().setUpdateReady();

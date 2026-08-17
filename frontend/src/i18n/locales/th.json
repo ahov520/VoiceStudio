@@ -809,6 +809,8 @@
     "empty_tauri": "ไม่มีบันทึก Tauri ทำงานในเชลล์เดสก์ท็อปเท่านั้น",
     "empty_backend": "บันทึกรันไทม์ว่างเปล่า กิจกรรมจะปรากฏที่นี่เมื่อแบ็กเอนด์บันทึก",
     "title": "บันทึก",
+    "notifications": "การแจ้งเตือน",
+    "notifications_count": "การแจ้งเตือน ({{count}})",
     "source_backend": "แบ็กเอนด์",
     "source_frontend": "ส่วนหน้า",
     "source_tauri": "ทอรี",

@@ -11,29 +11,38 @@
  * entirely (mic stays 'unknown', a11y stays true) so browser/dev mounts
  * no-op gracefully.
  */
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { checkMicrophone, checkAccessibility, inTauri } from '../utils/permissions';
 
 export default function usePermissions() {
   const available = inTauri();
   const [mic, setMic] = useState('unknown'); // granted | denied | prompt | unknown
   const [a11y, setA11y] = useState(true);
+  const mountedRef = useRef(false);
+  const probeSeqRef = useRef(0);
 
   const recheck = useCallback(async () => {
     if (!available) return;
+    const seq = ++probeSeqRef.current;
     const [micState, a11yState] = await Promise.all([checkMicrophone(), checkAccessibility()]);
+    if (!mountedRef.current || seq !== probeSeqRef.current) return;
     setMic(micState);
     setA11y(a11yState);
   }, [available]);
 
   useEffect(() => {
     if (!available) return undefined;
+    mountedRef.current = true;
     recheck();
     // Returning from System Settings refocuses the app window — refresh so
     // a just-flipped grant shows up without hunting for a Recheck button.
     const onFocus = () => recheck();
     window.addEventListener('focus', onFocus);
-    return () => window.removeEventListener('focus', onFocus);
+    return () => {
+      mountedRef.current = false;
+      probeSeqRef.current += 1;
+      window.removeEventListener('focus', onFocus);
+    };
   }, [available, recheck]);
 
   return { available, mic, a11y, recheck };

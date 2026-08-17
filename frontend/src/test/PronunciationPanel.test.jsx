@@ -223,6 +223,29 @@ describe('PronunciationPanel', () => {
     expect(screen.getByTestId('pron-test-out')).toHaveTextContent('NEWER');
   });
 
+  it('cancels obsolete preview work and the active request on unmount', async () => {
+    const signals = [];
+    apiJson.mockImplementation((path, opts) => {
+      if (path === '/pronunciation/test') {
+        signals.push(opts.signal);
+        return new Promise(() => {});
+      }
+      return Promise.resolve(ENTRIES);
+    });
+    const view = render(withI18n(<PronunciationPanel />));
+    const input = await screen.findByTestId('pron-test-input');
+
+    fireEvent.change(input, { target: { value: 'one' } });
+    await waitFor(() => expect(signals).toHaveLength(1));
+    fireEvent.change(input, { target: { value: 'one two' } });
+    expect(signals[0].aborted).toBe(true);
+    await waitFor(() => expect(signals).toHaveLength(2));
+    expect(signals[1].aborted).toBe(false);
+
+    view.unmount();
+    expect(signals[1].aborted).toBe(true);
+  });
+
   it('surfaces a preview failure instead of silently blanking', async () => {
     apiJson.mockImplementation((path) => {
       if (path === '/pronunciation/test') return Promise.reject(new Error('down'));

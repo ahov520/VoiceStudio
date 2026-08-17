@@ -546,6 +546,12 @@ async def enqueue_batch_job(
 @router.get("/batch/jobs")
 def list_batch_jobs(status: Optional[str] = None, limit: int = 50):
     """List batch jobs, optionally filtered by status."""
+    # Keep the response bounded for direct callers as well as HTTP clients.
+    # Negative Python slice bounds otherwise return nearly the entire queue.
+    try:
+        limit = max(1, min(500, int(limit)))
+    except (TypeError, ValueError) as exc:
+        raise HTTPException(400, "limit must be an integer") from exc
     jobs = list(_jobs.values())
     if status:
         if status == "active":
@@ -584,6 +590,11 @@ def delete_batch_job(job_id: str):
     job = _jobs.get(job_id)
     if not job:
         raise HTTPException(404, "Job not found")
+    if job["status"] in ("queued", "running"):
+        raise HTTPException(
+            409,
+            "Cancel the batch job before deleting it",
+        )
     if job.get("video_path"):
         try:
             unlink_if_present(job["video_path"])

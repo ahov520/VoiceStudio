@@ -809,6 +809,8 @@
     "empty_tauri": "沒有可用的 Tauri 日誌。僅在桌面 shell 中運行。",
     "empty_backend": "運行時日誌為空。當後端記錄活動時，活動將顯示在此。",
     "title": "紀錄",
+    "notifications": "通知",
+    "notifications_count": "通知（{{count}}）",
     "source_backend": "後端",
     "source_frontend": "前端",
     "source_tauri": "金牛座",

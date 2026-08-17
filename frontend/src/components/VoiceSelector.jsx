@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Play, Loader, ExternalLink, Plus, Star } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'react-hot-toast';
@@ -99,11 +99,19 @@ export default function VoiceSelector({
   const [rawQuery, setRawQuery] = useState('');
   const searchQuery = useDebounced(rawQuery.trim(), 200);
   const [materializing, setMaterializing] = useState(false);
+  const materializeSeq = useRef(0);
   // Optimistic row for a voice we just materialized, so the trigger shows its
   // name immediately instead of a ghost "not found" flash while the real
   // profiles list catches up (the backend emits a `profiles` realtime event on
   // /use, which triggers loadProfiles app-wide — no prop plumbing needed).
   const [justMaterialized, setJustMaterialized] = useState(null);
+
+  useEffect(
+    () => () => {
+      materializeSeq.current += 1;
+    },
+    [],
+  );
 
   // With a query → search the whole catalog; without → a small featured page.
   const archFilters = useMemo(
@@ -250,19 +258,23 @@ export default function VoiceSelector({
       }
       const id = v.slice(ARCHETYPE_PREFIX.length);
       const name = galleryNameById.get(id);
+      const seq = ++materializeSeq.current;
+      const stale = () => materializeSeq.current !== seq;
       setMaterializing(true);
       try {
         // eslint-disable-next-line react-hooks/rules-of-hooks -- useArchetypeAsProfile is an API call, not a React hook
         const r = await useArchetypeAsProfile(id, name);
+        if (stale()) return;
         setJustMaterialized({ id: r.profile_id, name: r.name });
         onChange?.(r.profile_id);
       } catch (e) {
+        if (stale()) return;
         // Keep the previous value; tell the user it didn't take with an
         // actionable, non-technical message (the raw error goes to the console).
         console.error('[VoiceSelector] failed to add gallery voice', e);
         toast.error(t('voiceSelector.addVoiceFailed'));
       } finally {
-        setMaterializing(false);
+        if (!stale()) setMaterializing(false);
       }
     },
     [onChange, galleryNameById, t],

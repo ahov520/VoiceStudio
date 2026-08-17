@@ -218,17 +218,26 @@ export default function Header({
     fetchModels();
   }, [flushOpen]);
 
-  // Click outside to close (must check both the button wrapper AND the portal dropdown)
+  // Close from either pointer or keyboard, including the portal dropdown.
   const dropdownRef = useRef(null);
   useEffect(() => {
     if (!flushOpen) return;
-    const handler = (e) => {
+    const onPointerDown = (e) => {
       const inBtn = flushRef.current && flushRef.current.contains(e.target);
       const inDrop = dropdownRef.current && dropdownRef.current.contains(e.target);
       if (!inBtn && !inDrop) setFlushOpen(false);
     };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
+    const onKeyDown = (e) => {
+      if (e.key !== 'Escape') return;
+      setFlushOpen(false);
+      flushBtnRef.current?.focus();
+    };
+    document.addEventListener('mousedown', onPointerDown);
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', onPointerDown);
+      document.removeEventListener('keydown', onKeyDown);
+    };
   }, [flushOpen]);
 
   const unloadModel = async (modelId) => {
@@ -385,6 +394,8 @@ export default function Header({
                   leading={!flushing && <Zap size={8} />}
                   trailing={<ChevronDown size={8} />}
                   onClick={() => setFlushOpen((o) => !o)}
+                  aria-expanded={flushOpen}
+                  aria-haspopup="menu"
                   className="ml-[2px]"
                 >
                   {t('header.flush')}
@@ -395,6 +406,7 @@ export default function Header({
                       className="fixed w-[260px] bg-[var(--color-bg-elev-1)] [border:1px_solid_var(--color-border)] rounded-[var(--radius-lg)] [box-shadow:0_8px_24px_rgba(0,0,0,0.5)] z-[9999] py-[4px] [animation:flush-slide_0.12s_ease-out]"
                       style={{ top: dropdownPos.top, left: dropdownPos.left }}
                       ref={dropdownRef}
+                      role="menu"
                     >
                       <div className="text-[10px] font-semibold text-[var(--color-fg-subtle)] uppercase tracking-[0.5px] pt-[6px] px-[12px] pb-[4px]">
                         {t('header.loaded_models')}

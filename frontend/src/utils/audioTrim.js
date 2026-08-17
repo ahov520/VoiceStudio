@@ -171,11 +171,24 @@ async function probeDuration(file) {
     const url = URL.createObjectURL(file);
     const a = new Audio();
     a.preload = 'metadata';
+    let settled = false;
+    let timeout;
     const cleanup = () => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timeout);
       try {
+        // Releasing the element's source matters on WebKit: revoking the
+        // Blob URL alone can retain decoded media until the element is GC'd.
+        a.src = '';
+        a.load?.();
         URL.revokeObjectURL(url);
       } catch {}
     };
+    timeout = setTimeout(() => {
+      cleanup();
+      reject(new Error('metadata timeout'));
+    }, 10000);
     a.addEventListener(
       'loadedmetadata',
       () => {
@@ -228,9 +241,13 @@ export function selectionPlayhead(startSec, endSec, elapsedSec, loop) {
 // window into the buffer. Pure so the guarantee is unit-tested, not eyeballed.
 export const MIN_LOOP_SEC = 0.01;
 export function loopWindow(startSec, endSec, durationSec) {
-  const start = clamp(startSec, 0, Math.max(0, durationSec));
-  const seg = Math.max(MIN_LOOP_SEC, endSec - start);
-  const loopEnd = Math.min(durationSec, start + seg);
+  const duration = Math.max(0, Number(durationSec) || 0);
+  const minSeg = Math.min(MIN_LOOP_SEC, duration);
+  // Keep a positive window even when a click lands exactly at the buffer end.
+  const requestedStart = clamp(Number(startSec) || 0, 0, duration);
+  const start = Math.min(requestedStart, Math.max(0, duration - minSeg));
+  const seg = Math.max(minSeg, (Number(endSec) || 0) - start);
+  const loopEnd = Math.min(duration, start + seg);
   return { loopStart: start, loopEnd, seg: loopEnd - start };
 }
 

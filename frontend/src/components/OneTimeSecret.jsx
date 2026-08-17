@@ -29,7 +29,16 @@ function useCountdown(expiresAt) {
   const [now, setNow] = useState(() => Date.now() / 1000);
   useEffect(() => {
     if (!expiresAt) return undefined;
-    const id = setInterval(() => setNow(Date.now() / 1000), 1000);
+    let id;
+    const tick = () => {
+      const current = Date.now() / 1000;
+      setNow(current);
+      // Once the token is expired the displayed value is stable at 0:00;
+      // stop polling instead of keeping a timer alive for the lifetime of
+      // the containing page.
+      if (current >= expiresAt) clearInterval(id);
+    };
+    id = setInterval(tick, 1000);
     return () => clearInterval(id);
   }, [expiresAt]);
   if (!expiresAt) return null;

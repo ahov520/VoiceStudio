@@ -809,6 +809,8 @@
     "empty_tauri": "Nessun registro Tauri disponibile. Funziona solo nella shell del desktop.",
     "empty_backend": "Il registro di runtime è vuoto. L'attività verrà visualizzata qui man mano che il backend la registra.",
     "title": "Registri",
+    "notifications": "Notifiche",
+    "notifications_count": "Notifiche ({{count}})",
     "source_backend": "Backend",
     "source_frontend": "Frontend",
     "source_tauri": "Tauri",

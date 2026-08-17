@@ -109,6 +109,25 @@ describe('GpuTarget', () => {
     expect(screen.getByText('192.168.0.222:2222')).toBeInTheDocument();
   });
 
+  it('closes with Escape and returns focus to the trigger', async () => {
+    apiFetch.mockResolvedValue(
+      respond({ target: 'local', active: { remote: false }, targets: [LOCAL, DESKTOP] }),
+    );
+    renderPicker();
+
+    const trigger = await screen.findByRole('button', { name: 'Where jobs run' });
+    expect(trigger).toHaveAttribute('aria-expanded', 'false');
+    fireEvent.click(trigger);
+    expect(trigger).toHaveAttribute('aria-expanded', 'true');
+    expect(screen.getByText('desktop-4090')).toBeInTheDocument();
+
+    fireEvent.keyDown(document, { key: 'Escape' });
+
+    expect(screen.queryByText('desktop-4090')).not.toBeInTheDocument();
+    expect(trigger).toHaveAttribute('aria-expanded', 'false');
+    expect(trigger).toHaveFocus();
+  });
+
   it('lets you choose an offline worker so you can set it up first', async () => {
     // You pick your desktop, then go and switch it on. Routing falls back
     // locally with a reason until it answers.

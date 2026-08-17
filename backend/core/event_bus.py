@@ -22,23 +22,29 @@ logger = logging.getLogger("omnivoice.events")
 # All connected WebSocket listener queues
 _listeners: list[asyncio.Queue] = []
 _lock = asyncio.Lock()
+_event_loop: asyncio.AbstractEventLoop | None = None
 
 
 async def subscribe() -> asyncio.Queue:
     """Register a new listener. Returns a Queue that receives event dicts."""
     q: asyncio.Queue = asyncio.Queue(maxsize=64)
+    global _event_loop
     async with _lock:
         _listeners.append(q)
+        _event_loop = asyncio.get_running_loop()
     return q
 
 
 async def unsubscribe(q: asyncio.Queue) -> None:
     """Remove a listener."""
+    global _event_loop
     async with _lock:
         try:
             _listeners.remove(q)
         except ValueError:
             pass
+        if not _listeners:
+            _event_loop = None
 
 
 def emit(kind: str, payload: dict[str, Any] | None = None) -> None:
@@ -50,18 +56,45 @@ def emit(kind: str, payload: dict[str, Any] | None = None) -> None:
     ``kind`` is one of: projects, profiles, dub_history, export_history,
     generation_history, model_status, glossary.
     """
+    # Runtime callers are not type-checked. Keep malformed payloads from
+    # turning an optional notification into a failed mutation.
+    metadata_dropped = payload is not None and not isinstance(payload, dict)
     event = {
         "kind": kind,
         "ts": time.time(),
-        **(payload or {}),
+        **(payload if isinstance(payload, dict) else {}),
     }
-    event_str = json.dumps(event)
+    # Event delivery is a best-effort side channel.  A caller should not lose
+    # a successful mutation because an optional diagnostic value (for example
+    # a Path or an exception) is not JSON-native.
+    if metadata_dropped:
+        logger.warning("Event payload must be a mapping; metadata dropped: %s", kind)
+        event = {"kind": kind, "ts": event["ts"], "metadata_dropped": True}
+    try:
+        event_str = json.dumps(event, default=str)
+    except (TypeError, ValueError):
+        logger.warning("Event payload could not be serialized; metadata dropped: %s", kind)
+        event_str = json.dumps({"kind": kind, "ts": event["ts"], "metadata_dropped": True})
     try:
         loop = asyncio.get_running_loop()
-        loop.create_task(_broadcast(event_str))
     except RuntimeError:
-        # No event loop running (unlikely in FastAPI context but safe)
-        logger.debug("No event loop — event dropped: %s", kind)
+        # Sync producers may run in a worker thread. Route delivery back to
+        # the loop captured by subscribe() instead of silently dropping it.
+        loop = _event_loop
+        if loop is None or loop.is_closed():
+            logger.debug("No event loop — event dropped: %s", kind)
+            return
+        try:
+            # Create the coroutine inside the callback so a rejected
+            # scheduling call does not leave an unawaited coroutine behind.
+            loop.call_soon_threadsafe(lambda: loop.create_task(_broadcast(event_str)))
+        except RuntimeError:
+            # The server can shut its loop down between the closed check and
+            # scheduling. Event delivery is best-effort and must not fail the
+            # worker operation that produced the event.
+            logger.debug("Event loop closed while delivering event: %s", kind)
+    else:
+        loop.create_task(_broadcast(event_str))
 
 
 async def _broadcast(event_str: str) -> None:

@@ -224,9 +224,11 @@ export default function LogsFooter() {
   // Always start collapsed on every launch — per-session toggling works
   // but nothing persists. Kill the legacy key on the way out so users
   // who had it stored as "open" before aren't stuck on the next load.
-  if (typeof localStorage !== 'undefined') {
-    localStorage.removeItem('omnivoice.logs.collapsed');
-  }
+  useEffect(() => {
+    if (typeof localStorage !== 'undefined') {
+      localStorage.removeItem('omnivoice.logs.collapsed');
+    }
+  }, []);
   const [collapsed, setCollapsed] = useState(true);
   const { t } = useTranslation();
   // Update availability drives the footer version badge's notification dot.
@@ -316,10 +318,12 @@ export default function LogsFooter() {
 
   const refreshAll = useCallback(async () => {
     setLoading(true);
-    backendLogs.refetch();
-    tauriLogs.refetch();
-    pullFrontend();
-    setLoading(false);
+    try {
+      await Promise.all([backendLogs.refetch(), tauriLogs.refetch()]);
+      pullFrontend();
+    } finally {
+      setLoading(false);
+    }
   }, [backendLogs, tauriLogs, pullFrontend]);
 
   // Frontend logs still need a local interval (no API, reads from buffer)
@@ -422,6 +426,18 @@ export default function LogsFooter() {
   // ── Actions ─────────────────────────────────────────────────────────
   const onClear = async () => {
     try {
+      if (active === 'notifications') {
+        // Notifications are client-side acknowledgements. Keep errors visible
+        // until their underlying condition clears; only dismissible notes can
+        // be bulk-cleared from the footer.
+        notifications.forEach((notification) => {
+          if (notification.id && isDismissibleNotification(notification)) {
+            dismissNotification(notification.id);
+          }
+        });
+        toast.success(t('logs.log_cleared', { source: active }));
+        return;
+      }
       if (active === 'backend') await clearSystemLogs();
       else if (active === 'tauri') await clearTauriLogs();
       else if (active === 'frontend') clearFrontendLogs();

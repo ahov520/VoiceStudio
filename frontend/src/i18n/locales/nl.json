@@ -809,6 +809,8 @@
     "empty_tauri": "Geen Tauri-logboek beschikbaar. Werkt alleen in de desktopshell.",
     "empty_backend": "Runtimelogboek is leeg. Activiteit wordt hier weergegeven terwijl de backend deze registreert.",
     "title": "Logboeken",
+    "notifications": "Meldingen",
+    "notifications_count": "Meldingen ({{count}})",
     "source_backend": "Achterkant",
     "source_frontend": "Frontend",
     "source_tauri": "Tauri",

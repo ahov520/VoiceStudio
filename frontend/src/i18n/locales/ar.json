@@ -809,6 +809,8 @@
     "empty_tauri": "لا يوجد سجل Tauri متاح. يعمل في غلاف سطح المكتب فقط.",
     "empty_backend": "سجل وقت التشغيل فارغ. سيظهر النشاط هنا عندما تقوم الواجهة الخلفية بتسجيله.",
     "title": "سجلات",
+    "notifications": "الإشعارات",
+    "notifications_count": "الإشعارات ({{count}})",
     "source_backend": "الخلفية",
     "source_frontend": "الواجهة الأمامية",
     "source_tauri": "تاوري",

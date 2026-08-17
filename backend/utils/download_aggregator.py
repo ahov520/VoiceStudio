@@ -33,10 +33,23 @@ _EMIT_THROTTLE_S = 0.3
 
 
 def _is_bytes_unit(unit) -> bool:
-    """A byte bar reports unit 'B' (often with unit_scale). The 'Fetching N
-    files' count bar uses 'it'/'files'/None — everything else is treated as a
-    count bar."""
-    return isinstance(unit, str) and unit.strip().upper().startswith("B")
+    """Return whether a tqdm unit represents bytes.
+
+    ``tqdm`` normally reports ``B``, but callers may provide an already-scaled
+    unit such as ``KiB`` or ``MiB``.  Treating those as count bars silently
+    drops their progress from the aggregate, so accept the conventional IEC
+    and SI byte suffixes while keeping the file-count bar (``it``/``files``)
+    separate.
+    """
+    if not isinstance(unit, str):
+        return False
+    normalized = unit.strip().upper()
+    if normalized in {"B", "BYTE", "BYTES"}:
+        return True
+    return normalized in {
+        "KB", "MB", "GB", "TB", "PB",
+        "KIB", "MIB", "GIB", "TIB", "PIB",
+    }
 
 
 class DownloadAggregator:
@@ -62,15 +75,28 @@ class DownloadAggregator:
         self._samples: deque[tuple[float, int]] = deque()
         self._lock = threading.Lock()
         self._last_emit = 0.0
+        self._completed = False
 
     # ── feed ──────────────────────────────────────────────────────────────
     def update_byte_bar(self, key: object, downloaded: int, total: Optional[int]) -> None:
         with self._lock:
-            self._byte_bars[key] = (int(downloaded or 0), total)
+            if self._completed:
+                return
+            previous_done, previous_total = self._byte_bars.get(key, (0, None))
+            current_done = max(0, int(downloaded or 0))
+            current_total = int(total) if total is not None else previous_total
+            # tqdm callbacks can arrive out of order when parallel workers
+            # flush concurrently. Aggregate progress must never move backwards.
+            self._byte_bars[key] = (
+                max(previous_done, current_done),
+                current_total,
+            )
 
     def credit_complete(self, key: object, total: Optional[int]) -> None:
         """A byte bar closed — credit its full size (Xet completion signal)."""
         with self._lock:
+            if self._completed:
+                return
             t = int(total or 0)
             prev = self._byte_bars.get(key, (0, t))
             # never go backwards
@@ -78,6 +104,8 @@ class DownloadAggregator:
 
     def update_files(self, done: int, total: Optional[int]) -> None:
         with self._lock:
+            if self._completed:
+                return
             self._files_done = max(self._files_done, int(done or 0))
             if total:
                 self._files_total = int(total)
@@ -85,12 +113,21 @@ class DownloadAggregator:
     def add(self, key: object, delta: int) -> None:
         """Increment a byte bar's downloaded bytes (used by the segmented path)."""
         with self._lock:
+            if self._completed:
+                return
             cur, tot = self._byte_bars.get(key, (0, None))
-            self._byte_bars[key] = (cur + int(delta or 0), tot)
+            self._byte_bars[key] = (cur + max(0, int(delta or 0)), tot)
 
     # ── derive ────────────────────────────────────────────────────────────
     def _bytes_done_locked(self) -> int:
-        return sum(d for d, _ in self._byte_bars.values())
+        observed = sum(d for d, _ in self._byte_bars.values())
+        # A failed segmented/LFS attempt leaves its tqdm bars behind while the
+        # retry creates new bar identities. Both describe bytes from the same
+        # preflight plan, so summing them can exceed 100%. Keep the raw bars for
+        # retry continuity, but never report more than the known plan total.
+        if self.total_bytes is not None:
+            return min(observed, max(0, int(self.total_bytes)))
+        return observed
 
     def _rate_locked(self, now: float, bytes_done: int) -> float:
         self._samples.append((now, bytes_done))
@@ -102,7 +139,7 @@ class DownloadAggregator:
         t0, b0 = self._samples[0]
         t1, b1 = self._samples[-1]
         dt = t1 - t0
-        return (b1 - b0) / dt if dt > 0 else 0.0
+        return max(0.0, (b1 - b0) / dt) if dt > 0 else 0.0
 
     def snapshot(self, now: Optional[float] = None) -> dict:
         now = time.monotonic() if now is None else now
@@ -114,6 +151,11 @@ class DownloadAggregator:
             files_done = self._files_done
             if not files_done and self._byte_bars:
                 files_done = sum(1 for d, t in self._byte_bars.values() if t and d >= t)
+            # Retries can leave completed bars registered while a fresh file
+            # count callback reports progress again. Keep the UI contract
+            # bounded by the preflight plan, just like bytes_done.
+            if self._files_total is not None:
+                files_done = min(files_done, max(0, int(self._files_total)))
             eta = None
             if rate > 0 and total and total > bytes_done:
                 eta = (total - bytes_done) / rate
@@ -162,6 +204,12 @@ def complete(repo_id: str, *, target: str = "local") -> None:
     if agg is None:
         return
     with agg._lock:
+        # Completion can be reported by both the high-level downloader and a
+        # retry/finally callback. Emit the terminal event only once; late
+        # progress is already ignored by the aggregator's completed flag.
+        if agg._completed:
+            return
+        agg._completed = True
         if agg.total_bytes:
             # REPLACE all byte bars with one full-total entry so the sum is
             # exactly total. Never add on top: the segmented path already
@@ -225,9 +273,14 @@ def add_bytes(
 
 def _maybe_emit(agg: DownloadAggregator) -> None:
     now = time.monotonic()
-    if (now - agg._last_emit) < _EMIT_THROTTLE_S:
-        return
-    agg._last_emit = now
+    # Feeders run on several tqdm/Xet threads. Reserve the emission slot while
+    # holding the aggregator lock so only one thread can pass the throttle
+    # window; reading/writing this timestamp outside the lock caused bursts of
+    # duplicate aggregate SSE events under parallel downloads.
+    with agg._lock:
+        if (now - agg._last_emit) < _EMIT_THROTTLE_S:
+            return
+        agg._last_emit = now
     try:
         hf_progress.emit(agg.snapshot(now))
     except Exception:

@@ -56,6 +56,19 @@ export default function WaveformPlayer({
   const [duration, setDuration] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
 
+  // Native fallback audio may be removed without emitting `pause` during
+  // unmount. Release the global playback claim explicitly so it cannot block
+  // every subsequent player in the application.
+  useEffect(
+    () => () => {
+      if (releaseRef.current) {
+        releaseRef.current();
+        releaseRef.current = null;
+      }
+    },
+    [],
+  );
+
   // Opt-in dictate-over-playback AEC (parity Action 8): while this player is
   // actually playing AND the pref is on, tap its decoded output as the echo
   // reference for dictation (published to the far-end bus). Gated on isPlaying
@@ -112,15 +125,27 @@ export default function WaveformPlayer({
     }
     if (isTauri) {
       let cancelled = false;
+      let objectUrl = null;
       fileToMediaUrl(src, null)
         .then((urls) => {
+          if (urls.audioUrl?.startsWith('blob:')) {
+            if (cancelled) {
+              URL.revokeObjectURL(urls.audioUrl);
+              return;
+            }
+            objectUrl = urls.audioUrl;
+          }
           if (!cancelled) setResolvedUrl(urls.audioUrl);
         })
         .catch(() => {
-          if (!cancelled) setResolvedUrl(URL.createObjectURL(src));
+          if (!cancelled) {
+            objectUrl = URL.createObjectURL(src);
+            setResolvedUrl(objectUrl);
+          }
         });
       return () => {
         cancelled = true;
+        if (objectUrl) URL.revokeObjectURL(objectUrl);
       };
     }
     const u = URL.createObjectURL(src);

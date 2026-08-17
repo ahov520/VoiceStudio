@@ -99,6 +99,17 @@ describe('MarkupToolbar', () => {
     fireEvent.click(close);
     expect(screen.queryByRole('menu')).toBeNull();
   });
+
+  it('closes the reactions menu with Escape and restores trigger focus', () => {
+    render(<ToolbarHarness />);
+    const trigger = screen.getByRole('button', { name: 'audiobook.insert_reactions' });
+    fireEvent.click(trigger);
+
+    fireEvent.keyDown(document, { key: 'Escape' });
+
+    expect(screen.queryByRole('menu')).toBeNull();
+    expect(trigger).toHaveFocus();
+  });
 });
 
 describe('StatsBar', () => {

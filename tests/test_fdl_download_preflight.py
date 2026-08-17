@@ -2,10 +2,21 @@
 from __future__ import annotations
 
 import time
+import threading
 import types
 
 from api.routers.setup.download import compute_plan
 from utils import download_aggregator as da
+
+
+def test_scaled_byte_units_are_aggregated_as_bytes():
+    assert da._is_bytes_unit("B")
+    assert da._is_bytes_unit("bytes")
+    assert da._is_bytes_unit("KiB")
+    assert da._is_bytes_unit("MiB")
+    assert da._is_bytes_unit("GB")
+    assert not da._is_bytes_unit("files")
+    assert not da._is_bytes_unit("it")
 from utils import hf_progress
 
 
@@ -89,6 +100,44 @@ def test_aggregator_add_increments():
     assert agg.snapshot()["bytes_done"] == 15
 
 
+def test_out_of_order_updates_cannot_regress_progress_or_rate():
+    agg = da.DownloadAggregator("r/parallel", total_bytes=1000)
+    t0 = 1000.0
+    agg.snapshot(now=t0)
+    agg.update_byte_bar("blob", 400, 1000)
+    first = agg.snapshot(now=t0 + 1.0)
+
+    agg.update_byte_bar("blob", 250, 1000)
+    agg.add("blob", -100)
+    second = agg.snapshot(now=t0 + 2.0)
+
+    assert first["bytes_done"] == second["bytes_done"] == 400
+    assert second["rate"] >= 0
+
+
+def test_retry_bars_cannot_exceed_preflight_total():
+    agg = da.DownloadAggregator("r/retry", total_bytes=1000, files_total=1)
+    agg.add("segmented-attempt", 700)
+    agg.update_byte_bar("lfs-retry", 600, 1000)
+
+    snap = agg.snapshot()
+    assert snap["bytes_done"] == 1000
+    assert snap["eta_seconds"] is None
+
+
+def test_retry_file_count_cannot_exceed_preflight_total():
+    agg = da.DownloadAggregator("r/file-retry", total_bytes=1000, files_total=2)
+    agg.update_files(5, 2)
+
+    assert agg.snapshot()["files_done"] == 2
+
+
+def test_zero_byte_plan_ignores_stray_retry_progress():
+    agg = da.DownloadAggregator("r/cached", total_bytes=0, files_total=0)
+    agg.update_byte_bar("stale", 10, 10)
+    assert agg.snapshot()["bytes_done"] == 0
+
+
 def test_aggregator_rate_and_eta_windowed():
     agg = da.DownloadAggregator("r/x", total_bytes=1000)
     t0 = 1000.0
@@ -157,3 +206,17 @@ def test_complete_sets_total_not_double_after_segmented_bytes():
     assert snap["bytes_done"] == 1000          # not 2000
     assert snap["files_done"] == snap["files_total"] == 2
     da.finish("r/seg")
+
+
+def test_parallel_feeders_reserve_single_throttled_emit(monkeypatch):
+    agg = da.DownloadAggregator("r/concurrent", total_bytes=100)
+    emitted = []
+    monkeypatch.setattr(hf_progress, "emit", lambda event: emitted.append(event))
+
+    threads = [threading.Thread(target=da._maybe_emit, args=(agg,)) for _ in range(24)]
+    for thread in threads:
+        thread.start()
+    for thread in threads:
+        thread.join()
+
+    assert len(emitted) == 1

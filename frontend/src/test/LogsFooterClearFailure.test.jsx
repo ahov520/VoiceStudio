@@ -3,10 +3,12 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
-const { clearTauriLogs, toastError, toastSuccess } = vi.hoisted(() => ({
+const { clearTauriLogs, toastError, toastSuccess, backendRefetch, tauriRefetch } = vi.hoisted(() => ({
   clearTauriLogs: vi.fn(),
   toastError: vi.fn(),
   toastSuccess: vi.fn(),
+  backendRefetch: vi.fn(),
+  tauriRefetch: vi.fn(),
 }));
 
 // Partial mocks: only what the test drives is stubbed. The footer renders
@@ -20,8 +22,8 @@ vi.mock('../api/system', async (importOriginal) => ({
 }));
 vi.mock('../api/hooks', async (importOriginal) => ({
   ...(await importOriginal()),
-  useSystemLogs: () => ({ data: null, refetch: vi.fn() }),
-  useTauriLogs: () => ({ data: null, refetch: vi.fn() }),
+  useSystemLogs: () => ({ data: null, refetch: backendRefetch }),
+  useTauriLogs: () => ({ data: null, refetch: tauriRefetch }),
   useVisibleNotifications: () => ({ notifications: [] }),
   isDismissibleNotification: () => false,
 }));
@@ -47,6 +49,8 @@ describe('LogsFooter Tauri cleanup failure', () => {
     clearTauriLogs.mockReset();
     toastError.mockReset();
     toastSuccess.mockReset();
+    backendRefetch.mockReset();
+    tauriRefetch.mockReset();
   });
 
   it('shows failure and never claims the log was cleared', async () => {
@@ -58,5 +62,22 @@ describe('LogsFooter Tauri cleanup failure', () => {
 
     await waitFor(() => expect(toastError).toHaveBeenCalled());
     expect(toastSuccess).not.toHaveBeenCalled();
+  });
+
+  it('keeps refresh disabled until both log queries finish', async () => {
+    let resolveBackend;
+    let resolveTauri;
+    backendRefetch.mockReturnValueOnce(new Promise((resolve) => { resolveBackend = resolve; }));
+    tauriRefetch.mockReturnValueOnce(new Promise((resolve) => { resolveTauri = resolve; }));
+    renderFooter();
+    fireEvent.click(screen.getByRole('button', { name: /expand logs panel/i }));
+    const refresh = screen.getByRole('button', { name: /refresh logs/i });
+    fireEvent.click(refresh);
+    expect(refresh).toBeDisabled();
+    resolveBackend();
+    await Promise.resolve();
+    expect(refresh).toBeDisabled();
+    resolveTauri();
+    await waitFor(() => expect(refresh).not.toBeDisabled());
   });
 });

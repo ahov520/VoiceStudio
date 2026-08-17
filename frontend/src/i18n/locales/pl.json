@@ -809,6 +809,8 @@
     "empty_tauri": "Brak dostępnego dziennika Tauri. Działa tylko w powłoce pulpitu.",
     "empty_backend": "Dziennik wykonawczy jest pusty. Aktywność pojawi się tutaj, gdy backend ją zarejestruje.",
     "title": "Dzienniki",
+    "notifications": "Powiadomienia",
+    "notifications_count": "Powiadomienia ({{count}})",
     "source_backend": "Zaplecze",
     "source_frontend": "Frontend",
     "source_tauri": "Tauri",

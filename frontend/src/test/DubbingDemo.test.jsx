@@ -88,6 +88,21 @@ describe('DubbingDemo', () => {
     });
   });
 
+  it('does not echo seek events once both players are aligned', async () => {
+    const { container } = render(withI18n(<DubbingDemo onDismiss={vi.fn()} />));
+    await waitFor(() => screen.getByText('English'));
+    const [source, dubbed] = container.querySelectorAll('video');
+
+    source.currentTime = 12;
+    dubbed.currentTime = 0;
+    fireEvent.seeked(source);
+    expect(dubbed.currentTime).toBe(12);
+
+    source.currentTime = 11.98;
+    fireEvent.seeked(dubbed);
+    expect(source.currentTime).toBe(11.98);
+  });
+
   it('calls onDismiss when the CTA is clicked', async () => {
     const onDismiss = vi.fn();
     render(withI18n(<DubbingDemo onDismiss={onDismiss} />));

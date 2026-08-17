@@ -16,6 +16,7 @@ the frozen-backend fallback mirror it for their toolchains.
 
 ### Changed
 - The backend binds its port immediately and reports startup progress live — `/health` answers 503-with-step and a new `/startup/progress` endpoint lists every step while PyTorch, API routes, and database migrations load in the background, so "starting at step X" is never mistakable for "dead"; the desktop splash narrates each step (#1550)
+- Model download progress stays within its planned total when a connection retry or segmented-to-LFS fallback creates replacement progress bars
 
 ### Added
 - The bug reporter notices when you're on an outdated build and offers the latest release before filing — with a "File anyway" escape hatch — and stamps a `Build status` line into every report so up-to-date reports are tellable from stale ones (#1547)
@@ -30,6 +31,53 @@ the frozen-backend fallback mirror it for their toolchains.
 - Every engine now has its own guide — 21 new pages under docs/engines plus an index covering all 16 TTS and 11 ASR engines, linked from both READMEs (#1556)
 
 ### Fixed
+- Searchable dropdowns no longer repeat recent and popular choices in the main option list.
+- Leaving a voice picker while a gallery voice is being added no longer lets the completed request overwrite the abandoned selection.
+- Reference-audio duration checks now preserve loaded metadata while releasing browser media resources.
+- Pronunciation previews now cancel obsolete backend requests while typing and when leaving Settings.
+- The GPU target menu now closes with Escape, reports its expanded state, and returns keyboard focus to its trigger.
+- Failed gallery voice deletions now stay visible and report the backend error instead of appearing to succeed.
+- Language search in batch dubbing now adds the first match with Enter and no longer lists popular languages twice.
+- Invalid desktop updater progress events can no longer render a broken `NaN%` progress bar.
+- The audiobook reaction-tag menu now closes with Escape and returns keyboard focus to its trigger.
+- The global audio player's seek bar now stops scrubbing when pointer capture is interrupted instead of seeking on later pointer movement.
+- Closing Voice Preview now cancels its active render and prevents late audio from playing after it is reopened.
+- Real-time sidebar updates now coalesce overlapping reconnect attempts instead of opening duplicate WebSockets after transient disconnects.
+- Switching media files now keeps the current preview playable until its replacement is ready.
+- Long-form audiobook and story renders now process the final status event even when the stream closes without a trailing newline.
+- Rapidly triggering voice generation can no longer start duplicate renders before the Generate button disables.
+- Batch queue empty states now follow the selected language instead of falling back to English.
+- Informational notifications now use the info badge color instead of appearing as errors.
+- Dubbing preparation and transcription streams now release cancellation listeners on every terminal path instead of retaining completed stream state after errors or retries.
+- Closing an old background-task status can no longer hide a new task that starts during its exit animation.
+- Synced dubbing-demo players no longer bounce seek events between each other and stutter after scrubbing.
+- Leaving voice recording now stops the active recorder and releases the microphone immediately.
+- Permission checks no longer jump back to stale microphone or accessibility states when overlapping OS probes finish out of order.
+- Coalesced browser persistence now retains every store key written in the same flush window instead of silently keeping only the last key.
+- A previous completion toast can no longer dismiss a newer background-task status early.
+- The header notification button now has localized, non-duplicated screen-reader output.
+- Searchable dropdowns no longer crash when their persisted recent-items value contains valid JSON with the wrong shape.
+- Dub waveform fallback playback now stops and releases native media resources when switching projects or leaving the editor.
+- Browser downloads now keep their temporary blob alive long enough for Safari/WebKit to start saving it.
+- Browser downloads now sanitize server-provided filenames so unsafe paths and invalid characters cannot produce broken save names.
+- Audiobook cover previews now release each browser blob URL exactly once when cleared or closed.
+- Voice profile previews now release each replaced audio blob exactly once instead of revoking the same browser URL twice.
+- Drama script copying now works in plain-HTTP LAN sessions and no longer shows success when clipboard access fails.
+- Copying an entry from transcription history now writes to the clipboard instead of crashing with recursive calls.
+- Stories line previews now release replaced and abandoned audio blobs instead of accumulating memory while projects are edited.
+- Tauri audio previews now release fallback blob URLs after playback components close instead of leaking memory across repeated previews.
+- Sidebar lists no longer jump back to stale data when an older refresh finishes after a real-time update.
+- Streaming TTS no longer joins words or preserves raw line breaks when sentence boundaries arrive across text chunks.
+- Parallel model-download callbacks can no longer make aggregate progress or transfer speed move backwards.
+- MCP voice, personality, transcription, health, and history responses are now valid JSON instead of Python representations that agent clients could not parse.
+- Community voice previews now detect and repair playable cache files that fail their published integrity hash.
+- Installing and deleting the same model can no longer race and leave a partially removed Hugging Face cache.
+- Segmented model downloads now reject unsafe cache paths returned by a Hugging Face endpoint or mirror.
+- Real-time sidebar notifications can no longer fail a successful backend mutation when optional event metadata is not JSON-native.
+- Dictation now removes repeated ASR hallucination loops from sherpa finals as well as Whisper finals.
+- Cancelled background tasks now stop promptly and can no longer finish with a misleading completed status.
+- Demo assets can now be rebuilt with OmniVoice on Linux and Windows without falling through to the macOS-only `say` command, and the renderer updates the correct manifest.
+- Invalid task progress values can no longer corrupt the persisted job summary.
 - The crash-isolated ASR sidecar and its download preflight now agree on which model to load — setting the shared faster-whisper model variable applies to both variants instead of the sidecar quietly using a different one (#1556)
 - "Ready" now requires the deep health probe (a working database-backed route), not just the identity probe — a backend whose install broke underneath can no longer be announced up while every real request fails (#1548)
 - Supervisor restarts after repeat crashes now back off (immediate, then 5s, then 15s) instead of respawning back-to-back, so a tight crash loop can't burn the whole restart budget in seconds (#1548)

@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Search, ChevronDown, Check, Star, Clock } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -9,7 +9,9 @@ const readRecents = (key) => {
   if (!key || typeof window === 'undefined') return [];
   try {
     const raw = window.localStorage.getItem(key);
-    return raw ? JSON.parse(raw) : [];
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
   } catch {
     return [];
   }
@@ -70,10 +72,13 @@ export default function SearchableSelect({
   const [highlight, setHighlight] = useState(0);
   const [recents, setRecents] = useState(() => readRecents(recentsKey));
   const wrapRef = useRef(null);
+  const triggerRef = useRef(null);
   const listRef = useRef(null);
   const inputRef = useRef(null);
   const menuRef = useRef(null);
+  const focusTimerRef = useRef(null);
   const [menuPos, setMenuPos] = useState(null);
+  const listboxId = `searchable-select-${useId().replace(/:/g, '')}`;
 
   const getVal = useCallback((o) => (typeof o === 'string' ? o : o?.value), []);
   const getLabel = useCallback(
@@ -128,7 +133,13 @@ export default function SearchableSelect({
     return out;
   }, [query, recents, popular, byVal]);
 
-  const displayed = useMemo(() => filtered.slice(0, MAX_DISPLAY), [filtered]);
+  // Pinned recent/popular values already appear at the top. Exclude them from
+  // the main rows so mouse and keyboard navigation do not encounter duplicates.
+  const displayed = useMemo(() => {
+    if (!pinned.length) return filtered.slice(0, MAX_DISPLAY);
+    const pinnedValues = new Set(pinned.map(({ o }) => getVal(o)));
+    return filtered.filter((o) => !pinnedValues.has(getVal(o))).slice(0, MAX_DISPLAY);
+  }, [filtered, pinned, getVal]);
 
   const flatItems = useMemo(() => {
     const list = [];
@@ -174,8 +185,8 @@ export default function SearchableSelect({
       const listMax = Math.max(120, Math.floor(Math.min(280, openUp ? above : below)));
       setMenuPos(
         openUp
-          ? { bottom: vh - r.top + GAP, left, width: r.width, listMax }
-          : { top: r.bottom + GAP, left, width: r.width, listMax },
+          ? { bottom: vh - r.top + GAP, left, width, listMax }
+          : { top: r.bottom + GAP, left, width, listMax },
       );
     };
     place();
@@ -190,10 +201,28 @@ export default function SearchableSelect({
   useEffect(() => {
     if (open) {
       setHighlight(0);
-      setTimeout(() => inputRef.current?.focus(), 0);
+      // Defer focus until the portaled input exists, but cancel it if the
+      // menu closes or this component unmounts before the callback runs.
+      focusTimerRef.current = setTimeout(() => {
+        focusTimerRef.current = null;
+        inputRef.current?.focus();
+      }, 0);
     } else {
+      if (focusTimerRef.current !== null) {
+        clearTimeout(focusTimerRef.current);
+        focusTimerRef.current = null;
+      }
       setQuery('');
+      // Return focus to the trigger so keyboard users can continue from the
+      // same control after selecting an option or pressing Escape.
+      triggerRef.current?.focus();
     }
+    return () => {
+      if (focusTimerRef.current !== null) {
+        clearTimeout(focusTimerRef.current);
+        focusTimerRef.current = null;
+      }
+    };
   }, [open]);
 
   useEffect(() => {
@@ -201,6 +230,12 @@ export default function SearchableSelect({
     const el = listRef.current.querySelector(`[data-idx="${highlight}"]`);
     if (el) el.scrollIntoView({ block: 'nearest' });
   }, [highlight, open]);
+
+  // Async option sources can shrink while the menu is open. Keep the active
+  // descendant valid so Enter always commits a currently displayed option.
+  useEffect(() => {
+    setHighlight((current) => Math.max(0, Math.min(current, flatItems.length - 1)));
+  }, [flatItems.length]);
 
   // Surface open/query state to an optional parent driver (#1219). Kept in
   // effects (not inline in handlers) so the reset-on-close above is included.
@@ -253,6 +288,7 @@ export default function SearchableSelect({
     // position/width rule now lives in these utilities.
     <div ref={wrapRef} className="ss-wrap relative w-full">
       <button
+        ref={triggerRef}
         type="button"
         className={`${buttonClassName} flex items-center justify-between gap-[6px] w-full text-left cursor-pointer [font-family:inherit] disabled:cursor-not-allowed disabled:opacity-50 ${triggerSizeCls}`}
         style={buttonStyle}
@@ -260,6 +296,7 @@ export default function SearchableSelect({
         disabled={disabled}
         aria-haspopup="listbox"
         aria-expanded={open}
+        aria-controls={open ? listboxId : undefined}
         aria-label={ariaLabel}
         title={currentLabel}
       >
@@ -273,6 +310,7 @@ export default function SearchableSelect({
         wrapMenu(
           <div
             ref={menuRef}
+            id={listboxId}
             className={`z-[1000] bg-[rgba(29,32,33,0.98)] [border:1px_solid_rgba(255,255,255,0.1)] rounded-[6px] shadow-[0_8px_24px_rgba(0,0,0,0.5)] [backdrop-filter:blur(12px)] overflow-hidden min-w-[220px] max-w-[min(360px,90vw)] ${
               menuPortal ? 'fixed' : 'absolute top-[calc(100%+4px)] left-0 right-0'
             }`}
@@ -296,6 +334,10 @@ export default function SearchableSelect({
                 ref={inputRef}
                 className="flex-1 w-full bg-[rgba(0,0,0,0.25)] [border:1px_solid_rgba(255,255,255,0.08)] rounded-[4px] py-[5px] pr-[8px] pl-[24px] text-[0.72rem] text-[color:var(--text-primary)] outline-none [font-family:inherit] focus:[border-color:rgba(250,189,47,0.4)]"
                 placeholder={t('common.search')}
+                role="combobox"
+                aria-controls={listboxId}
+                aria-activedescendant={flatItems[highlight] ? `${listboxId}-option-${highlight}` : undefined}
+                aria-expanded="true"
                 value={query}
                 onChange={(e) => {
                   setQuery(e.target.value);
@@ -352,6 +394,7 @@ export default function SearchableSelect({
                       {showHeader && <div className={GROUP_LABEL_CLS}>{it.o.groupLabel}</div>}
                       <div
                         data-idx={idx}
+                        id={`${listboxId}-option-${idx}`}
                         // Migrated `.ss-option`/`.ss-hl`/`.ss-sel` cascade. Selected
                         // wins its color/weight; selected+highlighted gets the
                         // stronger amber wash; highlight (and hover, when neither

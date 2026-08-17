@@ -1210,15 +1210,17 @@ async def generate_speech(
         from services.engine_memory import evict_other_tts_engines
         await evict_other_tts_engines(engine_id)
 
-        # Non-blocking breadcrumb: if free memory is already low before this
-        # load, log it. A later OOM kill (the 16 GB-Mac class) then has a trail
-        # pointing at the load that tipped it, instead of a silent process
-        # death. Never blocks — the OS can reclaim cache, and a hard refuse
-        # would brick legitimate loads.
+        # Unified resource budget: probe the relevant memory pool and evict
+        # idle engines when the incoming engine cannot fit. The hook is
+        # permissive when a platform cannot report memory.
         try:
-            from services.memory_budget import log_if_low
+            from services.memory_budget import ensure_capacity
 
-            log_if_low(f"TTS load ({engine_id})")
+            await ensure_capacity(
+                _engine_min_vram_gb,
+                f"TTS load ({engine_id})",
+                keep_engine=engine_id,
+            )
         except Exception:
             pass
 

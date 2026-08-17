@@ -266,7 +266,10 @@ async def list_jobs(status: str | None = None, project_id: str | None = None, li
     `project_id=...` → scope to one project.
     """
     from core import job_store
-    limit = max(1, min(500, int(limit)))
+    try:
+        limit = max(1, min(500, int(limit)))
+    except (TypeError, ValueError) as exc:
+        raise HTTPException(status_code=400, detail="limit must be an integer") from exc
     return job_store.list_jobs(status=status, project_id=project_id, limit=limit)
 
 
@@ -294,7 +297,14 @@ async def list_job_events(job_id: str, after_seq: int = 0, limit: int = 500):
             status_code=404,
             detail="No job with that id. It may have expired, been deleted, or the server restarted before it was persisted — check the dub history in the sidebar.",
         )
-    limit = max(1, min(2000, int(limit)))
+    try:
+        after_seq = max(0, int(after_seq))
+        limit = max(1, min(2000, int(limit)))
+    except (TypeError, ValueError) as exc:
+        raise HTTPException(
+            status_code=400,
+            detail="after_seq and limit must be integers",
+        ) from exc
     return {
         "job": row,
         "events": job_store.events_since(job_id, after_seq=after_seq, limit=limit),

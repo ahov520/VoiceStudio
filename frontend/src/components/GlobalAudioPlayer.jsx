@@ -181,6 +181,7 @@ function PlayerBar({ track }) {
         onPointerMove={onPointerMove}
         onPointerUp={endScrub}
         onPointerCancel={endScrub}
+        onLostPointerCapture={endScrub}
         onKeyDown={onKeyDown}
       >
         <WaveCanvas peaks={peaks} progress={duration > 0 ? currentTime / duration : 0} />

@@ -5,6 +5,7 @@ and idempotent profile materialization without a model or network dependency.
 """
 from __future__ import annotations
 
+import hashlib
 import io
 import json
 import os
@@ -410,6 +411,36 @@ def test_recorded_download_rejects_non_audio_bytes(tmp_path):
         community._download_voice_audio(item, destination, client=Client())
     assert not destination.exists()
     assert not list(tmp_path.glob(".*.part"))
+
+
+def test_recorded_cache_repairs_playable_file_with_wrong_hash(tmp_path, monkeypatch):
+    expected = _wav_bytes()
+    item = community.validate_item({
+        **_FIXTURE["items"][3],
+        "audio": {
+            **_FIXTURE["items"][3]["audio"],
+            "sha256": hashlib.sha256(expected).hexdigest(),
+        },
+    })
+    monkeypatch.setattr(community, "_CACHE_DIR", tmp_path)
+    cached = community._voice_audio_path(item)
+    cached.parent.mkdir(parents=True)
+    corrupted = bytearray(expected)
+    corrupted[-1] ^= 1
+    cached.write_bytes(corrupted)
+    assert community.is_playable_wav(cached)
+
+    downloads = []
+
+    def repair(_item, destination, *, client=None):
+        downloads.append(destination)
+        destination.write_bytes(expected)
+
+    monkeypatch.setattr(community, "_download_voice_audio", repair)
+
+    assert community._cached_voice_audio(item) == cached
+    assert cached.read_bytes() == expected
+    assert downloads == [cached]
 
 
 # ── Materialization ───────────────────────────────────────────────────────────

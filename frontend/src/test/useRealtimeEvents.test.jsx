@@ -102,6 +102,33 @@ describe('useRealtimeEvents cold-start health probe', () => {
     ]);
   });
 
+  it('coalesces duplicate reconnect callbacks while the health probe is pending', async () => {
+    vi.useFakeTimers();
+    let resolveHealth;
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce({ ok: true, status: 200 })
+      .mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            resolveHealth = resolve;
+          }),
+      );
+    vi.stubGlobal('fetch', fetchMock);
+    render(<Harness />);
+    await vi.waitFor(() => expect(FakeWebSocket.instances.length).toBe(1));
+
+    const first = FakeWebSocket.instances[0];
+    first.onclose({ code: 1006 });
+    first.onclose({ code: 1006 });
+    await vi.advanceTimersByTimeAsync(4000);
+
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    resolveHealth({ ok: true, status: 200 });
+    await vi.waitFor(() => expect(FakeWebSocket.instances.length).toBe(2));
+    expect(authenticatedWsUrl).toHaveBeenCalledTimes(2);
+  });
+
   it('does not log authentication error details', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, status: 200 }));
     authenticatedWsUrl.mockRejectedValueOnce(new Error('private-session-value'));

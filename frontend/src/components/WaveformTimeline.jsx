@@ -32,6 +32,14 @@ const WF_BTN_BASE =
 const WF_BTN = `${WF_BTN_BASE} bg-[rgba(255,255,255,0.04)] text-[color:var(--text-secondary)] [border:1px_solid_rgba(255,255,255,0.06)] hover:bg-[rgba(255,255,255,0.1)] hover:text-[color:var(--text-primary)] hover:[border-color:rgba(255,255,255,0.12)]`;
 const WF_BTN_PLAY = `${WF_BTN_BASE} bg-[var(--chrome-accent-bg)] text-[color:var(--chrome-accent)] [border:1px_solid_var(--chrome-accent-border)] hover:bg-[color-mix(in_srgb,var(--chrome-accent)_22%,transparent)] hover:shadow-none`;
 
+export function bindFallbackMediaEvents(mediaEl, handlers) {
+  const entries = Object.entries(handlers);
+  for (const [event, handler] of entries) mediaEl.addEventListener(event, handler);
+  return () => {
+    for (const [event, handler] of entries) mediaEl.removeEventListener(event, handler);
+  };
+}
+
 /**
  * WaveformTimeline
  *
@@ -240,6 +248,18 @@ function WaveformTimeline(
     mediaEl.crossOrigin = 'anonymous'; // helps in sandboxed WebViews
     mediaElRef.current = mediaEl; // keep ref for fallback play/pause
 
+    const releaseMedia = () => {
+      if (videoRetryTimer) clearTimeout(videoRetryTimer);
+      try {
+        mediaEl.pause();
+        mediaEl.removeAttribute('src');
+        mediaEl.load?.();
+      } catch (_) {}
+      mediaElRef.current = null;
+      const c = videoContainerRef.current;
+      if (c && videoEl?.parentNode === c) c.removeChild(videoEl);
+    };
+
     // ── 3. Init WaveSurfer with that single media element ────────────────────
     let ws;
     try {
@@ -289,30 +309,36 @@ function WaveformTimeline(
       };
       if (mediaEl.readyState >= 1) waitMeta();
       else mediaEl.addEventListener('loadedmetadata', waitMeta, { once: true });
-      mediaEl.addEventListener('timeupdate', () => {
-        setCurrentTime(mediaEl.currentTime);
-        // playRange watcher — stop at the requested slot end.
-        if (
-          playRangeEndRef.current != null &&
-          mediaEl.currentTime >= playRangeEndRef.current - 0.02
-        ) {
-          playRangeEndRef.current = null;
-          try {
-            mediaEl.pause();
-          } catch (_) {
-            /* ignore */
+      const removeFallbackListeners = bindFallbackMediaEvents(mediaEl, {
+        timeupdate: () => {
+          setCurrentTime(mediaEl.currentTime);
+          // playRange watcher — stop at the requested slot end.
+          if (
+            playRangeEndRef.current != null &&
+            mediaEl.currentTime >= playRangeEndRef.current - 0.02
+          ) {
+            playRangeEndRef.current = null;
+            try {
+              mediaEl.pause();
+            } catch (_) {
+              /* ignore */
+            }
           }
-        }
+        },
+        play: () => setIsPlaying(true),
+        pause: () => {
+          setIsPlaying(false);
+          playRangeEndRef.current = null;
+        },
+        ended: () => setIsPlaying(false),
       });
-      mediaEl.addEventListener('play', () => setIsPlaying(true));
-      mediaEl.addEventListener('pause', () => {
-        setIsPlaying(false);
-        playRangeEndRef.current = null;
-      });
-      mediaEl.addEventListener('ended', () => setIsPlaying(false));
       wsRef.current = null;
       setFallbackMode(true);
-      return;
+      return () => {
+        mediaEl.removeEventListener('loadedmetadata', waitMeta);
+        removeFallbackListeners();
+        releaseMedia();
+      };
     }
 
     ws.on('ready', () => {

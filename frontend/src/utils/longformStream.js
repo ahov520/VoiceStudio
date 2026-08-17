@@ -57,7 +57,12 @@ export async function consumeLongformStream(res, onEvent, { isAborted, signal } 
         return;
       }
       const { done, value } = await reader.read();
-      if (done) break;
+      if (done) {
+        buffer += decoder.decode();
+        const evt = parseSSELine(buffer);
+        if (evt) onEvent(evt);
+        break;
+      }
       buffer += decoder.decode(value, { stream: true });
       const { lines, rest } = splitSSEBuffer(buffer);
       buffer = rest;

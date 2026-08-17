@@ -43,6 +43,30 @@ describe('consumeLongformStream', () => {
     expect(events.at(-1).output).toBe('book.m4b');
   });
 
+  it('parses a final UTF-8 event when the stream ends without a newline', async () => {
+    const enc = new TextEncoder();
+    const frame = enc.encode('data: {"type":"done","output":"audiobook-中文.m4b"}');
+    const splitAt = frame.indexOf(0xe4) + 1; // split inside the first CJK code point
+    let i = 0;
+    const byteRes = {
+      body: {
+        getReader: () => ({
+          read: () =>
+            i++ === 0
+              ? Promise.resolve({ done: false, value: frame.slice(0, splitAt) })
+              : i === 2
+                ? Promise.resolve({ done: false, value: frame.slice(splitAt) })
+                : Promise.resolve({ done: true, value: undefined }),
+        }),
+      },
+    };
+
+    const events = [];
+    await consumeLongformStream(byteRes, (event) => events.push(event));
+
+    expect(events).toEqual([{ type: 'done', output: 'audiobook-中文.m4b' }]);
+  });
+
   it('stops early when isAborted() returns true', async () => {
     const res = streamResponse([
       sse({ type: 'started', chapters: 5 }),

@@ -215,5 +215,26 @@ describe('VoiceSelector', () => {
       // onChange never fires on the error path → value preserved.
       expect(onChange).not.toHaveBeenCalled();
     });
+
+    it('does not commit a gallery pick after unmount', async () => {
+      vi.mocked(useArchetypes).mockReturnValue({ data: { items: GALLERY_ITEMS } });
+      let resolveMaterialize;
+      vi.mocked(useArchetypeAsProfile).mockReturnValue(
+        new Promise((resolve) => {
+          resolveMaterialize = resolve;
+        }),
+      );
+      const onChange = vi.fn();
+      const { unmount } = renderVS({ value: '', onChange, profiles: PROFILES });
+      open();
+      fireEvent.mouseDown(screen.getByText('The Librarian'));
+      await waitFor(() => expect(useArchetypeAsProfile).toHaveBeenCalled());
+
+      unmount();
+      resolveMaterialize({ profile_id: 'p_late', name: 'The Librarian' });
+      await Promise.resolve();
+
+      expect(onChange).not.toHaveBeenCalled();
+    });
   });
 });

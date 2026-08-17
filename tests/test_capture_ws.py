@@ -87,6 +87,32 @@ def test_eof_text_frame_triggers_final_without_disconnect(client):
         assert final["engine"] == "stub"
 
 
+def test_final_collapses_repetitive_asr_artifacts(client, monkeypatch):
+    """Every ASR backend final gets deterministic hallucination cleanup."""
+    from api.routers import capture_ws as cw
+
+    async def repetitive_full(_chunks, **_kw):
+        return {
+            "text": "hello hello hello hello hello hello world",
+            "segments": [],
+            "language": "en",
+            "duration_s": 1.0,
+            "transcription_time_s": 0.01,
+            "engine": "stub",
+        }
+
+    monkeypatch.setattr(cw, "_transcribe_buffer_full", repetitive_full)
+    with client.websocket_connect("/ws/transcribe") as ws:
+        ws.send_bytes(_audio_chunk())
+        ws.send_text("EOF")
+        for _ in range(10):
+            final = ws.receive_json()
+            if final.get("type") == "final":
+                break
+
+    assert final["text"] == "World."
+
+
 def test_legacy_disconnect_still_finalizes(client):
     """Closing the socket without EOF should still deliver final (legacy path)."""
     # Even if the client closes, the server runs final and *attempts* to send

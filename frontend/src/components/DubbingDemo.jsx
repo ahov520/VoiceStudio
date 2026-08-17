@@ -17,6 +17,7 @@ import { API, apiFetch } from '../api/client';
 
 // Shared container surface for the demo + its loading placeholder.
 const SHELL = 'rounded-[10px] border border-border bg-[rgba(255,255,255,0.02)]';
+const SYNC_DRIFT_TOLERANCE_S = 0.05;
 
 export default function DubbingDemo({ onDismiss }) {
   const { t } = useTranslation();
@@ -61,7 +62,12 @@ export default function DubbingDemo({ onDismiss }) {
       if (!dst.paused) dst.pause();
     };
     const onSeek = (src, dst) => () => {
-      dst.currentTime = src.currentTime;
+      // The assignment itself emits `seeked` on the other player. Ignore that
+      // echo once both players are aligned, otherwise they can seek each other
+      // indefinitely on browsers that emit for same-time assignments.
+      if (Math.abs(dst.currentTime - src.currentTime) > SYNC_DRIFT_TOLERANCE_S) {
+        dst.currentTime = src.currentTime;
+      }
     };
 
     const aPlay = onPlay(a, b);

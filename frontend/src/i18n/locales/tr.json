@@ -809,6 +809,8 @@
     "empty_tauri": "Tauri günlüğü mevcut değil. Yalnızca masaüstü kabuğunda çalışır.",
     "empty_backend": "Çalışma zamanı günlüğü boş. Arka uç günlüğe kaydettikçe etkinlik burada görünecektir.",
     "title": "Günlükler",
+    "notifications": "Bildirimler",
+    "notifications_count": "Bildirimler ({{count}})",
     "source_backend": "Arka uç",
     "source_frontend": "Ön uç",
     "source_tauri": "Tauri",

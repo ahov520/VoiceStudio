@@ -42,6 +42,7 @@ import time
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
 from api.dependencies import is_local_host, ws_remote_authorized
+from services.refinement import collapse_repetitive_artifacts
 from services.text_polish import polish_text
 
 router = APIRouter()
@@ -68,6 +69,11 @@ MIN_FINAL_BUFFER_BYTES = 4000  # ~125ms of 16-bit mono 16kHz
 # server can tell mic audio from the playback reference it must cancel:
 _AEC_NEAR = 0x00  # microphone frame (clean it, then buffer for ASR)
 _AEC_FAR = 0x01   # playback reference frame (feed the echo model only)
+
+
+def _normalize_final_text(text: str) -> str:
+    """Apply every deterministic cleanup step to a final transcript."""
+    return polish_text(collapse_repetitive_artifacts(text or ""))
 
 
 def _requested_pcm_sample_rate(query_params) -> int | None:
@@ -363,7 +369,7 @@ async def ws_transcribe(websocket: WebSocket):
             result = await _transcribe_buffer_full(audio_chunks, pcm_sr=pcm_sr)
             # Dictation v2: deterministic polish so the pasted final reads
             # like typed text (leading capital, terminal punctuation).
-            result["text"] = polish_text(result.get("text", ""))
+            result["text"] = _normalize_final_text(result.get("text", ""))
             # Wave 2.1: optional local-LLM refinement of the final text.
             # HARD-BOUNDED (maybe_refine_async, ~4s OMNIVOICE_REFINE_TIMEOUT_S):
             # a slow/dead LLM can never delay this `final` beyond the budget —
@@ -614,7 +620,7 @@ async def _run_sherpa_streaming(websocket: WebSocket, spec):
             if endpoint:
                 # Commit this utterance (polished — it gets pasted); reset
                 # for the next one.
-                text = polish_text(text)
+                text = _normalize_final_text(text)
                 if text:
                     committed.append(text)
                     await _send({"type": "final", "text": text,
@@ -637,7 +643,7 @@ async def _run_sherpa_streaming(websocket: WebSocket, spec):
     except Exception as e:
         logger.debug("sherpa streaming flush failed: %s", e)
         tail_text = ""
-    tail_text = polish_text(tail_text)
+    tail_text = _normalize_final_text(tail_text)
     if tail_text and tail_text != (committed[-1] if committed else None):
         committed.append(tail_text)
 
@@ -762,7 +768,7 @@ async def _run_sherpa_offline(websocket: WebSocket, spec):
             return
         del buf[:len(snapshot)]
         last_partial = ""
-        text = polish_text(text)
+        text = _normalize_final_text(text)
         if text:
             committed.append(text)
             await _send({"type": "final", "text": text,
@@ -812,7 +818,7 @@ async def _run_sherpa_offline(websocket: WebSocket, spec):
     except Exception:
         logger.exception("sherpa offline final failed")
         tail = ""
-    tail = polish_text(tail)
+    tail = _normalize_final_text(tail)
     if tail:
         committed.append(tail)
     # Pieces are already polished; the join is too (polish is idempotent).
@@ -846,7 +852,7 @@ async def _run_sherpa_offline(websocket: WebSocket, spec):
             logger.exception("silent-model demotion failed")
         try:
             result = await _transcribe_buffer_full([bytes(session_pcm)], pcm_sr=pcm_sr)
-            fb_text = polish_text((result or {}).get("text", "") or "")
+            fb_text = _normalize_final_text((result or {}).get("text", "") or "")
             if fb_text:
                 full = fb_text
                 segments = (result or {}).get("segments") or [

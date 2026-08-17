@@ -7,6 +7,8 @@ These pin the threshold logic and the never-raises contract.
 from __future__ import annotations
 
 import os
+import asyncio
+import pytest
 
 os.environ.setdefault("OMNIVOICE_MODEL", "test")
 os.environ.setdefault("OMNIVOICE_DISABLE_FILE_LOG", "1")
@@ -66,3 +68,82 @@ def test_available_memory_never_raises(monkeypatch):
 
     monkeypatch.setitem(sys.modules, "psutil", None)  # force ImportError path
     assert isinstance(mb.available_memory(), dict)
+
+
+@pytest.mark.asyncio
+async def test_ensure_capacity_evicts_when_pool_is_tight(monkeypatch):
+    samples = iter([
+        {"vram_free_gb": 1.0},
+        {"vram_free_gb": 4.0},
+    ])
+    monkeypatch.setattr(mb, "available_memory", lambda: next(samples))
+    calls = []
+
+    async def evict(keep_id):
+        calls.append(keep_id)
+        return ["other"]
+
+    monkeypatch.setattr("services.engine_memory.evict_other_tts_engines", evict)
+    result = await mb.ensure_capacity(2.0, "test", keep_engine="mlx")
+    assert calls == ["mlx"]
+    assert result["sufficient"] is True
+    assert result["evicted"] == ["other"]
+
+
+@pytest.mark.asyncio
+async def test_ensure_capacity_is_permissive_when_memory_unknown(monkeypatch):
+    monkeypatch.setattr(mb, "available_memory", lambda: {})
+    result = await mb.ensure_capacity(2.0, "test")
+    assert result["sufficient"] is True
+
+
+@pytest.mark.asyncio
+async def test_ensure_capacity_serializes_concurrent_eviction(monkeypatch):
+    # The first request evicts; the second observes the post-eviction pool
+    # instead of racing into a second eviction.
+    samples = iter([
+        {"vram_free_gb": 1.0}, {"vram_free_gb": 4.0},
+        {"vram_free_gb": 4.0}, {"vram_free_gb": 4.0},
+    ])
+    monkeypatch.setattr(mb, "available_memory", lambda: next(samples))
+    calls = []
+
+    async def evict(keep_id):
+        calls.append(keep_id)
+        await asyncio.sleep(0)
+        return ["other"]
+
+    monkeypatch.setattr("services.engine_memory.evict_other_tts_engines", evict)
+    results = await asyncio.gather(
+        mb.ensure_capacity(2.0, "first", keep_engine="a"),
+        mb.ensure_capacity(2.0, "second", keep_engine="b"),
+    )
+    assert calls == ["a"]
+    assert results[0]["evicted"] == ["other"]
+    assert results[1]["evicted"] == []
+
+
+def test_capacity_falls_back_to_ram_when_vram_probe_is_empty():
+    assert mb._available_for_device({"vram_free_gb": None, "ram_available_gb": 3.0}) == 3.0
+
+
+def test_invalid_headroom_configuration_falls_back_to_default():
+    assert mb._configured_headroom("not-a-number") == 2.0
+    assert mb._configured_headroom("nan") == 2.0
+    assert mb._configured_headroom("-1") == 2.0
+    assert mb._configured_headroom("3.5") == 3.5
+
+
+def test_configured_headroom_reads_runtime_environment(monkeypatch):
+    monkeypatch.setenv("OMNIVOICE_LOW_MEMORY_HEADROOM_GB", "4.5")
+    assert mb.configured_headroom() == 4.5
+    monkeypatch.setenv("OMNIVOICE_LOW_MEMORY_HEADROOM_GB", "invalid")
+    assert mb.configured_headroom() == 2.0
+
+
+def test_warning_uses_current_environment_when_threshold_omitted(monkeypatch):
+    monkeypatch.setattr(mb, "available_memory", lambda: {"ram_available_gb": 3.0})
+    monkeypatch.setenv("OMNIVOICE_LOW_MEMORY_HEADROOM_GB", "4")
+    assert mb.low_memory_warning() and "Low memory" in mb.low_memory_warning()
+    monkeypatch.setenv("OMNIVOICE_LOW_MEMORY_HEADROOM_GB", "2")
+    assert mb.low_memory_warning() is None

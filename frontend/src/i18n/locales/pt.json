@@ -809,6 +809,8 @@
     "empty_tauri": "Nenhum registro Tauri disponível. É executado apenas no shell da área de trabalho.",
     "empty_backend": "O log de tempo de execução está vazio. A atividade aparecerá aqui conforme o back-end a registra.",
     "title": "Registros",
+    "notifications": "Notificações",
+    "notifications_count": "Notificações ({{count}})",
     "source_backend": "Back-end",
     "source_frontend": "Interface",
     "source_tauri": "Touro",

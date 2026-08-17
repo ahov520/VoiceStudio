@@ -479,6 +479,22 @@ def _voice_audio_path(item: dict) -> Path:
     return _CACHE_DIR / "audio" / f"{item['id']}-{_voice_audio_fingerprint(item)}.wav"
 
 
+def _cached_voice_audio_is_valid(path: Path, item: dict) -> bool:
+    if not is_playable_wav(path):
+        return False
+    expected = (item.get("audio") or {}).get("sha256")
+    if not expected:
+        return True
+    digest = hashlib.sha256()
+    try:
+        with path.open("rb") as handle:
+            for chunk in iter(lambda: handle.read(1 << 20), b""):
+                digest.update(chunk)
+    except OSError:
+        return False
+    return digest.hexdigest() == expected
+
+
 async def _render_preset_atomic(item: dict, out_path: Path) -> Path:
     if is_playable_wav(out_path):
         return out_path
@@ -597,7 +613,7 @@ def _download_voice_audio(item: dict, out_path: Path, *, client=None) -> None:
 
 def _cached_voice_audio(item: dict) -> Path:
     path = _voice_audio_path(item)
-    if is_playable_wav(path):
+    if _cached_voice_audio_is_valid(path, item):
         return path
     with contextlib.suppress(OSError):
         path.unlink()

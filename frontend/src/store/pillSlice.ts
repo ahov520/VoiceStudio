@@ -81,48 +81,65 @@ const INITIAL: PillState = {
   homeMode: null,
 };
 
-export const createPillSlice: StateCreator<PillSlice, [], [], PillSlice> = (set) => ({
-  ...INITIAL,
+export const createPillSlice: StateCreator<PillSlice, [], [], PillSlice> = (set) => {
+  let dismissTimer: ReturnType<typeof setTimeout> | null = null;
+  const cancelAutoDismiss = () => {
+    if (dismissTimer !== null) clearTimeout(dismissTimer);
+    dismissTimer = null;
+  };
 
-  showPill: (stage, label, opts) =>
-    set({
-      stage,
-      label,
-      progress: opts?.progress ?? null,
-      startedAt: Date.now(),
-      error: null,
-      visible: true,
-      cancellable: opts?.cancellable ?? false,
-      homeMode: opts?.homeMode ?? null,
-    }),
+  return {
+    ...INITIAL,
 
-  setPillProgress: (progress) => set({ progress }),
-  setPillLabel: (label) => set({ label }),
+    showPill: (stage, label, opts) => {
+      cancelAutoDismiss();
+      set({
+        stage,
+        label,
+        progress: opts?.progress ?? null,
+        startedAt: Date.now(),
+        error: null,
+        visible: true,
+        cancellable: opts?.cancellable ?? false,
+        homeMode: opts?.homeMode ?? null,
+      });
+    },
 
-  dismissPill: () => set(INITIAL),
+    setPillProgress: (progress) => set({ progress }),
+    setPillLabel: (label) => set({ label }),
 
-  completePill: (label = 'Done') => {
-    set({
-      stage: 'done',
-      label,
-      progress: 100,
-      error: null,
-      cancellable: false,
-      visible: true,
-    });
-    // Auto-dismiss after 3s
-    setTimeout(() => {
-      set((s) => (s.stage === 'done' ? INITIAL : s));
-    }, 3000);
-  },
+    dismissPill: () => {
+      cancelAutoDismiss();
+      set(INITIAL);
+    },
 
-  errorPill: (error) =>
-    set({
-      stage: 'error',
-      label: 'Error',
-      progress: null,
-      error,
-      cancellable: false,
-      visible: true,
-    }),
-});
+    completePill: (label = 'Done') => {
+      cancelAutoDismiss();
+      set({
+        stage: 'done',
+        label,
+        progress: 100,
+        error: null,
+        cancellable: false,
+        visible: true,
+      });
+      // Auto-dismiss after 3s
+      dismissTimer = setTimeout(() => {
+        dismissTimer = null;
+        set((s) => (s.stage === 'done' ? INITIAL : s));
+      }, 3000);
+    },
+
+    errorPill: (error) => {
+      cancelAutoDismiss();
+      set({
+        stage: 'error',
+        label: 'Error',
+        progress: null,
+        error,
+        cancellable: false,
+        visible: true,
+      });
+    },
+  };
+};
