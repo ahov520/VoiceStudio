@@ -6,13 +6,21 @@ zero-shot voice cloning across 9+ languages with separate models for "base",
 
 ## Install
 
-CosyVoice is installed *per-engine* from the in-app **Model Catalogue → Engines** tab:
+CosyVoice runs in a dependency-isolated sidecar so it cannot poison the main
+VoiceStudio Python environment. Configure it from the in-app **Model Catalogue
+→ Engines** tab:
 
 1. Open **Model Catalogue → Engines**.
-2. Click **Install** next to "CosyVoice".
-3. The app fetches the engine source, creates a dedicated venv, syncs deps,
-   and downloads model weights (~2 GB).
-4. Once installed, the engine appears in the **Voice Cloning** engine picker.
+2. Download/select the `Fun-CosyVoice3-0.5B-2512` model.
+3. Select **CosyVoice** in the **Voice Cloning** engine picker. On first use,
+   the app creates a private compatibility venv under its app-data directory
+   and installs the upstream-compatible pins (`transformers==4.51.3`,
+   `numpy==1.26.4`, `onnxruntime==1.18.0`, `wetext==0.0.4`, and
+   `x-transformers==2.11.24`). `uv` must be installed for this one-time step.
+
+If you already cloned CosyVoice and prepared a compatible `.venv`, set
+`OMNIVOICE_COSYVOICE_DIR` to the clone root (or directly to that venv) before
+starting VoiceStudio; the user environment is preferred over the managed one.
 
 CosyVoice 3 requires a reference recording for local synthesis. The adapter
 adds the model's required prompt boundary internally, so enter the reference

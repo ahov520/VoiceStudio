@@ -1537,19 +1537,17 @@ class MLXAudioBackend(TTSBackend):
 class CosyVoiceBackend(TTSBackend):
     """FunAudioLLM CosyVoice — multilingual zero-shot TTS (9 langs + 18 dialects).
 
-    Supports v1 (300M), v2 (0.5B), and v3 (0.5B, latest). Installation is
-    non-trivial (git clone --recursive + SoX) so we ship as an optional
-    scaffold: ``is_available()`` reports the missing install cleanly.
+    Supports v1 (300M), v2 (0.5B), and v3 (0.5B, latest). The public registry
+    uses the dependency-isolated sidecar in ``engines.cosyvoice``; this
+    adapter remains the sidecar's inference implementation.
 
     Set ``OMNIVOICE_COSYVOICE_MODEL`` to the pretrained model directory path
     (e.g. ``pretrained_models/Fun-CosyVoice3-0.5B``). The directory must
     contain the CosyVoice checkpoint files.
 
-    Install:
-        git clone --recursive https://github.com/FunAudioLLM/CosyVoice.git
-        cd CosyVoice && pip install -r requirements.txt
-        # Ubuntu: sudo apt-get install sox libsox-dev
-        # macOS:  brew install sox
+    A dedicated sidecar venv pins the upstream-compatible dependencies on first
+    use. A user-provided clone plus ``OMNIVOICE_COSYVOICE_DIR`` remains
+    supported for installations that do not bundle the package.
     """
 
     id = "cosyvoice"
@@ -2111,6 +2109,11 @@ _LAZY_REGISTRY: dict[str, tuple[str, str]] = {
     # IndexTTS2. Lazy for the same import-cycle reason as the entries above.
     "moss-tts-v15": ("engines.moss_tts_v15", "MossTTSV15Backend"),
     "dots-tts": ("engines.dots_tts", "DotsTTSBackend"),
+    # CosyVoice 3 pins a transformers/numpy/onnxruntime stack that conflicts
+    # with the parent VoiceStudio environment.  Keep the prompt/inference
+    # adapter above available for the sidecar, but expose the public engine
+    # through its dedicated-venv subprocess wrapper.
+    "cosyvoice": ("engines.cosyvoice", "CosyVoiceBackend"),
     # The resident OmniVoice model in a crash-isolated sidecar (#730/#1190):
     # same model and quality as the in-process "omnivoice" engine, but a wedged
     # generate can be hard-killed to reclaim VRAM/device. Opt-in (the in-process
@@ -2202,7 +2205,6 @@ class _LazyRegistry(dict):
 
 _REGISTRY: dict[str, type[TTSBackend]] = _LazyRegistry({
     "omnivoice":     OmniVoiceBackend,
-    "cosyvoice":     CosyVoiceBackend,
     "kittentts":     KittenTTSBackend,
     "mlx-audio":     MLXAudioBackend,
     "voxcpm2":       VoxCPM2Backend,
@@ -2230,7 +2232,7 @@ _LAST_ERRORS: dict[str, str] = {}
 _INSTALL_HINTS: dict[str, str] = {
     "omnivoice":     "pip install omnivoice  (bundled — no extra install needed)",
     "omnivoice-subprocess": "No extra install; uses the host OmniVoice install. Opt in with OMNIVOICE_TTS_BACKEND=omnivoice-subprocess (same model in a killable sidecar, for unattended reliability).",
-    "cosyvoice":     "git clone --recursive FunAudioLLM/CosyVoice + pip install -r requirements.txt + SoX",
+    "cosyvoice":     "CosyVoice runs in a private compatibility venv (uv bootstraps it on first use); optionally set OMNIVOICE_COSYVOICE_DIR to a clone with its own .venv",
     "kittentts":     "pip install kittentts  (ONNX, CPU-only, ~80 MB)",
     "mlx-audio":     "pip install mlx-audio  (Apple Silicon only)",
     "voxcpm2":       'pip install "voxcpm>=2.0.3"  (floor: 2.0.3 fixed Apple-Silicon audio quality; CPU/MPS supported, CUDA recommended for speed)',

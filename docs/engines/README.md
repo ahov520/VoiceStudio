@@ -28,7 +28,7 @@ approval), [Windows](../install/windows.md), [Linux](../install/linux.md),
 | MOSS-TTS-Nano | [moss-tts-nano](moss-tts-nano.md) | CUDA · CPU | ✅ (ref only) | clone + `uv pip install -e .` |
 | KittenTTS | [kittentts](kittentts.md) | CPU | — (8 preset voices) | `pip install kittentts` |
 | MLX-Audio (Kokoro, CSM, Dia, …) | [mlx-audio](mlx-audio.md) | Apple Silicon | model-dependent | `pip install mlx-audio` |
-| CosyVoice 3 | [cosyvoice](cosyvoice.md) | CUDA · CPU | ✅ | clone + requirements |
+| CosyVoice 3 | [cosyvoice](cosyvoice.md) | CUDA · CPU | ✅ | isolated venv (auto-bootstrap) |
 | GPT-SoVITS | [gpt-sovits](gpt-sovits.md) | external server | ✅ | its own API server |
 | Sherpa-ONNX | [sherpa-onnx](sherpa-onnx.md) | CUDA · CPU | — | `pip install sherpa-onnx` + model dir |
 | IndexTTS 2.5 | [indextts](indextts.md) | CUDA · CPU | ✅ + emotion | one-click sidecar install |
