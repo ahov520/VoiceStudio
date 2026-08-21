@@ -14,10 +14,11 @@ import { SettingsSection, SettingRow, InfoHint, SettingsToggle } from './primiti
 
 // Append-only: the keyboard-navigation test walks the list from Gruvbox with
 // ArrowDown and expects Midnight next — inserting mid-list breaks that order.
-// `light`/`auto` (zh-UX pass 1) ride at the end; their labels go through t()
-// because unlike the proper-noun skins they're common words every locale
-// should localize (zh-CN renders them via the locale bundle), while `auto`
-// also carries a second dot color rendered as a half-dark/half-light swatch.
+// `light`/`auto` (zh-UX pass 1) and `voicestudio` (pass 3) were appended in
+// that order; `light`/`auto` labels go through t() because unlike the
+// proper-noun skins they're common words every locale should localize
+// (zh-CN renders them via the locale bundle), while `auto` also carries a
+// second dot color rendered as a half-dark/half-light swatch.
 const THEMES = [
   { id: 'gruvbox', label: 'Gruvbox', dot: '#d3869b' },
   { id: 'midnight', label: 'Midnight', dot: '#8b5cf6' },
@@ -32,6 +33,10 @@ const THEMES = [
   { id: 'kanagawa', label: 'Kanagawa', dot: '#7e9cd8' },
   { id: 'light', label: null, dot: '#faf6ed' },
   { id: 'auto', label: null, dot: '#1d2021', dot2: '#faf6ed', split: true },
+  // The product's own palette (docs/branding.md) — voice rose on the plum
+  // tile. Appended last to keep the list append-only; proper-noun label like
+  // the other skins, so no t() key.
+  { id: 'voicestudio', label: 'VoiceStudio', dot: '#f47fa3' },
 ];
 
 /**
