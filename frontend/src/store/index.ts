@@ -176,7 +176,7 @@ export const useAppStore = create<AppStore>()(
         firedMilestones: s.firedMilestones,
         optedOut: s.optedOut,
       }),
-      version: 7,
+      version: 8,
       // Drop old persisted shapes rather than crashing the app. Every field
       // has a safe default in its slice, so v1/v2/v3 users pick up v4 defaults
       // for new fields (timingStrategy etc.) and keep any keys we still write
@@ -233,6 +233,15 @@ export const useAppStore = create<AppStore>()(
           // use exactly 100%. Mark all v1–v6 records as configured; only a
           // brand-new v7 store should show the scale check.
           p.uiScaleConfigured = true;
+        }
+        if (version < 8) {
+          // zh-UX pass 3: fresh installs on a Chinese OS now default to the
+          // labeled titlebar tabs. Records persisted before navStyle existed
+          // (v1–v6) carry no navStyle, so without this pin they would pick up
+          // the new locale-aware default and have their navigation change
+          // under them on upgrade. Keep them on the rail they've always had;
+          // v7 records already persisted a real choice and pass through.
+          p.navStyle = p.navStyle ?? 'rail';
         }
         return p as Partial<AppStore>; // also covers version > 6 (downgrade→upgrade)
       },

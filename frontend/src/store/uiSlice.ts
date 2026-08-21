@@ -13,6 +13,7 @@
  */
 import type { StateCreator } from 'zustand';
 import type { EngineFamily } from '../api/types';
+import { isChineseOs } from '../utils/isChineseOs';
 
 export type AppMode =
   | 'launchpad'
@@ -142,9 +143,14 @@ export const createUiSlice: StateCreator<UiSlice, [], [], UiSlice> = (set, get) 
   uiScale: 1.0,
   uiScaleConfigured: false,
   uiScalePreviewed: false,
-  // The icon rail is the out-of-the-box navigation; titlebar tabs are opt-in
-  // from Settings → Appearance and persist like the other chrome preferences.
-  navStyle: 'rail',
+  // Navigation skin out of the box. The icon rail is the default; on a
+  // Chinese-language OS fresh installs get the labeled titlebar tabs instead
+  // (zh-UX pass 3) — an icon-only rail with hover tooltips is a discoverability
+  // wall for mainstream creators, and zh labels are short enough (2–4 chars)
+  // that the strip never needs its compact fallback. Only seeds a first
+  // launch: zustand persist merges a persisted navStyle over this, and the
+  // v8 migration pins every pre-existing install to 'rail' regardless of OS.
+  navStyle: isChineseOs() ? 'tabs' : 'rail',
 
   setMode: (mode) => set({ mode }),
   setDefineMethod: (method) => set({ defineMethod: method }),

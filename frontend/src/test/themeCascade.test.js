@@ -108,6 +108,7 @@ describe('theme cascade on documentElement (:root) — per-theme chrome recolori
     everforest: '#232a2e',
     'one-dark': '#21252b',
     kanagawa: '#16161d',
+    voicestudio: '#211b2b',
     light: '#f1ead8',
   };
 
